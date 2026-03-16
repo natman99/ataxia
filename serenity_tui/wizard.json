@@ -1,0 +1,65 @@
+{
+  "name": "wizard",
+  "level": 1,
+  "initiative": 10,
+  "armor_class": 10,
+  "health": {
+    "current": 8,
+    "max": 8,
+    "modifier": 0,
+    "bonus": 0
+  },
+  "class": "Fighter",
+  "inventory": {},
+  "ability_scores": {
+    "str": {
+      "base": 18,
+      "bonus": 0,
+      "override_score": null
+    },
+    "dex": {
+      "base": 18,
+      "bonus": 0,
+      "override_score": null
+    },
+    "con": {
+      "base": 18,
+      "bonus": 0,
+      "override_score": null
+    },
+    "int": {
+      "base": 18,
+      "bonus": 0,
+      "override_score": null
+    },
+    "wis": {
+      "base": 18,
+      "bonus": 0,
+      "override_score": null
+    },
+    "char": {
+      "base": 18,
+      "bonus": 0,
+      "override_score": null
+    }
+  },
+  "skills": {
+    "proficiency_bonus": 2,
+    "proficiencies": 3
+  },
+  "spells": {
+    "spell_slots": {
+      "slots": []
+    },
+    "spells": {}
+  },
+  "senses": {
+    "perception": 10,
+    "investigation": 10,
+    "insight": 10,
+    "extra": 0
+  },
+  "traits": {
+    "inner": {}
+  }
+}
