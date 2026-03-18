@@ -1,17 +1,18 @@
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::roll::{Die, Roll};
 
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
-pub struct Ability {
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, JsonSchema)]
+pub struct Feature {
     name: String,
     description: Option<String>,
     roll: Option<Roll>,
 }
 
-impl Default for Ability {
+impl Default for Feature {
     fn default() -> Self {
         Self {
             name: "example spell".to_string(),
@@ -21,7 +22,7 @@ impl Default for Ability {
     }
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Default)]
-pub struct Abilities {
-    pub inner: HashMap<String, Ability>,
+#[derive(Debug, Clone, Deserialize, Serialize, Default, PartialEq, JsonSchema)]
+pub struct Features {
+    pub inner: BTreeMap<String, Feature>,
 }

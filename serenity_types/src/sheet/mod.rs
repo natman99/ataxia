@@ -1,4 +1,5 @@
 use enumflags2::{BitFlags, bitflags};
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, fmt::Display};
 
@@ -10,8 +11,8 @@ pub mod roll;
 pub mod skills;
 pub mod spells;
 
-pub mod ability;
-pub mod r#trait;
+pub mod feature;
+pub mod senses;
 
 pub use hit_points::HitPoints;
 pub use item::Item;
@@ -20,11 +21,11 @@ use ability_score::AbilityScore;
 
 use crate::{
     ability::Abilities,
+    feature::Features,
     sheet::{class::Class, skills::Skills, spells::Spells},
-    r#trait::Features,
 };
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default, JsonSchema)]
 #[serde(default)]
 pub struct Character {
     pub name: String,
@@ -40,7 +41,7 @@ pub struct Character {
     pub spells: Spells,
     pub senses: Senses,
     pub traits: Features,
-    pub abilities: Abilities,
+    // pub abilities: Abilities,
     pub ability_modifier: Score,
 }
 
@@ -80,10 +81,11 @@ impl Character {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default, JsonSchema)]
+/// An inventory containing a hash map of `Item`s
 pub struct Inventory(HashMap<String, Item>);
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default, JsonSchema)]
 /// Ability scores. Defaults to ten.
 pub struct AbilityScores {
     pub str: AbilityScore,
@@ -114,7 +116,7 @@ impl AbilityScores {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Default, JsonSchema)]
 pub enum Score {
     #[default]
     Str,
@@ -125,7 +127,8 @@ pub enum Score {
     Char,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
+/// The armor class of a character.
 pub struct ArmorClass(u32);
 
 impl ArmorClass {
@@ -150,7 +153,8 @@ impl Display for ArmorClass {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
+/// Initiative score.
 pub struct Initiative(u32);
 
 impl Display for Initiative {
@@ -165,48 +169,7 @@ impl Default for Initiative {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct Senses {
-    pub perception: i32,
-    pub investigation: i32,
-    pub insight: i32,
-    pub extra: BitFlags<ExtraSenses>,
-}
-
-impl Default for Senses {
-    fn default() -> Self {
-        Self {
-            perception: 10,
-            investigation: 10,
-            insight: 10,
-            extra: BitFlags::empty(),
-        }
-    }
-}
-
-#[bitflags]
-#[repr(u8)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub enum ExtraSenses {
-    BlindSight,
-    DarkVision,
-    TremorSense,
-    TrueSight,
-}
-
-impl Display for ExtraSenses {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let s = match self {
-            ExtraSenses::BlindSight => "Blindsight",
-            ExtraSenses::DarkVision => "Darkvision",
-            ExtraSenses::TremorSense => "Tremorsense",
-            ExtraSenses::TrueSight => "Truesight",
-        };
-
-        write!(f, "{}", s)
-    }
-}
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct Level(pub u32);
 
 impl Default for Level {

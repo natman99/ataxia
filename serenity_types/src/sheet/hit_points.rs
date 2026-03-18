@@ -1,5 +1,6 @@
 use std::fmt::Display;
 
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -7,15 +8,17 @@ use crate::{
     roll::{Die, Roll},
 };
 
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
-/// Default display displays the current health.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, JsonSchema)]
+/// The hit points of the character. Default display displays the current health.
 pub struct HitPoints {
+    /// Current health.
     pub current: i32,
+    /// Max health.
     pub max: u32,
-    /// Bonus per level.
+    /// Bonus health gained per level.
     pub level_bonus: i32,
-    /// Temp bonus health.
-    pub bonus: u32,
+    /// Temporary bonus health.
+    pub bonus: i32,
 }
 
 impl Default for HitPoints {
@@ -61,7 +64,15 @@ impl HitPoints {
     }
 
     pub fn hit(&mut self, dmg: i32) {
-        self.current -= dmg;
+        if self.bonus > 0 {
+            self.bonus = self.bonus - dmg;
+            if self.bonus < 0 {
+                self.current -= self.bonus.abs();
+                self.bonus = 0;
+            }
+        } else {
+            self.current -= dmg;
+        }
         self.current = self.current.max(0);
     }
     pub fn heal(&mut self, dmg: i32) {

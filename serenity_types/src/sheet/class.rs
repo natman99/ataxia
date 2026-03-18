@@ -1,9 +1,11 @@
 use std::fmt::Display;
 
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(from = "String")]
+/// The class of a character.
 pub enum Class {
     Fighter,
     Wizard,

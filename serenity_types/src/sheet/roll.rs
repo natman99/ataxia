@@ -3,18 +3,32 @@ use std::sync::LazyLock;
 
 use rand::{Rng, RngExt};
 use regex::Regex;
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum RollModifier {
+    Advantage,
+    Disadvantage,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
+/// A dice roll. Can contain multiple dice.
 pub struct Roll {
     pub dice: Vec<Die>,
+    /// A bonus to add after the dice have been rolled.
     pub bonus: i32,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct RollResult {
+    /// The total dice results added up.
     pub total: i32,
+    /// The number of dice rolled.
     pub num_dice_rolled: i32,
+    /// The list of individual results.
     pub results: Vec<i32>,
+    /// The dice that weren't counted due to advantage/disadvantage
+    pub failures: Vec<i32>,
 }
 
 impl Roll {
@@ -25,14 +39,43 @@ impl Roll {
         }
     }
 
-    pub fn roll<T: Rng>(&self, rng: &mut T) -> RollResult {
+    pub fn roll<T: Rng>(&self, rng: &mut T, special: Option<RollModifier>) -> RollResult {
         let mut total = 0i32;
         let mut results = vec![];
+        let mut failures = vec![];
 
         for i in &self.dice {
             let r = i.roll(rng);
-            total += r;
-            results.push(r);
+
+            if let Some(s) = &special {
+                let other = i.roll(rng);
+
+                let (success, failure) = {
+                    match s {
+                        RollModifier::Advantage => {
+                            if other > r {
+                                (other, r)
+                            } else {
+                                (r, other)
+                            }
+                        }
+                        RollModifier::Disadvantage => {
+                            if other < r {
+                                (other, r)
+                            } else {
+                                (r, other)
+                            }
+                        }
+                    }
+                };
+
+                total += success;
+                results.push(success);
+                failures.push(failure);
+            } else {
+                total += r;
+                results.push(r);
+            }
         }
 
         total += self.bonus;
@@ -41,6 +84,7 @@ impl Roll {
             total,
             num_dice_rolled: results.len() as i32,
             results,
+            failures,
         }
     }
 
@@ -74,7 +118,8 @@ impl TryFrom<&str> for Roll {
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+/// An individual die.
 pub enum Die {
     D4,
     D6,

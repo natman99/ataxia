@@ -1,6 +1,7 @@
 use std::fmt::Display;
 
 use enumflags2::{BitFlags, bitflags};
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::sheet::AbilityScores;
@@ -111,7 +112,7 @@ impl TryFrom<&str> for Skill {
         }
     }
 }
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default, JsonSchema)]
 struct SkillsJson {
     athletics: bool,
     acrobatics: bool,
@@ -134,7 +135,10 @@ struct SkillsJson {
     proficiency_bonus: u32,
 }
 
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Default, JsonSchema, Serialize, Deserialize)]
+#[serde(from = "SkillsJson")]
+#[serde(into = "SkillsJson")]
+/// The characters proficiency skills.
 pub struct Skills {
     pub proficiency_bonus: u32,
     pub proficiencies: BitFlags<Skill>,
@@ -198,27 +202,34 @@ impl From<&Skills> for SkillsJson {
         out
     }
 }
+impl From<Skills> for SkillsJson {
+    fn from(value: Skills) -> Self {
+        let mut out = SkillsJson::default();
+        out.proficiency_bonus = value.proficiency_bonus;
+        value.proficiencies.iter().for_each(|f| match f {
+            Skill::Athletics => out.athletics = true,
+            Skill::Acrobatics => out.acrobatics = true,
+            Skill::SleightOfHand => out.sleightofhand = true,
+            Skill::Stealth => out.stealth = true,
+            Skill::Arcana => out.arcana = true,
+            Skill::History => out.history = true,
+            Skill::Investigation => out.investigation = true,
+            Skill::Nature => out.nature = true,
+            Skill::Religion => out.religion = true,
+            Skill::AnimalHandling => out.animalhandling = true,
+            Skill::Insight => out.insight = true,
+            Skill::Medicine => out.medicine = true,
+            Skill::Perception => out.perception = true,
+            Skill::Survival => out.survival = true,
+            Skill::Deception => out.deception = true,
+            Skill::Intimidation => out.intimidation = true,
+            Skill::Performance => out.performance = true,
+            Skill::Persuasion => out.persuasion = true,
+        });
 
-impl<'de> Deserialize<'de> for Skills {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let data = SkillsJson::deserialize(deserializer)?;
-        Ok(Skills::from(data))
+        out
     }
 }
-
-impl Serialize for Skills {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        let v = SkillsJson::from(self);
-        v.serialize(serializer)
-    }
-}
-
 impl Skills {
     /// Get the skill bonus.
     pub fn check(&self, skill: &Skill, ability_scores: &AbilityScores) -> i32 {
