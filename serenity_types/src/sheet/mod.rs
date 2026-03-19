@@ -20,8 +20,8 @@ pub use item::Item;
 use ability_score::AbilityScore;
 
 use crate::{
-    ability::Abilities,
     feature::Features,
+    senses::Senses,
     sheet::{class::Class, skills::Skills, spells::Spells},
 };
 
@@ -66,7 +66,6 @@ impl Character {
             initiative: Default::default(),
             armor_class: Default::default(),
             traits: Default::default(),
-            abilities: Default::default(),
             ability_modifier: Score::Str,
         }
     }

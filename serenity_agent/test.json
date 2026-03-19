@@ -1,6 +1,6 @@
 {
-  "name": "",
-  "level": 1,
+  "name": "Billy Bob Jones",
+  "level": 3,
   "initiative": 10,
   "armor_class": 10,
   "health": {
@@ -18,7 +18,7 @@
       "override_score": null
     },
     "dex": {
-      "base": 10,
+      "base": 16,
       "bonus": 0,
       "override_score": null
     },
@@ -61,7 +61,8 @@
     "deception": false,
     "intimidation": false,
     "performance": false,
-    "persuasion": false
+    "persuasion": false,
+    "proficiency_bonus": 0
   },
   "spells": {
     "spell_slots": {
@@ -75,12 +76,14 @@
     "perception": 10,
     "investigation": 10,
     "insight": 10,
-    "extra": 0
+    "extra": {
+      "blind_sight": false,
+      "dark_vision": false,
+      "tremor_sense": false,
+      "true_sight": false
+    }
   },
   "traits": {
-    "inner": {}
-  },
-  "abilities": {
     "inner": {}
   },
   "ability_modifier": "Str"
