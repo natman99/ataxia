@@ -70,9 +70,9 @@ async fn main() {
         use futures::StreamExt;
         use std::fmt::Write;
         use std::fmt::write;
-        while let Some(e) = response.next().await {
-            match e {}
-        }
+        // while let Some(e) = response.next().await {
+        //     match e {}
+        // }
 
         buf.clear();
     }

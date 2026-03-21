@@ -14,3 +14,4 @@ thiserror = "2.0.18"
 tokio = { version = "1.50.0", features = ["full"] }
 serenity_types = { path = "../serenity_types" }
 futures = "0.3.32"
+parking_lot = { version = "0.12.5", features = ["serde"] }
