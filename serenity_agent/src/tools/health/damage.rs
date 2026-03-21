@@ -1,24 +1,19 @@
-use std::{fs, sync::Arc};
-
-use parking_lot::Mutex;
 use rig::{
     completion::ToolDefinition,
-    tool::{Tool, ToolEmbedding, ToolError},
+    tool::{Tool, ToolEmbedding},
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use serenity_types::Character;
 
-use crate::tools::InitError;
+use crate::tools::{InitError, SheetState};
 
 #[derive(Deserialize, Serialize, Debug, JsonSchema)]
 pub struct DamageArgs {
-    num: i32,
+    amount: i32,
 }
 
-#[derive(Serialize, Deserialize)]
 pub struct Damage {
-    inner: Arc<Mutex<Character>>,
+    pub inner: SheetState,
 }
 
 impl Tool for Damage {
@@ -42,9 +37,9 @@ impl Tool for Damage {
     }
 
     async fn call(&self, args: Self::Args) -> Result<Self::Output, Self::Error> {
-        println!("Damage");
-        let i = self.inner.lock();
-        i.health.current -= args.num;
+        // println!("Damage");
+        let mut i = self.inner.lock();
+        i.health.hit(args.amount);
 
         Ok(())
     }
@@ -55,7 +50,7 @@ impl ToolEmbedding for Damage {
 
     type Context = ();
 
-    type State = ();
+    type State = SheetState;
 
     fn embedding_docs(&self) -> Vec<String> {
         vec![
@@ -67,7 +62,9 @@ impl ToolEmbedding for Damage {
 
     fn context(&self) -> Self::Context {}
 
-    fn init(state: Self::State, context: Self::Context) -> Result<Self, Self::InitError> {
-        Ok(LoadSheet)
+    fn init(state: Self::State, _context: Self::Context) -> Result<Self, Self::InitError> {
+        Ok(Damage {
+            inner: state.clone(),
+        })
     }
 }

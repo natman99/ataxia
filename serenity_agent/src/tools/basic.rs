@@ -12,7 +12,6 @@ pub struct AddArgs {
     /// The second number to add.
     y: i32,
 }
-#[derive(Serialize, Deserialize)]
 pub struct Adder;
 
 impl Tool for Adder {
@@ -34,7 +33,7 @@ impl Tool for Adder {
     }
 
     async fn call(&self, args: Self::Args) -> Result<Self::Output, Self::Error> {
-        println!("{:?}", args);
+        // println!("{:?}", args);
         Ok(format!("{}", args.x + args.y))
     }
 }
@@ -47,12 +46,12 @@ impl ToolEmbedding for Adder {
     type State = ();
 
     fn embedding_docs(&self) -> Vec<String> {
-        vec!["Add two numbers".into()]
+        vec!["Add two numbers".into(), "x + y".into()]
     }
 
     fn context(&self) -> Self::Context {}
 
-    fn init(state: Self::State, context: Self::Context) -> Result<Self, Self::InitError> {
+    fn init(_state: Self::State, _context: Self::Context) -> Result<Self, Self::InitError> {
         Ok(Adder)
     }
 }
@@ -87,7 +86,7 @@ impl Tool for Subtract {
     }
 
     async fn call(&self, args: Self::Args) -> Result<Self::Output, Self::Error> {
-        println!("{:?}", args);
+        // println!("{:?}", args);
         Ok(format!("{}", args.x - args.y))
     }
 }
@@ -100,12 +99,12 @@ impl ToolEmbedding for Subtract {
     type State = ();
 
     fn embedding_docs(&self) -> Vec<String> {
-        vec!["Subtract two numbers".into()]
+        vec!["Subtract two numbers".into(), "x - y".into()]
     }
 
     fn context(&self) -> Self::Context {}
 
-    fn init(state: Self::State, context: Self::Context) -> Result<Self, Self::InitError> {
+    fn init(_state: Self::State, _context: Self::Context) -> Result<Self, Self::InitError> {
         Ok(Subtract)
     }
 }
@@ -140,7 +139,7 @@ impl Tool for Multiply {
     }
 
     async fn call(&self, args: Self::Args) -> Result<Self::Output, Self::Error> {
-        println!("{:?}", args);
+        // println!("{:?}", args);
         Ok(format!("{}", args.x * args.y))
     }
 }
@@ -158,7 +157,7 @@ impl ToolEmbedding for Multiply {
 
     fn context(&self) -> Self::Context {}
 
-    fn init(state: Self::State, context: Self::Context) -> Result<Self, Self::InitError> {
+    fn init(_state: Self::State, _context: Self::Context) -> Result<Self, Self::InitError> {
         Ok(Multiply)
     }
 }

@@ -62,7 +62,7 @@ impl HitPoints {
 
         s
     }
-
+    /// Apply damage. Damage is subtracted.
     pub fn hit(&mut self, dmg: i32) {
         if self.bonus > 0 {
             self.bonus = self.bonus - dmg;
@@ -75,8 +75,8 @@ impl HitPoints {
         }
         self.current = self.current.max(0);
     }
-    pub fn heal(&mut self, dmg: i32) {
-        self.current += dmg;
+    pub fn heal(&mut self, healing: i32) {
+        self.current += healing;
         self.current = self.current.max(self.max as i32);
     }
 }
