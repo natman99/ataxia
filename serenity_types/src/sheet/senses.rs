@@ -25,10 +25,19 @@ impl Default for Senses {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default, Serialize, Deserialize, JsonSchema)]
 pub struct ExtraSenses {
-    blind_sight: bool,
-    dark_vision: bool,
-    tremor_sense: bool,
-    true_sight: bool,
+    pub blind_sight: bool,
+    pub dark_vision: bool,
+    pub tremor_sense: bool,
+    pub true_sight: bool,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+/// Extra sense types.
+pub enum Sense {
+    BlindSight,
+    DarkVision,
+    TremorSense,
+    TrueSight,
 }
 
 // impl Display for ExtraSenses {

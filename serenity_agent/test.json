@@ -1,13 +1,15 @@
 {
   "name": "Billy Bob Jones",
-  "level": 3,
+  "level": 1,
+  "race": "",
   "initiative": 10,
   "armor_class": 10,
   "health": {
-    "current": 12,
-    "max": 12,
+    "current": 8,
+    "max": 8,
     "level_bonus": 0,
-    "bonus": 0
+    "bonus": 0,
+    "hit_dice": "D8"
   },
   "class": "Fighter",
   "inventory": {},
@@ -18,7 +20,7 @@
       "override_score": null
     },
     "dex": {
-      "base": 16,
+      "base": 10,
       "bonus": 0,
       "override_score": null
     },
@@ -65,12 +67,7 @@
     "proficiency_bonus": 0
   },
   "spells": {
-    "spell_slots": {
-      "slots": []
-    },
-    "spells": {
-      "inner": {}
-    }
+    "spells": {}
   },
   "senses": {
     "perception": 10,
@@ -83,8 +80,22 @@
       "true_sight": false
     }
   },
-  "traits": {
+  "features": {
     "inner": {}
   },
-  "ability_modifier": "Str"
+  "ability_modifier": "Str",
+  "meters": {
+    "meters": {}
+  },
+  "lore": {
+    "backstory": "",
+    "personality_traits": "",
+    "allies": "",
+    "enemies": "",
+    "physical_traits": "",
+    "alignment": {
+      "morality": "Good",
+      "order": "Lawful"
+    }
+  }
 }

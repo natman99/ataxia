@@ -29,13 +29,15 @@ impl Tool for SetScore {
 
     type Args = SetScoreArgs;
 
-    type Output = ();
+    type Output = String;
 
     async fn definition(&self, _prompt: String) -> ToolDefinition {
         let s = schemars::schema_for!(SetScoreArgs);
         ToolDefinition {
             name: "Set score".to_string(),
-            description: "Set an ability score to a new value.".to_string(),
+            description:
+                "Set an ability score to a new value. Scores are str, dex, con, int, wis, and char"
+                    .to_string(),
             parameters: serde_json::to_value(s).expect("Schema error"),
         }
     }
@@ -52,7 +54,7 @@ impl Tool for SetScore {
             Score::Char => i.ability_scores.char = score,
         }
 
-        Ok(())
+        Ok(format!("Set {} to {}", args.score, args.amount))
     }
 }
 
@@ -69,6 +71,7 @@ impl ToolEmbedding for SetScore {
             "Set ability score".into(),
             "Set ability bonus".into(),
             "Update ability score".into(),
+            "Set score".into(),
         ]
     }
 

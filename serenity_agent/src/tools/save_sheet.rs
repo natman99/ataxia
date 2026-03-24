@@ -7,7 +7,7 @@ use rig::{
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::tools::{InitError, SheetState};
+use crate::tools::{InitError, SheetState, Success};
 
 #[derive(Deserialize, Serialize, Debug, JsonSchema)]
 pub struct LoadSheetArgs {}
@@ -23,7 +23,7 @@ impl Tool for SaveSheet {
 
     type Args = LoadSheetArgs;
 
-    type Output = ();
+    type Output = String;
 
     async fn definition(&self, _prompt: String) -> ToolDefinition {
         let s = schemars::schema_for!(LoadSheetArgs);
@@ -44,7 +44,7 @@ impl Tool for SaveSheet {
             },
             Err(e) => return Err(ToolError::ToolCallError(Box::new(e))),
         }
-        Ok(())
+        Ok(Success::success())
     }
 }
 
@@ -56,7 +56,13 @@ impl ToolEmbedding for SaveSheet {
     type State = SheetState;
 
     fn embedding_docs(&self) -> Vec<String> {
-        vec!["Save the character sheet".into(), "Save state".into()]
+        vec![
+            "Save the character sheet".into(),
+            "Save state".into(),
+            "Save the sheet".into(),
+            "Call this tool to save the character sheet".into(),
+            "Save sheet".into(),
+        ]
     }
 
     fn context(&self) -> Self::Context {}

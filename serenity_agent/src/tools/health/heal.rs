@@ -23,7 +23,7 @@ impl Tool for Heal {
 
     type Args = HealArgs;
 
-    type Output = ();
+    type Output = String;
 
     async fn definition(&self, _prompt: String) -> ToolDefinition {
         let s = schemars::schema_for!(HealArgs);
@@ -40,7 +40,7 @@ impl Tool for Heal {
         let mut i = self.inner.lock();
         i.health.heal(args.amount);
 
-        Ok(())
+        Ok(format!("Healed by {}", args.amount))
     }
 }
 

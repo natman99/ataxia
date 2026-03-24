@@ -23,26 +23,25 @@ impl Tool for GetSheet {
 
     type Args = GetSheetArgs;
 
-    // type Output = String;
-
     type Output = serenity_types::Character;
 
     async fn definition(&self, _prompt: String) -> ToolDefinition {
         let s = schemars::schema_for!(GetSheetArgs);
         ToolDefinition {
             name: "Get sheet".to_string(),
-            description: "Get the character sheet. This tool can be used to get the current state. Use whenever you report details after updating a value.".to_string(),
+            description: "Get the character sheet. This tool can be used to get the current state.
+                Use whenever the user requests ANY information or when you need more information to fufill a request.
+                For the purposes of reducing context size, this does not contain the inventory. Use the seperate tool for that.".to_string(),
             parameters: serde_json::to_value(s).expect("Schema error"),
         }
     }
 
-    async fn call(&self, args: Self::Args) -> Result<Self::Output, Self::Error> {
+    async fn call(&self, _args: Self::Args) -> Result<Self::Output, Self::Error> {
         let s = self.inner.lock();
-        // let res = match serde_json::to_string_pretty(&*s) {
-        //     Ok(s) => s,
-        //     Err(e) => return Err(ToolError::ToolCallError(Box::new(e))),
-        // };
-        Ok(s.clone())
+
+        let mut i = s.clone();
+        i.inventory.0.clear();
+        Ok(i)
     }
 }
 
@@ -63,6 +62,7 @@ impl ToolEmbedding for GetSheet {
             "Update state".into(),
             "Get information".into(),
             "Show me x".into(),
+            "Tell me x".into(),
         ]
     }
 

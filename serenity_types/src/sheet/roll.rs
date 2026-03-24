@@ -14,6 +14,7 @@ pub enum RollModifier {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 /// A dice roll. Can contain multiple dice.
 pub struct Roll {
+    /// Array of dice to roll.
     pub dice: Vec<Die>,
     /// A bonus to add after the dice have been rolled.
     pub bonus: i32,
@@ -105,9 +106,20 @@ impl TryFrom<&str> for Roll {
                 && let Ok(d) = d
                 && let Ok(die) = Die::try_from(d)
             {
+                let bonus = {
+                    if value.contains("+") {
+                        if let Some(e) = value.split("+").collect::<Vec<&str>>().get(1) {
+                            e.parse().unwrap_or(0)
+                        } else {
+                            0
+                        }
+                    } else {
+                        0
+                    }
+                };
                 Ok(Self {
                     dice: vec![die; n as usize],
-                    bonus: 0,
+                    bonus: bonus,
                 })
             } else {
                 Err(())
@@ -118,7 +130,7 @@ impl TryFrom<&str> for Roll {
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema, Default)]
 /// An individual die.
 pub enum Die {
     D4,
@@ -126,6 +138,7 @@ pub enum Die {
     D8,
     D10,
     D12,
+    #[default]
     D20,
     Percentile,
 }

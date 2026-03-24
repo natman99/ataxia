@@ -9,7 +9,7 @@ use crate::sheet::AbilityScores;
 #[bitflags]
 #[repr(u32)]
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, JsonSchema)]
-/// A skill
+/// Skills enum.
 pub enum Skill {
     //str scaling
     Athletics,

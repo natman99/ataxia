@@ -52,7 +52,16 @@ pub enum SWidget {
 pub struct Scores;
 
 impl Scores {
-    pub fn view(&self, sheet: Character) -> Element<'_, Message> {
-        
+    pub fn view(&self, sheet: &Character) -> Element<'_, Message> {
+
+
+
+
     }
+}
+
+pub struct SkillsWidget;
+
+impl SkillsWidget {
+    pub fn view(&self, sheet: &Character)
 }

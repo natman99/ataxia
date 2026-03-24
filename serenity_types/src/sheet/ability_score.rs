@@ -30,9 +30,22 @@ impl AbilityScore {
             override_score: None,
         }
     }
-
+    /// Get the total score.
     pub fn get(&self) -> u32 {
         self.override_score.unwrap_or(self.base + self.bonus)
+    }
+
+    pub fn get_bonus(&self) -> u32 {
+        self.bonus
+    }
+
+    pub fn set_bonus(&mut self, num: u32) {
+        self.bonus = num;
+    }
+
+    /// Remove all bonuses.
+    pub fn reset(&mut self) {
+        self.bonus = 0;
     }
 
     pub fn modifier(&self) -> i32 {

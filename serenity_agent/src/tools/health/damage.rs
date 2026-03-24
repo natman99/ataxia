@@ -23,7 +23,7 @@ impl Tool for Damage {
 
     type Args = DamageArgs;
 
-    type Output = ();
+    type Output = String;
 
     async fn definition(&self, _prompt: String) -> ToolDefinition {
         let s = schemars::schema_for!(DamageArgs);
@@ -41,7 +41,7 @@ impl Tool for Damage {
         let mut i = self.inner.lock();
         i.health.hit(args.amount);
 
-        Ok(())
+        Ok(format!("Took {} points of damage", args.amount))
     }
 }
 
