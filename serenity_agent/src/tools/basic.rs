@@ -33,7 +33,6 @@ impl Tool for Adder {
     }
 
     async fn call(&self, args: Self::Args) -> Result<Self::Output, Self::Error> {
-        // println!("{:?}", args);
         Ok(format!("{}", args.x + args.y))
     }
 }
@@ -152,7 +151,7 @@ impl ToolEmbedding for Multiply {
     type State = ();
 
     fn embedding_docs(&self) -> Vec<String> {
-        vec!["Multiply two numbers".into()]
+        vec!["Multiply two numbers".into(), "x * y".into()]
     }
 
     fn context(&self) -> Self::Context {}

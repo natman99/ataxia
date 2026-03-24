@@ -3,7 +3,7 @@
   "level": 1,
   "race": "",
   "initiative": 10,
-  "armor_class": 10,
+  "armor_class": 12,
   "health": {
     "current": 8,
     "max": 8,

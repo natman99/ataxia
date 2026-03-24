@@ -4,18 +4,18 @@ use std::error::Error;
 use std::fs;
 use std::sync::Arc;
 
+use log::{debug, info, warn};
 use parking_lot::Mutex;
 use qdrant_client::Qdrant;
 use qdrant_client::qdrant::{CreateCollectionBuilder, QueryPointsBuilder, VectorParamsBuilder};
 use rig::agent::{Agent, MultiTurnStreamItem};
 use rig::client::{Client, CompletionClient, EmbeddingsClient};
-use rig::{Embed, OneOrMany};
-
 use rig::embeddings::{EmbeddingsBuilder, embed};
 use rig::loaders::FileLoader;
 use rig::message::Message;
 use rig::prelude::TypedPrompt;
 use rig::providers::ollama::{self, CompletionModel, OllamaExt};
+use rig::{Embed, OneOrMany};
 
 use rig::streaming::StreamingPrompt;
 use rig::streaming::{StreamedAssistantContent, StreamedUserContent, StreamingChat};
@@ -55,8 +55,6 @@ pub struct MyClient {
 impl MyClient {
     pub async fn new<T: AsRef<Path>>(path: T, client: Client<OllamaExt>) -> anyhow::Result<Self> {
         let s = fs::read_to_string(path.as_ref())?;
-
-        // let client: Client<OllamaExt> = Client::from_url("dasd")?;
 
         let sheet: Character = serde_json::from_str(&s)?;
         let sheet = Arc::new(Mutex::new(sheet));
@@ -105,11 +103,9 @@ impl MyClient {
         let embedding_model = client.embedding_model(ollama::NOMIC_EMBED_TEXT);
 
         let embeddings = EmbeddingsBuilder::new(embedding_model.clone())
-            .documents(toolset.schemas().unwrap())
-            .unwrap()
+            .documents(toolset.schemas()?)?
             .build()
-            .await
-            .unwrap();
+            .await?;
 
         let vector_store =
             rig::vector_store::in_memory_store::InMemoryVectorStore::from_documents_with_id_f(
@@ -121,11 +117,7 @@ impl MyClient {
 
         let qdrant_client = qdrant_client::Qdrant::from_url(QDRANT_URL).build().unwrap();
 
-        if !qdrant_client
-            .collection_exists(INFO_COLLECTION)
-            .await
-            .unwrap()
-        {
+        if !qdrant_client.collection_exists(INFO_COLLECTION).await? {
             qdrant_client
                 .create_collection(
                     CreateCollectionBuilder::new(INFO_COLLECTION).vectors_config(
@@ -135,8 +127,7 @@ impl MyClient {
                         ),
                     ),
                 )
-                .await
-                .unwrap();
+                .await?;
         }
         let query_params = QueryPointsBuilder::new(INFO_COLLECTION).with_payload(true);
 
@@ -200,7 +191,8 @@ impl MyClient {
             match result.classification {
                 PromptClassification::SameTopic => {}
                 PromptClassification::StandAlone => {
-                    println!("Clearing messages");
+                    debug!("Clearing messages");
+
                     self.messages.clear();
                     self.prev_messages.clear();
                 }
@@ -222,9 +214,9 @@ impl MyClient {
                                 tool_call,
                                 internal_call_id: _,
                             } => {
-                                println!("Called tool: {}", tool_call.function.name);
+                                debug!("Called tool: {}", tool_call.function.name);
                                 if tool_call.function.name == "think" {
-                                    println!("Thoughts: {}", tool_call.function.arguments)
+                                    debug!("Thoughts: {}", tool_call.function.arguments)
                                 }
                             }
                             _ => (),
@@ -240,7 +232,7 @@ impl MyClient {
                         self.prev_messages.push(format!("user: {}", s.to_string()));
                         self.prev_messages
                             .push(format!("agent: {}", e.response().to_string()));
-                        println!("tokens: {}", e.usage().total_tokens);
+                        debug!("tokens: {}", e.usage().total_tokens);
                     }
                     MultiTurnStreamItem::StreamUserItem(item) => match item {
                         StreamedUserContent::ToolResult {
@@ -253,7 +245,7 @@ impl MyClient {
                     _ => (),
                 },
                 Err(e) => {
-                    println!("{:?}", e);
+                    warn!("{:?}", e);
                 }
             }
         }

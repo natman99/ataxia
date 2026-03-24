@@ -1,3 +1,4 @@
+use log::debug;
 use rig::{
     completion::ToolDefinition,
     providers::ollama::EmbeddingModel,
@@ -54,7 +55,7 @@ impl Tool for Search {
             Ok(a) => a,
             Err(e) => return Err(ToolError::ToolCallError(Box::new(e))),
         };
-        println!("{:?}", results);
+        debug!("{:?}", results);
         let out = results.into_iter().map(|f| f.2).collect::<Vec<Value>>();
         Ok(out)
     }

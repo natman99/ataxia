@@ -59,7 +59,7 @@ impl ToolEmbedding for SetHealth {
 
     fn context(&self) -> Self::Context {}
 
-    fn init(state: Self::State, context: Self::Context) -> Result<Self, Self::InitError> {
+    fn init(state: Self::State, _context: Self::Context) -> Result<Self, Self::InitError> {
         Ok(SetHealth {
             inner: state.clone(),
         })
