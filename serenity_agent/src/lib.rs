@@ -1,33 +1,24 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
-use std::error::Error;
 use std::fs;
 use std::sync::Arc;
+use std::time::Instant;
 
 use log::{debug, info, warn};
 use parking_lot::Mutex;
-use qdrant_client::Qdrant;
-use qdrant_client::qdrant::{CreateCollectionBuilder, QueryPointsBuilder, VectorParamsBuilder};
+use qdrant_client::qdrant::{CreateCollectionBuilder, VectorParamsBuilder};
 use rig::agent::{Agent, MultiTurnStreamItem};
 use rig::client::{Client, CompletionClient, EmbeddingsClient};
-use rig::embeddings::{EmbeddingsBuilder, embed};
-use rig::loaders::FileLoader;
+use rig::embeddings::EmbeddingsBuilder;
 use rig::message::Message;
 use rig::prelude::TypedPrompt;
 use rig::providers::ollama::{self, CompletionModel, OllamaExt};
-use rig::{Embed, OneOrMany};
 
-use rig::streaming::StreamingPrompt;
 use rig::streaming::{StreamedAssistantContent, StreamedUserContent, StreamingChat};
 use rig::tool::ToolSet;
-use rig::tools::ThinkTool;
-use rig::vector_store::{InsertDocuments, VectorSearchRequest, VectorStoreIndexDyn};
-use rig_qdrant::QdrantVectorStore;
 use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use serenity_types::Character;
-use text_splitter::ChunkConfig;
-use tokio::io;
 
 use crate::tools::basic::{Adder, Multiply, Subtract};
 use crate::tools::damage::Damage;
@@ -36,6 +27,7 @@ use crate::tools::heal::Heal;
 use crate::tools::save_sheet::SaveSheet;
 use crate::tools::search::Search;
 
+mod database;
 mod tools;
 
 const QDRANT_URL: &'static str = "http://localhost:6334";
@@ -129,20 +121,12 @@ impl MyClient {
                 )
                 .await?;
         }
-        let query_params = QueryPointsBuilder::new(INFO_COLLECTION).with_payload(true);
 
-        let docs_v =
-            QdrantVectorStore::new(qdrant_client, embedding_model.clone(), query_params.build());
-        // println!("Loading files");
-        // let documents = get_documents(DOC_PATH)?;
-        // println!("Building embeddings for {} chunks", documents.len());
-        // let documents = EmbeddingsBuilder::new(embedding_model.clone())
-        //     .documents(documents)?
-        //     .build()
-        //     .await?;
-        // println!("Inserting documents");
-        // QdrantVectorStore::insert_documents(&docs_v, documents).await?;
+        info!("Running indexing");
 
+        let t = Instant::now();
+        database::incremental_index(&qdrant_client, DOC_PATH, &embedding_model).await?;
+        info!("Finished indexing in {} seconds", t.elapsed().as_secs_f32());
         let judge_agent: Agent<CompletionModel> = client.agent("qwen3:8b")
                 .preamble("You are an assistant for deciding if a prompt or question is the same topic as the previous conversation.
                     Follow the providing schema. 100 is the highest confidence, 0 is the lowest.").build();
@@ -153,9 +137,9 @@ impl MyClient {
                     ALWAYS use the provided tools to view, modify or save the sheet. When in doubt, call the get sheet tool if you do not have access to information requested in the users prompt OR needed to carry out an action.
                     Do NOT guess values or make up sheet data. Use tools for EVERY change or read operation. Don't output markdown. Always tell the user what you did. If you are not sure about something, ask the user.")
                 .dynamic_tools(3, index, toolset)
-                .tool(Search {
-                    inner: docs_v
-                })
+                // .tool(Search {
+                //     inner: docs_v
+                // }) TODO
                 // .dynamic_context(5, docs_v)
                 .default_max_turns(8)
 
@@ -270,57 +254,4 @@ struct CheckOutput {
     reason: String,
     /// What exactly is unclear without history? (or 'none' if standalone)
     missing_referent: String,
-}
-
-fn get_documents<T: AsRef<Path>>(path: T) -> anyhow::Result<Vec<Embedding>> {
-    let p = path.as_ref().join("*/*.md");
-    let p = p
-        .to_str()
-        .expect("Should work.. what idiot made this library");
-    let glob_loader = FileLoader::with_glob(p)?;
-
-    let i = glob_loader
-        .read_with_path()
-        .ignore_errors()
-        .into_iter()
-        .collect::<Vec<_>>();
-
-    let e = i
-        .iter()
-        .map(|f| Embedding {
-            id: f.0.to_str().expect("Should work?").to_string(),
-            content: f.1.clone(),
-        })
-        .collect::<Vec<_>>();
-
-    let e = e
-        .iter()
-        .map(|f| split_text(&f.id, &f.content))
-        .flatten()
-        .collect::<Vec<_>>();
-
-    Ok(e)
-}
-#[derive(Debug, Embed, Clone, Serialize, Deserialize)]
-struct Embedding {
-    id: String,
-    #[embed]
-    content: String,
-}
-fn split_text(p: &str, s: &str) -> Vec<Embedding> {
-    let mut i = 0;
-    let mut out = vec![];
-    let config = ChunkConfig::new(512).with_overlap(50).expect("Should work");
-    text_splitter::MarkdownSplitter::new(config)
-        .chunks(s)
-        .into_iter()
-        .for_each(|f| {
-            out.push(Embedding {
-                id: p.to_string() + &format!("-{i}"),
-                content: f.to_string(),
-            });
-            i += 1;
-        });
-
-    out
 }

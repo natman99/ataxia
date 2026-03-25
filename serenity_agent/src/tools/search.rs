@@ -1,4 +1,5 @@
-use log::debug;
+use crate::tools::{InitError, SheetState};
+use log::{debug, info};
 use rig::{
     completion::ToolDefinition,
     providers::ollama::EmbeddingModel,
@@ -9,8 +10,6 @@ use rig_qdrant::QdrantVectorStore;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-
-use crate::tools::{InitError, SheetState};
 
 #[derive(Deserialize, Serialize, Debug, JsonSchema)]
 pub struct SearchArgs {
@@ -41,11 +40,11 @@ impl Tool for Search {
     }
 
     async fn call(&self, args: Self::Args) -> Result<Self::Output, Self::Error> {
-        println!("Search: {}", &args.search_term);
+        info!("Search: {}", &args.search_term);
         let search = match VectorSearchRequestBuilder::default()
             .query(args.search_term)
             .samples(10)
-            .threshold(0.7)
+            .threshold(0.8)
             .build()
         {
             Ok(e) => e,
