@@ -5,11 +5,12 @@ use std::sync::Arc;
 use std::time::Instant;
 
 use log::{debug, info, warn};
+use ort::ep::ExecutionProvider;
 use parking_lot::Mutex;
 use qdrant_client::qdrant::{CreateCollectionBuilder, VectorParamsBuilder};
 use rig::agent::{Agent, MultiTurnStreamItem};
 use rig::client::{Client, CompletionClient, EmbeddingsClient};
-use rig::embeddings::EmbeddingsBuilder;
+use rig::embeddings::{EmbeddingModel, EmbeddingsBuilder};
 use rig::message::Message;
 use rig::prelude::TypedPrompt;
 use rig::providers::ollama::{self, CompletionModel, OllamaExt};
@@ -41,6 +42,7 @@ pub struct MyClient {
     judge_agent: Agent<CompletionModel>,
     agent: Agent<CompletionModel>,
     messages: Vec<Message>,
+    tokens: u64,
     prev_messages: Vec<String>,
 }
 
@@ -125,7 +127,25 @@ impl MyClient {
         info!("Running indexing");
 
         let t = Instant::now();
-        database::incremental_index(&qdrant_client, DOC_PATH, &embedding_model).await?;
+
+        let v_client = Arc::new(qdrant_client.clone());
+        let v_embedding_model = Arc::new(embedding_model.clone());
+        tokio::spawn(async move {
+            let v_client = v_client.clone();
+            let v_embedding_model = v_embedding_model.clone();
+            match database::incremental_index(
+                v_client,
+                DOC_PATH,
+                v_embedding_model,
+                &["Wiki", "base", "Templates", "Categories"],
+            )
+            .await
+            {
+                Ok(_) => info!("Indexing finished"),
+                Err(e) => log::error!("Indexing failed: {:?}", e),
+            };
+        });
+
         info!("Finished indexing in {} seconds", t.elapsed().as_secs_f32());
         let judge_agent: Agent<CompletionModel> = client.agent("qwen3:8b")
                 .preamble("You are an assistant for deciding if a prompt or question is the same topic as the previous conversation.
@@ -133,13 +153,17 @@ impl MyClient {
 
         let agent = client
                 .agent("qwen3:8b")
-                .preamble("You are a very careful D&D character sheet manager. You can take multiple turns. Call the get sheet tool liberally to assure your state is up to date. Use the provided information to answer the users questions.
-                    ALWAYS use the provided tools to view, modify or save the sheet. When in doubt, call the get sheet tool if you do not have access to information requested in the users prompt OR needed to carry out an action.
-                    Do NOT guess values or make up sheet data. Use tools for EVERY change or read operation. Don't output markdown. Always tell the user what you did. If you are not sure about something, ask the user.")
+                .preamble("You are a very careful D&D character sheet manager. You can take multiple turns. Call the get sheet tool liberally to assure your state is up to date.
+                    ALWAYS use the provided tools to view, modify or save the sheet.
+                    When in doubt, call the get sheet tool if you do not have access to information requested in the users prompt OR needed to carry out an action.
+                    Do NOT guess values or make up sheet data. Use tools for EVERY change or read operation. Don't output markdown.
+                    Always tell the user what you did. If you are not sure about something, ask the user.")
                 .dynamic_tools(3, index, toolset)
-                // .tool(Search {
-                //     inner: docs_v
-                // }) TODO
+                .tool(Search {
+                    client: qdrant_client.clone(),
+                    embedding_model: embedding_model.clone(),
+                    reranker: Reranker::new()?,
+                })
                 // .dynamic_context(5, docs_v)
                 .default_max_turns(8)
 
@@ -153,6 +177,7 @@ impl MyClient {
             client,
             judge_agent,
             agent,
+            tokens: 0,
             messages: vec![],
             prev_messages: vec![],
         };
@@ -164,20 +189,20 @@ impl MyClient {
         let result: CheckOutput = self
             .judge_agent
             .prompt_typed(&format!(
-                "new prompt: {}. Previous prompt: {:#?}",
+                "new prompt: {}. Previous context: {:#?}",
                 s, &self.prev_messages
             ))
-            .await
-            .unwrap();
+            .await?;
         println!("{:?}: {:?}", result.classification, result.reason);
         // High chance of context required.
         if result.confidence > 60 {
             match result.classification {
                 PromptClassification::SameTopic => {}
-                PromptClassification::StandAlone => {
+                PromptClassification::NewTopic => {
                     debug!("Clearing messages");
 
                     self.messages.clear();
+                    self.tokens = 0;
                     self.prev_messages.clear();
                 }
             }
@@ -216,7 +241,8 @@ impl MyClient {
                         self.prev_messages.push(format!("user: {}", s.to_string()));
                         self.prev_messages
                             .push(format!("agent: {}", e.response().to_string()));
-                        debug!("tokens: {}", e.usage().total_tokens);
+                        self.tokens += e.usage().total_tokens;
+                        debug!("tokens: {}", self.tokens);
                     }
                     MultiTurnStreamItem::StreamUserItem(item) => match item {
                         StreamedUserContent::ToolResult {
@@ -240,7 +266,7 @@ impl MyClient {
 
 #[derive(Debug, Deserialize, JsonSchema, PartialEq)]
 enum PromptClassification {
-    StandAlone,
+    NewTopic,
     SameTopic,
 }
 
@@ -254,4 +280,64 @@ struct CheckOutput {
     reason: String,
     /// What exactly is unclear without history? (or 'none' if standalone)
     missing_referent: String,
+}
+
+use anyhow::Result;
+use fastembed::{ExecutionProviderDispatch, RerankInitOptions, RerankerModel, TextRerank};
+#[derive(Debug, Clone)]
+pub struct Reranker {
+    model: Arc<Mutex<TextRerank>>,
+}
+
+impl Reranker {
+    pub fn new() -> Result<Self> {
+        // Downloads ~400-500MB on first run, then caches
+        //
+        use ort::ep::{CPU, CUDA};
+        let execution_providers: Vec<ExecutionProviderDispatch> = vec![
+            CUDA::default().build().error_on_failure(),
+            CPU::default().build(),
+        ];
+
+        let model = TextRerank::try_new(
+            RerankInitOptions::new(RerankerModel::BGERerankerV2M3)
+                .with_execution_providers(execution_providers)
+                .with_show_download_progress(true),
+        )?;
+        // $ORT_CUDA_VERSION = "12"
+
+        let model = Arc::new(Mutex::new(model));
+
+        Ok(Self { model })
+    }
+
+    /// Reranks a list of documents for a given query.
+    /// Returns top_k documents sorted by relevance (score 0.0 - 1.0)
+    pub fn rerank(
+        &self,
+        query: &str,
+        documents: Vec<&str>,
+        top_k: usize,
+    ) -> Result<Vec<(f32, String)>> {
+        if documents.is_empty() {
+            return Ok(vec![]);
+        }
+
+        // fastembed rerank returns scores (higher = more relevant)
+        let results = self.model.lock().rerank(query, &documents, true, None)?;
+
+        // results are already sorted by score descending
+
+        let mut scored: Vec<(f32, String)> = results
+            .into_iter()
+            .map(|item| (item.score, item.document.unwrap_or("Error".to_string())))
+            .collect();
+
+        // Take only top_k
+        if scored.len() > top_k {
+            scored.truncate(top_k);
+        }
+
+        Ok(scored)
+    }
 }

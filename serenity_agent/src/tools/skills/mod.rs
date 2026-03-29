@@ -1,13 +1,9 @@
-use std::{fs, sync::Arc};
-
-use parking_lot::Mutex;
 use rig::{
     completion::ToolDefinition,
-    tool::{Tool, ToolEmbedding, ToolError},
+    tool::{Tool, ToolEmbedding},
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use serenity_types::{Character, skills::Skill};
 
 use crate::tools::{InitError, SheetState};
 

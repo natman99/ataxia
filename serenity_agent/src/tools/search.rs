@@ -1,33 +1,33 @@
-use crate::tools::{InitError, SheetState};
+use crate::{INFO_COLLECTION, Reranker};
 use log::{debug, info};
+use qdrant_client::{Qdrant, qdrant::QueryPointsBuilder};
 use rig::{
     completion::ToolDefinition,
-    providers::ollama::EmbeddingModel,
-    tool::{Tool, ToolEmbedding, ToolError},
-    vector_store::{VectorStoreIndexDyn, request::VectorSearchRequestBuilder},
+    embeddings::EmbeddingModel,
+    tool::{Tool, ToolError},
 };
-use rig_qdrant::QdrantVectorStore;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 
 #[derive(Deserialize, Serialize, Debug, JsonSchema)]
 pub struct SearchArgs {
     search_term: String,
 }
 
-pub struct Search {
-    pub inner: QdrantVectorStore<EmbeddingModel>,
+pub struct Search<T: EmbeddingModel> {
+    pub client: Qdrant,
+    pub embedding_model: T,
+    pub reranker: Reranker,
 }
 
-impl Tool for Search {
+impl<T: EmbeddingModel> Tool for Search<T> {
     const NAME: &'static str = "Search";
 
     type Error = rig::tool::ToolError;
 
     type Args = SearchArgs;
 
-    type Output = Vec<Value>;
+    type Output = Vec<String>;
 
     async fn definition(&self, _prompt: String) -> ToolDefinition {
         let s = schemars::schema_for!(SearchArgs);
@@ -41,21 +41,56 @@ impl Tool for Search {
 
     async fn call(&self, args: Self::Args) -> Result<Self::Output, Self::Error> {
         info!("Search: {}", &args.search_term);
-        let search = match VectorSearchRequestBuilder::default()
-            .query(args.search_term)
-            .samples(10)
-            .threshold(0.8)
-            .build()
+
+        let embedding = self
+            .embedding_model
+            .embed_text(&args.search_term)
+            .await
+            .map_err(|e| ToolError::ToolCallError(Box::new(e)))?;
+        let results = match self
+            .client
+            .query(
+                QueryPointsBuilder::new(INFO_COLLECTION)
+                    // .score_threshold(0.4)
+                    .query(
+                        embedding
+                            .vec
+                            .into_iter()
+                            .map(|f| f as f32)
+                            .collect::<Vec<f32>>(),
+                    )
+                    .with_payload(true)
+                    .limit(30)
+                    .build(),
+            )
+            .await
         {
             Ok(e) => e,
             Err(e) => return Err(ToolError::ToolCallError(Box::new(e))),
         };
-        let results = match self.inner.top_n(search).await {
-            Ok(a) => a,
-            Err(e) => return Err(ToolError::ToolCallError(Box::new(e))),
-        };
-        debug!("{:?}", results);
-        let out = results.into_iter().map(|f| f.2).collect::<Vec<Value>>();
+
+        // results.result.iter().for_each(|f| info!("{}", f.score));
+
+        let documents = results
+            .result
+            .iter()
+            .map(|f| &f.payload["content"])
+            .filter_map(|f| f.as_str())
+            .map(|f| f.trim())
+            .collect::<Vec<&str>>();
+        let out = self
+            .reranker
+            .rerank(&args.search_term, documents, 8)
+            .unwrap();
+
+        info!("{:#?}", out);
+        let out = out
+            .into_iter()
+            .filter(|f| f.0 > -6.0)
+            .map(|f| f.1)
+            .collect();
+
+        // TODO headers
         Ok(out)
     }
 }

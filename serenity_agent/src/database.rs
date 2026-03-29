@@ -2,6 +2,7 @@ use std::{
     collections::HashMap,
     ffi::OsStr,
     path::{Path, PathBuf},
+    sync::Arc,
     time::Instant,
 };
 
@@ -9,7 +10,10 @@ use futures::TryFutureExt;
 use log::{debug, info, warn};
 use qdrant_client::{
     Payload, Qdrant,
-    qdrant::{PointStruct, QueryPointsBuilder, UpsertPointsBuilder},
+    qdrant::{
+        DeletePointsBuilder, PointId, PointStruct, QueryPointsBuilder, ScrollPointsBuilder,
+        UpsertPointsBuilder,
+    },
 };
 use rig::{embeddings::EmbeddingModel, loaders::FileLoader};
 use serde::{Deserialize, Serialize};
@@ -23,42 +27,61 @@ use crate::INFO_COLLECTION;
 
 const EMBED_CHUNK_SIZE: usize = 5;
 
-pub async fn incremental_index<T: AsRef<Path>>(
-    client: &Qdrant,
+pub async fn incremental_index<T, E>(
+    client: Arc<Qdrant>,
     path: T,
-    embedding_model: &impl EmbeddingModel,
-) -> anyhow::Result<()> {
-    debug!("Loading embeddings");
-    let embeddings = load_embeddings(path)?;
-    debug!("Loaded embeddings");
+    embedding_model: Arc<E>,
+    blacklist: &[&str],
+) -> anyhow::Result<()>
+where
+    T: AsRef<Path> + Send + 'static,
+    E: EmbeddingModel + Send + Sync,
+{
+    let total = Instant::now();
     let t = Instant::now();
     // grab ALL the points.
     let query_result = client
-        .query(QueryPointsBuilder::new(INFO_COLLECTION))
+        .scroll(
+            ScrollPointsBuilder::new(INFO_COLLECTION)
+                .with_payload(true)
+                .limit(5_000),
+        )
         .await?;
-    debug!("Loaded points in {} seconds", t.elapsed().as_secs_f32());
-    let mut map = HashMap::new();
+    debug!(
+        "Loaded {} points in {} seconds",
+        query_result.result.len(),
+        t.elapsed().as_secs_f32()
+    );
+    let mut map: HashMap<&String, (PointId, &String)> = HashMap::new();
     let mut points_to_embed = vec![];
     let t = Instant::now();
 
     for i in query_result.result.iter() {
-        let content = i.payload["content_hash"].as_str();
-        let file = i.payload["path_hash"].as_str();
-
-        if let Some(content) = content
-            && let Some(file) = file
+        if let Some(content) = i.payload.get("content_hash")
+            && let Some(file) = i.payload.get("path_hash")
+            && let Some(content) = content.as_str()
+            && let Some(file) = file.as_str()
         {
-            map.insert(file, content);
+            let Some(ref uuid) = i.id else {
+                warn!("No id");
+                continue;
+            };
+
+            map.insert(file, (uuid.clone(), content));
         } else {
-            warn!("Missing fields for vector entry!");
+            warn!("Missing fields for vector entry {:?}!", i);
         }
     }
 
     debug!("Processed points in {} seconds", t.elapsed().as_secs_f32());
     debug!("Found {} points", map.len());
 
+    let embeddings = load_embeddings(path, blacklist).await?;
+
+    let mut new_file_count = 0;
+
     for (uuid, i) in embeddings.into_iter() {
-        if let Some(e) = map.get(&i.path_hash) {
+        if let Some((_uuid, e)) = map.get(&i.path_hash) {
             if *e == &i.content_hash {
                 // no change required
             } else {
@@ -66,40 +89,67 @@ pub async fn incremental_index<T: AsRef<Path>>(
 
                 points_to_embed.push((uuid, i.clone()));
             }
-
-            // remove the value from the map.
+            // remove the value from the map. If there are remaining values it means we have extra points.
             map.remove(&i.path_hash);
         } else {
             // new file
             points_to_embed.push((uuid, i.clone()));
+            new_file_count += 1;
         }
     }
 
-    debug!("{} remaining chunks. These need to be removed", map.len());
+    debug!("Found {} new files", new_file_count);
 
-    debug!("Found {} chunks to embed", points_to_embed.len());
+    debug!(
+        "Found {} files to update",
+        points_to_embed.len() - new_file_count as usize
+    );
 
-    if points_to_embed.is_empty() {
-        warn!("No points found to embed");
-        return Ok(());
+    if !map.is_empty() {
+        debug!("{} deleted points. Removing points.", map.len());
+        let delete = map.into_iter().map(|f| f.1.0).collect::<Vec<_>>();
+        client
+            .delete_points(
+                DeletePointsBuilder::new(INFO_COLLECTION)
+                    .points(delete)
+                    .build(),
+            )
+            .await?;
     }
 
-    upsert_points(client, &points_to_embed, embedding_model).await?;
+    if points_to_embed.is_empty() {
+        debug!("No points found to embed");
+        return Ok(());
+    } else {
+        debug!("Found {} chunks to embed", points_to_embed.len());
+    }
+
+    upsert_points(&client, &points_to_embed, &embedding_model).await?;
+
+    info!(
+        "Completed indexing in {} seconds",
+        total.elapsed().as_secs_f32()
+    );
 
     Ok(())
 }
 
-async fn upsert_points(
+async fn upsert_points<'i, T>(
     client: &Qdrant,
-    embeddings: &[(Uuid, Embedding)],
-    embedding_model: &impl EmbeddingModel,
-) -> anyhow::Result<()> {
+    embeddings: &'i [(Uuid, Embedding)],
+    embedding_model: &Arc<T>,
+) -> anyhow::Result<()>
+where
+    T: EmbeddingModel + Send + Sync,
+{
     let mut vectors = vec![];
 
     for i in embeddings.rchunks(EMBED_CHUNK_SIZE) {
-        let mut inner_vectors = embedding_model
-            .embed_texts(i.into_iter().map(|f| f.1.content.clone()))
-            .await?;
+        let content = i
+            .iter()
+            .map(|(_, s)| s.content.to_string())
+            .collect::<Vec<String>>();
+        let mut inner_vectors = embedding_model.embed_texts(content).await?;
         vectors.append(&mut inner_vectors);
     }
 
@@ -111,7 +161,6 @@ async fn upsert_points(
 
         let uuid = embedding.0;
 
-        info!("{}", uuid.to_string());
         let i = PointStruct::new(
             uuid.to_string(),
             vector.vec.iter().map(|f| *f as f32).collect::<Vec<_>>(),
@@ -129,20 +178,27 @@ async fn upsert_points(
 }
 
 /// Load documents, split them up, and return ready embeddings.
-fn load_embeddings<T: AsRef<Path>>(path: T) -> anyhow::Result<Vec<(Uuid, Embedding)>> {
-    let documents = get_documents(path)?;
+async fn load_embeddings<T: AsRef<Path>>(
+    path: T,
+    blacklist: &[&str],
+) -> anyhow::Result<Vec<(Uuid, Embedding)>> {
+    let documents = get_documents(path, blacklist).await?;
 
     let mut out = vec![];
-
+    debug!("Loaded documents");
     for (path, content) in documents {
-        let path_hash = Sha256::digest(path.to_string_lossy().as_bytes());
-        let path_hash = format!("{:x}", path_hash);
+        let content = clean_markdown_tables(&content);
 
         let chunks = split_text(&content);
         let chunks = merge_chunks(chunks);
 
         for (idx, chunk) in chunks.into_iter().enumerate() {
             let uuid = create_stable_uuid(path.to_string_lossy().trim(), idx);
+            let path = path.join(format!("{idx}"));
+            let path = path.to_string_lossy();
+            let path_hash = Sha256::digest(&path.as_bytes());
+            let path_hash = format!("{:x}", path_hash);
+
             let content_hash = Sha256::digest(&chunk);
             let content_hash = format!("{:x}", content_hash);
 
@@ -168,8 +224,12 @@ fn create_stable_uuid(relative_path: &str, chunk_idx: usize) -> Uuid {
     Uuid::new_v5(&Uuid::NAMESPACE_URL, name.as_bytes())
 }
 
-async fn get_documents<T: AsRef<Path>>(path: T) -> anyhow::Result<Vec<(PathBuf, String)>> {
+async fn get_documents<T: AsRef<Path>>(
+    path: T,
+    blacklist: &[&str],
+) -> anyhow::Result<Vec<(PathBuf, String)>> {
     debug!("Loading documents");
+    let t = Instant::now();
     let p = path.as_ref().join("**/*.md");
     let p = p
         .to_str()
@@ -182,6 +242,12 @@ async fn get_documents<T: AsRef<Path>>(path: T) -> anyhow::Result<Vec<(PathBuf, 
     let glob = glob.filter_map(|f| f.ok());
 
     for ele in glob.into_iter() {
+        let e = ele.to_string_lossy();
+
+        if blacklist.iter().any(|f| e.contains(f)) {
+            continue;
+        }
+
         let future = tokio::fs::read_to_string(ele.clone());
         let handle = tokio::spawn(future);
         handles.push((handle, ele));
@@ -194,7 +260,10 @@ async fn get_documents<T: AsRef<Path>>(path: T) -> anyhow::Result<Vec<(PathBuf, 
             e => warn!("Failed to read file: {:?}", e),
         }
     }
-
+    debug!(
+        "Loading documents took {} seconds",
+        t.elapsed().as_secs_f32()
+    );
     Ok(out)
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -214,6 +283,7 @@ fn split_text(s: &str) -> Vec<String> {
         .with_sizer(tokenizer)
         .with_overlap(100)
         .expect("Should work");
+
     let chunks = text_splitter::MarkdownSplitter::new(config)
         .chunks(s)
         .collect::<Vec<&str>>();
@@ -255,4 +325,62 @@ fn merge_chunks(chunks: Vec<String>) -> Vec<String> {
     }
 
     merged
+}
+
+use lazy_static::lazy_static;
+use regex::Regex;
+
+lazy_static! {
+    static ref TABLE_RE: Regex =
+        Regex::new(r"(?ms)^\s*\|.*?\|\s*\n(?:\s*\|[-:]+.*?\|\s*\n)?((?:\s*\|.*?\|\s*\n)+)")
+            .unwrap();
+}
+
+fn clean_markdown_tables(text: &str) -> String {
+    let mut cleaned = text.to_string();
+
+    // Replace each table with a clean, readable version
+    cleaned = TABLE_RE
+        .replace_all(&cleaned, |caps: &regex::Captures| {
+            let table_block = caps.get(0).unwrap().as_str();
+
+            // Simple conversion: turn table into bullet-list style text
+            let lines: Vec<&str> = table_block.lines().collect();
+            if lines.len() < 2 {
+                return table_block.to_string();
+            }
+
+            let header = lines[0]
+                .trim()
+                .trim_matches('|')
+                .split('|')
+                .map(|s| s.trim())
+                .collect::<Vec<_>>();
+            let mut result = String::new();
+
+            // Keep header as title
+            result.push_str(&format!("\n### Table: {}\n", header.join(" | ")));
+
+            for row in lines.iter().skip(2) {
+                // skip separator line
+                let cells: Vec<&str> = row
+                    .trim()
+                    .trim_matches('|')
+                    .split('|')
+                    .map(|s| s.trim())
+                    .collect();
+                if cells.len() == header.len() {
+                    let pairs: Vec<String> = header
+                        .iter()
+                        .zip(cells.iter())
+                        .map(|(h, c)| format!("{}: {}", h, c))
+                        .collect();
+                    result.push_str(&format!("- {}\n", pairs.join(" | ")));
+                }
+            }
+            result
+        })
+        .into_owned();
+
+    cleaned
 }
