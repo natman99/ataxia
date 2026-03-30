@@ -3,7 +3,7 @@ use std::{
     ffi::OsStr,
     path::{Path, PathBuf},
     sync::Arc,
-    time::Instant,
+    time::{Duration, Instant},
 };
 
 use futures::TryFutureExt;
@@ -30,11 +30,11 @@ const EMBED_CHUNK_SIZE: usize = 5;
 pub async fn incremental_index<T, E>(
     client: Arc<Qdrant>,
     path: T,
-    embedding_model: Arc<E>,
+    embedding_model: &Arc<E>,
     blacklist: &[&str],
 ) -> anyhow::Result<()>
 where
-    T: AsRef<Path> + Send + 'static,
+    T: AsRef<Path> + Send,
     E: EmbeddingModel + Send + Sync,
 {
     let total = Instant::now();
@@ -383,4 +383,73 @@ fn clean_markdown_tables(text: &str) -> String {
         .into_owned();
 
     cleaned
+}
+
+pub async fn run_update_service<T, E>(
+    client: Arc<Qdrant>,
+    embedding_model: Arc<E>,
+    path: T,
+    blacklist: &[&str],
+) -> !
+where
+    T: AsRef<Path> + Send + Sync + 'static,
+    E: EmbeddingModel + Send + Sync,
+{
+    let p = path.as_ref().join("**/*.md");
+    let p = p
+        .to_str()
+        .expect("Should work.. what idiot made this library");
+
+    let glob = glob::glob(p).expect("Failed to read glob pattern");
+
+    let glob = glob.filter_map(|f| f.ok());
+
+    let mut map = HashMap::new();
+
+    for ele in glob.into_iter() {
+        if let Ok(m) = ele.metadata()
+            && let Ok(m) = m.modified()
+        {
+            map.insert(ele, m);
+        }
+    }
+
+    loop {
+        let mut index = false;
+        let glob = glob::glob(p).expect("Failed to read glob pattern");
+
+        let glob = glob.filter_map(|f| f.ok());
+        for ele in glob.into_iter() {
+            let prev_time = map.get(&ele);
+
+            if let Some(prev) = prev_time
+                && let Ok(m) = ele.metadata()
+                && let Ok(time) = m.modified()
+            {
+                if &time > prev {
+                    index = true;
+                }
+
+                map.insert(ele, time);
+            } else {
+                // new item
+
+                if let Ok(m) = ele.metadata()
+                    && let Ok(time) = m.modified()
+                {
+                    //
+                    index = true;
+
+                    map.insert(ele, time);
+                }
+            }
+        }
+
+        if index {
+            debug!("Detected change. Indexing");
+            let _ = incremental_index(client.clone(), &path, &embedding_model, blacklist).await;
+        }
+
+        tokio::time::sleep(Duration::from_secs(5)).await;
+    }
 }

@@ -37,6 +37,8 @@ const VECTOR_SIZE: u64 = 768;
 
 const DOC_PATH: &'static str = r"C:\Users\Nathaniel\Nextcloud\Documents\Dnd";
 
+const BLACKLIST: [&'static str; 4] = ["Wiki", "base", "Templates", "Categories"];
+
 pub struct MyClient {
     client: Client<OllamaExt>,
     judge_agent: Agent<CompletionModel>,
@@ -129,17 +131,14 @@ impl MyClient {
         let t = Instant::now();
 
         let v_client = Arc::new(qdrant_client.clone());
+        let v_client2 = v_client.clone();
         let v_embedding_model = Arc::new(embedding_model.clone());
+        let v_embedding_model2 = v_embedding_model.clone();
         tokio::spawn(async move {
             let v_client = v_client.clone();
             let v_embedding_model = v_embedding_model.clone();
-            match database::incremental_index(
-                v_client,
-                DOC_PATH,
-                v_embedding_model,
-                &["Wiki", "base", "Templates", "Categories"],
-            )
-            .await
+            match database::incremental_index(v_client, DOC_PATH, &v_embedding_model, &BLACKLIST)
+                .await
             {
                 Ok(_) => info!("Indexing finished"),
                 Err(e) => log::error!("Indexing failed: {:?}", e),
@@ -147,6 +146,15 @@ impl MyClient {
         });
 
         info!("Finished indexing in {} seconds", t.elapsed().as_secs_f32());
+
+        info!("Starting indexing service");
+        tokio::spawn(async move {
+            let client = v_client2.clone();
+            let v_model = v_embedding_model2.clone();
+
+            database::run_update_service(client, v_model, DOC_PATH, &BLACKLIST).await;
+        });
+
         let judge_agent: Agent<CompletionModel> = client.agent("qwen3:8b")
                 .preamble("You are an assistant for deciding if a prompt or question is the same topic as the previous conversation.
                     Follow the providing schema. 100 is the highest confidence, 0 is the lowest.").build();

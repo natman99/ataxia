@@ -33,7 +33,7 @@ impl<T: EmbeddingModel> Tool for Search<T> {
         let s = schemars::schema_for!(SearchArgs);
         ToolDefinition {
             name: "Search".to_string(),
-            description: "Search the provided database. Use this whenever the user asks for details about items, rules, story elements, or enemies. This uses a semantic search.
+            description: "Search the provided database. Use this whenever the user asks for details about characters, items, rules, story elements, or enemies. This uses a vector search, feel free to put questions or phrases as well as search terms.
                 Report to the user if there are no results.".to_string(),
             parameters: serde_json::to_value(s).expect("Schema error"),
         }
