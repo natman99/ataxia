@@ -5,12 +5,11 @@ use std::sync::Arc;
 use std::time::Instant;
 
 use log::{debug, info, warn};
-use ort::ep::ExecutionProvider;
 use parking_lot::Mutex;
 use qdrant_client::qdrant::{CreateCollectionBuilder, VectorParamsBuilder};
 use rig::agent::{Agent, MultiTurnStreamItem};
 use rig::client::{Client, CompletionClient, EmbeddingsClient};
-use rig::embeddings::{EmbeddingModel, EmbeddingsBuilder};
+use rig::embeddings::EmbeddingsBuilder;
 use rig::message::Message;
 use rig::prelude::TypedPrompt;
 use rig::providers::ollama::{self, CompletionModel, OllamaExt};
@@ -31,13 +30,13 @@ use crate::tools::search::Search;
 mod database;
 mod tools;
 
-const QDRANT_URL: &'static str = "http://localhost:6334";
-const INFO_COLLECTION: &'static str = "info";
+const QDRANT_URL: &str = "http://localhost:6334";
+const INFO_COLLECTION: &str = "info";
 const VECTOR_SIZE: u64 = 768;
 
-const DOC_PATH: &'static str = r"C:\Users\Nathaniel\Nextcloud\Documents\Dnd";
+const DOC_PATH: &str = r"C:\Users\Nathaniel\Nextcloud\Documents\Dnd";
 
-const BLACKLIST: [&'static str; 4] = ["Wiki", "base", "Templates", "Categories"];
+const BLACKLIST: [&str; 4] = ["Wiki", "base", "Templates", "Categories"];
 
 pub struct MyClient<T: AsRef<Path> + Clone> {
     client: Client<OllamaExt>,
@@ -199,7 +198,7 @@ impl<T: AsRef<Path> + Clone> MyClient<T> {
             tokens: 0,
             messages: vec![],
             prev_messages: vec![],
-            path: path,
+            path,
         };
 
         Ok(se)
@@ -208,7 +207,7 @@ impl<T: AsRef<Path> + Clone> MyClient<T> {
     pub async fn prompt(&mut self, s: &str) -> anyhow::Result<String> {
         let result: CheckOutput = self
             .judge_agent
-            .prompt_typed(&format!(
+            .prompt_typed(format!(
                 "new prompt: {}. \n\nPrevious context: {:#?}",
                 s, &self.prev_messages
             ))
@@ -258,9 +257,8 @@ impl<T: AsRef<Path> + Clone> MyClient<T> {
                             self.messages.append(&mut history.to_vec());
                         }
                         output.push_str(e.response());
-                        self.prev_messages.push(format!("user: {}", s.to_string()));
-                        self.prev_messages
-                            .push(format!("agent: {}", e.response().to_string()));
+                        self.prev_messages.push(format!("user: {}", s));
+                        self.prev_messages.push(format!("agent: {}", e.response()));
                         self.tokens += e.usage().total_tokens;
                         debug!("tokens: {}", self.tokens);
                     }
@@ -313,9 +311,10 @@ impl Reranker {
     pub fn new() -> Result<Self> {
         // Downloads ~400-500MB on first run, then caches
         //
-        use ort::ep::{CPU, CUDA};
+        use ort::ep::{CPU, CUDA, DirectML};
         let execution_providers: Vec<ExecutionProviderDispatch> = vec![
             CUDA::default().build().error_on_failure(),
+            DirectML::default().build(),
             CPU::default().build(),
         ];
 
@@ -324,7 +323,6 @@ impl Reranker {
                 .with_execution_providers(execution_providers)
                 .with_show_download_progress(true),
         )?;
-        // $ORT_CUDA_VERSION = "12"
 
         let model = Arc::new(Mutex::new(model));
 

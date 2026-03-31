@@ -1,11 +1,10 @@
-use std::collections::{BTreeMap, HashMap};
+use std::collections::BTreeMap;
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::{
     Score,
-    ability_score::AbilityScore,
     database::spell::Spell,
     meter::Meter,
     roll::{Die, Roll},

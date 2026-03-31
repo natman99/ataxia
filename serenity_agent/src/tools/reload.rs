@@ -38,7 +38,7 @@ impl<T: std::marker::Send + std::marker::Sync + AsRef<Path>> Tool for Reload<T> 
         }
     }
 
-    async fn call(&self, args: Self::Args) -> Result<Self::Output, Self::Error> {
+    async fn call(&self, _args: Self::Args) -> Result<Self::Output, Self::Error> {
         let p = self.path.as_ref().to_path_buf();
         let data = tokio::task::spawn_blocking(|| fs::read_to_string(p))
             .await
@@ -68,7 +68,7 @@ impl<T: Send + Sync + AsRef<Path> + Clone> ToolEmbedding for Reload<T> {
 
     fn context(&self) -> Self::Context {}
 
-    fn init(state: Self::State, context: Self::Context) -> Result<Self, Self::InitError> {
+    fn init(state: Self::State, _context: Self::Context) -> Result<Self, Self::InitError> {
         Ok(Reload {
             inner: state.0.clone(),
             path: state.1.clone(),

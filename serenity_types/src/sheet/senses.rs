@@ -1,8 +1,5 @@
-use enumflags2::BitFlags;
-use enumflags2::bitflags;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use std::fmt::Display;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct Senses {

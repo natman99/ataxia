@@ -1,8 +1,6 @@
-use std::fs;
-
 use rig::{
     completion::ToolDefinition,
-    tool::{Tool, ToolEmbedding, ToolError},
+    tool::{Tool, ToolEmbedding},
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -69,7 +67,7 @@ impl ToolEmbedding for GetSheet {
 
     fn context(&self) -> Self::Context {}
 
-    fn init(state: Self::State, context: Self::Context) -> Result<Self, Self::InitError> {
+    fn init(state: Self::State, _context: Self::Context) -> Result<Self, Self::InitError> {
         Ok(GetSheet {
             inner: state.clone(),
         })

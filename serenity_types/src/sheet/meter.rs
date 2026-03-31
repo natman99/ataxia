@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use enumflags2::bitflags;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 

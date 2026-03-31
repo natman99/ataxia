@@ -10,13 +10,13 @@ use serenity_agent::MyClient;
 #[tokio::main]
 async fn main() {
     dotenvy::dotenv().unwrap();
-    let _ = env_logger::init();
+    env_logger::init();
     CryptoProvider::install_default(rustls::crypto::aws_lc_rs::default_provider())
         .expect("failed to install crypto nonsense.");
     let client = ollama::Client::new(Nothing).unwrap();
     let mut client = MyClient::new("test.json", client).await.unwrap();
 
-    println!("Ready.");
+    info!("Ready.");
 
     loop {
         let mut buf = String::new();

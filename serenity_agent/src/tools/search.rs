@@ -1,5 +1,5 @@
 use crate::{INFO_COLLECTION, Reranker};
-use log::{debug, info};
+use log::info;
 use qdrant_client::{Qdrant, qdrant::QueryPointsBuilder};
 use rig::{
     completion::ToolDefinition,

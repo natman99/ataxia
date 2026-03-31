@@ -1,23 +1,17 @@
 use std::{
     collections::HashMap,
-    ffi::OsStr,
     path::{Path, PathBuf},
     sync::Arc,
     time::{Duration, Instant},
 };
 
-use futures::TryFutureExt;
 use log::{debug, info, warn};
 use qdrant_client::{
     Payload, Qdrant,
-    qdrant::{
-        DeletePointsBuilder, PointId, PointStruct, QueryPointsBuilder, ScrollPointsBuilder,
-        UpsertPointsBuilder,
-    },
+    qdrant::{DeletePointsBuilder, PointId, PointStruct, ScrollPointsBuilder, UpsertPointsBuilder},
 };
-use rig::{embeddings::EmbeddingModel, loaders::FileLoader};
+use rig::embeddings::EmbeddingModel;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use text_splitter::ChunkConfig;
 
 use sha2::{Sha256, digest::Digest};
@@ -124,7 +118,7 @@ where
         debug!("Found {} chunks to embed", points_to_embed.len());
     }
 
-    upsert_points(&client, &points_to_embed, &embedding_model).await?;
+    upsert_points(&client, &points_to_embed, embedding_model).await?;
 
     info!(
         "Completed indexing in {} seconds",
@@ -134,9 +128,9 @@ where
     Ok(())
 }
 
-async fn upsert_points<'i, T>(
+async fn upsert_points<T>(
     client: &Qdrant,
-    embeddings: &'i [(Uuid, Embedding)],
+    embeddings: &[(Uuid, Embedding)],
     embedding_model: &Arc<T>,
 ) -> anyhow::Result<()>
 where
@@ -196,7 +190,7 @@ async fn load_embeddings<T: AsRef<Path>>(
             let uuid = create_stable_uuid(path.to_string_lossy().trim(), idx);
             let path = path.join(format!("{idx}"));
             let path = path.to_string_lossy();
-            let path_hash = Sha256::digest(&path.as_bytes());
+            let path_hash = Sha256::digest(path.as_bytes());
             let path_hash = format!("{:x}", path_hash);
 
             let content_hash = Sha256::digest(&chunk);
@@ -288,14 +282,12 @@ fn split_text(s: &str) -> Vec<String> {
         .chunks(s)
         .collect::<Vec<&str>>();
 
-    let i = merge_chunks(
+    merge_chunks(
         chunks
             .iter()
             .map(|f| f.to_string())
             .collect::<Vec<String>>(),
-    );
-
-    i
+    )
 }
 /// Merge small chunks.
 fn merge_chunks(chunks: Vec<String>) -> Vec<String> {

@@ -38,7 +38,7 @@ impl Tool for Recalculate {
         let mut i = self.inner.lock();
         *i = i.calculate();
 
-        Ok(format!("Recalculated sheet"))
+        Ok("Recalculated sheet".to_string())
     }
 }
 

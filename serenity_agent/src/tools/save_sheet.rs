@@ -34,8 +34,7 @@ impl Tool for SaveSheet {
         }
     }
 
-    async fn call(&self, args: Self::Args) -> Result<Self::Output, Self::Error> {
-        // println!("Save sheet");
+    async fn call(&self, _args: Self::Args) -> Result<Self::Output, Self::Error> {
         let s = self.inner.lock();
         match serde_json::to_string_pretty(&*s) {
             Ok(string) => match fs::write("test.json", string) {
@@ -67,7 +66,7 @@ impl ToolEmbedding for SaveSheet {
 
     fn context(&self) -> Self::Context {}
 
-    fn init(state: Self::State, context: Self::Context) -> Result<Self, Self::InitError> {
+    fn init(state: Self::State, _context: Self::Context) -> Result<Self, Self::InitError> {
         Ok(SaveSheet {
             inner: state.clone(),
         })

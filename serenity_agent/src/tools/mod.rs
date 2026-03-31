@@ -19,6 +19,8 @@ pub mod skills;
 
 pub mod search;
 
+pub mod feature;
+
 #[derive(Debug, thiserror::Error)]
 #[error("Init Error")]
 pub struct InitError;
@@ -29,9 +31,6 @@ pub type SheetState = Arc<Mutex<Character>>;
 pub struct Success;
 
 impl Success {
-    fn message() -> String {
-        "Success".to_string()
-    }
     fn success() -> String {
         "Success".to_string()
     }

@@ -1,7 +1,6 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
-use std::collections::HashMap;
 
 use crate::database::spell::Spell;
 

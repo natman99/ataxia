@@ -3,10 +3,7 @@ use std::fmt::Display;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    AbilityScores, Level,
-    roll::{Die, Roll},
-};
+use crate::{AbilityScores, Level, roll::Die};
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, JsonSchema)]
 /// The hit points of the character. Default display displays the current health.
