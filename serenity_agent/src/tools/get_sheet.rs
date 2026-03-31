@@ -61,6 +61,7 @@ impl ToolEmbedding for GetSheet {
             "Call this tool to get the character sheet".into(),
             "Update state".into(),
             "Get information".into(),
+            "Get hp".into(),
             "Show me x".into(),
             "Tell me x".into(),
         ]

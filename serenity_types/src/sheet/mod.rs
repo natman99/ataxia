@@ -86,7 +86,7 @@ impl Character {
         let f = self.ability_scores.get(&self.ability_modifier).modifier();
         self.skills.proficiency_bonus as i32 + f
     }
-
+    /// Calculate the sheet, updating items, health, and stats.
     pub fn calculate(&self) -> Self {
         let mut s = self.clone();
         // reset ability scores.
@@ -250,6 +250,10 @@ impl ArmorClass {
 
     pub fn get(&self) -> u32 {
         self.0
+    }
+
+    pub fn set(&mut self, s: u32) {
+        self.0 = s;
     }
 }
 

@@ -1,13 +1,13 @@
 {
   "name": "Billy Bob Jones",
-  "level": 1,
+  "level": 4,
   "race": "",
   "initiative": 10,
-  "armor_class": 12,
+  "armor_class": 10,
   "health": {
-    "current": 8,
-    "max": 8,
-    "level_bonus": 0,
+    "current": 31,
+    "max": 31,
+    "level_bonus": 2,
     "bonus": 0,
     "hit_dice": "D8"
   },

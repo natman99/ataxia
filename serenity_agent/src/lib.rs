@@ -39,17 +39,18 @@ const DOC_PATH: &'static str = r"C:\Users\Nathaniel\Nextcloud\Documents\Dnd";
 
 const BLACKLIST: [&'static str; 4] = ["Wiki", "base", "Templates", "Categories"];
 
-pub struct MyClient {
+pub struct MyClient<T: AsRef<Path> + Clone> {
     client: Client<OllamaExt>,
     judge_agent: Agent<CompletionModel>,
     agent: Agent<CompletionModel>,
     messages: Vec<Message>,
     tokens: u64,
     prev_messages: Vec<String>,
+    path: T,
 }
 
-impl MyClient {
-    pub async fn new<T: AsRef<Path>>(path: T, client: Client<OllamaExt>) -> anyhow::Result<Self> {
+impl<T: AsRef<Path> + Clone> MyClient<T> {
+    pub async fn new(path: T, client: Client<OllamaExt>) -> anyhow::Result<Self> {
         let s = fs::read_to_string(path.as_ref())?;
 
         let sheet: Character = serde_json::from_str(&s)?;
@@ -93,6 +94,16 @@ impl MyClient {
             })
             .dynamic_tool(tools::inventory::get::GetInventory {
                 inner: sheet.clone(),
+            })
+            .dynamic_tool(tools::armor::SetArmor {
+                inner: sheet.clone(),
+            })
+            .dynamic_tool(tools::recalculate::Recalculate {
+                inner: sheet.clone(),
+            })
+            .dynamic_tool(tools::reload::Reload {
+                inner: sheet.clone(),
+                path: path.as_ref().to_path_buf(),
             })
             .build();
 
@@ -188,6 +199,7 @@ impl MyClient {
             tokens: 0,
             messages: vec![],
             prev_messages: vec![],
+            path: path,
         };
 
         Ok(se)
@@ -197,7 +209,7 @@ impl MyClient {
         let result: CheckOutput = self
             .judge_agent
             .prompt_typed(&format!(
-                "new prompt: {}. Previous context: {:#?}",
+                "new prompt: {}. \n\nPrevious context: {:#?}",
                 s, &self.prev_messages
             ))
             .await?;
@@ -282,7 +294,7 @@ enum PromptClassification {
 struct CheckOutput {
     /// 0-100 how confident you are. Integer.
     confidence: i32,
-    /// Standalone or same topic.
+    /// new or same topic.
     classification: PromptClassification,
     /// Short one-sentence explanation of why you choise this classification.
     reason: String,
