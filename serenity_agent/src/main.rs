@@ -2,8 +2,8 @@ use std::io::Write;
 
 use log::info;
 use rig::{
-    client::Nothing,
-    providers::ollama::{self},
+    client::{CompletionClient, Nothing},
+    providers::ollama::{self, EmbeddingModel},
 };
 use rustls::crypto::CryptoProvider;
 use serenity_agent::MyClient;

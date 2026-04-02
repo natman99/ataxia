@@ -4,81 +4,44 @@ use rig::{
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use serenity_types::{Item, roll::Roll};
+use serenity_types::{Item, feature::Feature, roll::Roll};
 
 use crate::tools::{InitError, SheetState};
 
-#[derive(Deserialize, Serialize, Debug, JsonSchema)]
-pub struct AddSuccess {
-    /// The result of the operation.
-    result: String,
-    /// The item that was added.
-    added: Item,
-    /// The old version of the item, if there is one.
-    old_item: Option<Item>,
-}
-
-#[derive(Deserialize, Serialize, Debug, JsonSchema)]
-pub struct AddItemArgs {
-    /// Id of the item. This is an all lowercase version of the item's name with underscores instead of spaces.
-    pub id: String,
-    /// The name of the item
-    pub name: String,
-    /// The description of the item.
-    pub description: String,
-    /// How many of the item? Should never be zero.
-    pub quantity: i32,
-    /// The roll if the item deals damage or has an effect.
-    pub roll: Option<String>,
-}
-
-pub struct AddItem {
+pub struct AddFeature {
     pub inner: SheetState,
 }
 
-impl Tool for AddItem {
-    const NAME: &'static str = "Add item";
+impl Tool for AddFeature {
+    const NAME: &'static str = "Add feature";
 
     type Error = rig::tool::ToolError;
 
-    type Args = AddItemArgs;
+    type Args = Feature;
 
-    type Output = AddSuccess;
+    type Output = String;
 
     async fn definition(&self, _prompt: String) -> ToolDefinition {
-        let s = schemars::schema_for!(AddItemArgs);
+        let s = schemars::schema_for!(Feature);
         ToolDefinition {
-            name: "Add item".to_string(),
-            description: "Add or update an item to the character sheet. Use this tool when the user asks to add or update an item. This function replaces items with the same name, so you can also use it to update items.".to_string(),
+            name: "Add feature".to_string(),
+            description: "Add or update a feature on the character sheet. A call with the same name replaces the previous feature, so multiple similar features MUST have unique names. Use this behavior to update the feature if the user asks.
+                Features can include feats, class features, or traits".to_string(),
             parameters: serde_json::to_value(s).expect("Schema error"),
         }
     }
 
     async fn call(&self, args: Self::Args) -> Result<Self::Output, Self::Error> {
         let mut s = self.inner.lock();
-        let roll = if let Some(r) = args.roll {
-            Roll::try_from(r.as_str()).ok()
-        } else {
-            None
-        };
-        let item = Item {
-            id: args.id,
-            name: args.name,
-            description: args.description,
-            quantity: args.quantity,
-            roll,
-        };
-        let old = s.inventory.0.insert(item.id.clone(), item.clone());
+        log::debug!("{:?}", &args);
 
-        Ok(AddSuccess {
-            result: "Success".to_string(),
-            added: item,
-            old_item: old,
-        })
+        s.features.inner.insert(args.name.clone(), args);
+
+        Ok("Feature added".to_string())
     }
 }
 
-impl ToolEmbedding for AddItem {
+impl ToolEmbedding for AddFeature {
     type InitError = InitError;
 
     type Context = ();
@@ -87,20 +50,18 @@ impl ToolEmbedding for AddItem {
 
     fn embedding_docs(&self) -> Vec<String> {
         vec![
-            "Add item".into(),
-            "Add equipment".into(),
-            "Modify item".into(),
-            "Modify inventory".into(),
-            "Set item".into(),
-            "Update item".into(),
-            "Create item".into(),
+            "Add feature".into(),
+            "Add trait".into(),
+            "Add class feature".into(),
+            "Update feature".into(),
+            "Add feat".into(),
         ]
     }
 
     fn context(&self) -> Self::Context {}
 
     fn init(state: Self::State, _context: Self::Context) -> Result<Self, Self::InitError> {
-        Ok(AddItem {
+        Ok(AddFeature {
             inner: state.clone(),
         })
     }

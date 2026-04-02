@@ -85,7 +85,6 @@ impl Tool for Subtract {
     }
 
     async fn call(&self, args: Self::Args) -> Result<Self::Output, Self::Error> {
-        // println!("{:?}", args);
         Ok(format!("{}", args.x - args.y))
     }
 }
@@ -138,7 +137,6 @@ impl Tool for Multiply {
     }
 
     async fn call(&self, args: Self::Args) -> Result<Self::Output, Self::Error> {
-        // println!("{:?}", args);
         Ok(format!("{}", args.x * args.y))
     }
 }

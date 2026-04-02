@@ -14,16 +14,21 @@ use crate::{
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, JsonSchema)]
 pub struct Feature {
+    /// Name of the feature. Must be unique.
     pub name: String,
+    /// Description of the feature.
     pub description: String,
+    /// Optional roll for dice rolls for the feature.
     pub roll: Option<Roll>,
+
+    /// Array of feature effects.
     pub effects: Vec<FeatureEffect>,
 }
 
 impl Default for Feature {
     fn default() -> Self {
         Self {
-            name: "example spell".to_string(),
+            name: "Example feature".to_string(),
             description: "i explode something".to_string(),
             roll: Some(Roll::new(&[Die::D20], 0)),
             effects: vec![],
@@ -57,7 +62,7 @@ pub enum FeatureEffect {
     AddProficiency(Skill),
     /// Bonus to initiative.
     InitiativeBonus(u32),
-
+    /// Does nothing.
     Nothing,
 }
 

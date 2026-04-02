@@ -55,9 +55,6 @@ impl HitPoints {
         }
         let mut s = self;
 
-        println!("{}", fixed_per_level);
-        println!("{}", total);
-
         s.max = total.max(1) as u32;
 
         s

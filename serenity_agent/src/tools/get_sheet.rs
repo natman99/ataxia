@@ -27,7 +27,7 @@ impl Tool for GetSheet {
         let s = schemars::schema_for!(GetSheetArgs);
         ToolDefinition {
             name: "Get sheet".to_string(),
-            description: "Get the character sheet. This tool can be used to get the current state.
+            description: "Get the character sheet. This tool can be used to get the current state. This includes health, class, name, features, traits, backstore, ability scores, and initiative.
                 Use whenever the user requests ANY information or when you need more information to fufill a request.
                 For the purposes of reducing context size, this does not contain the inventory. Use the seperate tool for that.".to_string(),
             parameters: serde_json::to_value(s).expect("Schema error"),
@@ -59,6 +59,8 @@ impl ToolEmbedding for GetSheet {
             "Call this tool to get the character sheet".into(),
             "Update state".into(),
             "Get information".into(),
+            "Get traits".into(),
+            "Get features".into(),
             "Get hp".into(),
             "Show me x".into(),
             "Tell me x".into(),

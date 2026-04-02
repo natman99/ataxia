@@ -36,7 +36,6 @@ impl Tool for SetProficiency {
     }
 
     async fn call(&self, args: Self::Args) -> Result<Self::Output, Self::Error> {
-        // println!("Damage");
         let mut i = self.inner.lock();
 
         i.skills.proficiencies.set(args.skill, args.yes);
@@ -98,7 +97,6 @@ impl Tool for SetProficiencyBonus {
     }
 
     async fn call(&self, args: Self::Args) -> Result<Self::Output, Self::Error> {
-        // println!("Damage");
         let mut i = self.inner.lock();
 
         i.skills.proficiency_bonus = args.bonus;

@@ -8,11 +8,12 @@ use log::{debug, info, warn};
 use parking_lot::Mutex;
 use qdrant_client::qdrant::{CreateCollectionBuilder, VectorParamsBuilder};
 use rig::agent::{Agent, MultiTurnStreamItem};
-use rig::client::{Client, CompletionClient, EmbeddingsClient};
-use rig::embeddings::EmbeddingsBuilder;
+use rig::client::{Capabilities, Client, CompletionClient, EmbeddingsClient, Provider};
+use rig::completion::CompletionModel;
+use rig::embeddings::{EmbeddingModel, EmbeddingsBuilder};
 use rig::message::Message;
 use rig::prelude::TypedPrompt;
-use rig::providers::ollama::{self, CompletionModel, OllamaExt};
+use rig::providers::ollama::{self, OllamaExt};
 
 use rig::streaming::{StreamedAssistantContent, StreamedUserContent, StreamingChat};
 use rig::tool::ToolSet;
@@ -39,13 +40,12 @@ const DOC_PATH: &str = r"C:\Users\Nathaniel\Nextcloud\Documents\Dnd";
 const BLACKLIST: [&str; 4] = ["Wiki", "base", "Templates", "Categories"];
 
 pub struct MyClient<T: AsRef<Path> + Clone> {
-    client: Client<OllamaExt>,
-    judge_agent: Agent<CompletionModel>,
-    agent: Agent<CompletionModel>,
+    judge_agent: Agent<ollama::CompletionModel>,
+    agent: Agent<ollama::CompletionModel>,
     messages: Vec<Message>,
     tokens: u64,
     prev_messages: Vec<String>,
-    path: T,
+    _path: T,
 }
 
 impl<T: AsRef<Path> + Clone> MyClient<T> {
@@ -103,6 +103,9 @@ impl<T: AsRef<Path> + Clone> MyClient<T> {
             .dynamic_tool(tools::reload::Reload {
                 inner: sheet.clone(),
                 path: path.as_ref().to_path_buf(),
+            })
+            .dynamic_tool(tools::feature::add::AddFeature {
+                inner: sheet.clone(),
             })
             .build();
 
@@ -165,7 +168,7 @@ impl<T: AsRef<Path> + Clone> MyClient<T> {
             database::run_update_service(client, v_model, DOC_PATH, &BLACKLIST).await;
         });
 
-        let judge_agent: Agent<CompletionModel> = client.agent("qwen3:8b")
+        let judge_agent = client.agent("qwen3:8b")
                 .preamble("You are an assistant for deciding if a prompt or question is the same topic as the previous conversation.
                     Follow the providing schema. 100 is the highest confidence, 0 is the lowest.").build();
 
@@ -192,13 +195,12 @@ impl<T: AsRef<Path> + Clone> MyClient<T> {
                 .build();
 
         let se = Self {
-            client,
             judge_agent,
             agent,
             tokens: 0,
             messages: vec![],
             prev_messages: vec![],
-            path,
+            _path: path,
         };
 
         Ok(se)
@@ -212,9 +214,8 @@ impl<T: AsRef<Path> + Clone> MyClient<T> {
                 s, &self.prev_messages
             ))
             .await?;
-        println!("{:?}: {:?}", result.classification, result.reason);
-        // High chance of context required.
         if result.confidence > 60 {
+            debug!("{:?}: {:?}", result.classification, result.reason);
             match result.classification {
                 PromptClassification::SameTopic => {}
                 PromptClassification::NewTopic => {
@@ -267,7 +268,7 @@ impl<T: AsRef<Path> + Clone> MyClient<T> {
                             tool_result: _,
                             internal_call_id: _,
                         } => {
-                            // println!("{:?}", tool_result)
+                            // debug!("{:?}", tool_result)
                         }
                     },
                     _ => (),
@@ -297,7 +298,8 @@ struct CheckOutput {
     /// Short one-sentence explanation of why you choise this classification.
     reason: String,
     /// What exactly is unclear without history? (or 'none' if standalone)
-    missing_referent: String,
+    #[serde(rename = "missing_referent")]
+    _missing_referent: String,
 }
 
 use anyhow::Result;

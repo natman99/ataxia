@@ -8,15 +8,10 @@ fn main() {
     // let s = std::fs::read_to_string(r"../5e-database\src\2014\5e-SRD-Spells.json").unwrap();
 
     // let s: Vec<database::spell::Spell> = serde_json::from_str(&s).unwrap();
-    // println!("Loaded {} spells", s.len());
 
     // let s = std::fs::read_to_string(r"../5e-database\src\2014\5e-SRD-Races.json").unwrap();
 
     // let s: Vec<database::race::Race> = serde_json::from_str(&s).unwrap();
-
-    // println!("Loaded {} races", s.len());
-
-    // // println!("{:?}", s[0]);
 
     // let f = Character::default();
 

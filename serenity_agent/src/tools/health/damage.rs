@@ -37,7 +37,6 @@ impl Tool for Damage {
     }
 
     async fn call(&self, args: Self::Args) -> Result<Self::Output, Self::Error> {
-        // println!("Damage");
         let mut i = self.inner.lock();
         i.health.hit(args.amount);
 
