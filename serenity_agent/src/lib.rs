@@ -49,11 +49,11 @@ pub struct MyClient<T: AsRef<Path> + Clone> {
 }
 
 impl<T: AsRef<Path> + Clone> MyClient<T> {
-    pub async fn new(path: T, client: Client<OllamaExt>) -> anyhow::Result<Self> {
-        let s = fs::read_to_string(path.as_ref())?;
-
-        let sheet: Character = serde_json::from_str(&s)?;
-        let sheet = Arc::new(Mutex::new(sheet));
+    pub async fn new(
+        path: T,
+        client: Client<OllamaExt>,
+        sheet: Arc<Mutex<Character>>,
+    ) -> anyhow::Result<Self> {
         let toolset = ToolSet::builder()
             .dynamic_tool(Adder)
             .dynamic_tool(Subtract)
