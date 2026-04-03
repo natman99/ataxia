@@ -57,6 +57,27 @@ impl Skill {
         "performance",
         "persuasion",
     ];
+
+    pub const ALL_ITER: [Skill; 18] = [
+        Skill::Athletics,
+        Skill::Acrobatics,
+        Skill::SleightOfHand,
+        Skill::Stealth,
+        Skill::Arcana,
+        Skill::History,
+        Skill::Investigation,
+        Skill::Nature,
+        Skill::Religion,
+        Skill::AnimalHandling,
+        Skill::Insight,
+        Skill::Medicine,
+        Skill::Perception,
+        Skill::Survival,
+        Skill::Deception,
+        Skill::Intimidation,
+        Skill::Performance,
+        Skill::Persuasion,
+    ];
 }
 
 impl Display for Skill {
