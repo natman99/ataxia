@@ -38,7 +38,6 @@ const VECTOR_SIZE: u64 = 768;
 const DOC_PATH: &str = r"C:\Users\Nathaniel\Nextcloud\Documents\Dnd";
 
 const BLACKLIST: [&str; 4] = ["Wiki", "base", "Templates", "Categories"];
-
 pub struct MyClient<T: AsRef<Path> + Clone> {
     judge_agent: Agent<ollama::CompletionModel>,
     agent: Agent<ollama::CompletionModel>,

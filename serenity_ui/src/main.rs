@@ -1,14 +1,17 @@
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use iced::futures::FutureExt;
 use iced::theme::Style;
 use iced::widget::{Column, Container, Text, button, column, container, row, text};
 
-use iced::{Application, Background, Element, Task, Theme};
+use iced::{Application, Background, Element, Subscription, Task, Theme};
 use log::{error, info, warn};
 use parking_lot::Mutex;
 use rfd::FileDialog;
+use rig::client::Nothing;
+use rig::providers::ollama;
 use serenity_agent::MyClient;
 use serenity_types::skills::Skill;
 use serenity_types::{Character, sheet};
@@ -17,6 +20,7 @@ fn main() {
     dotenvy::dotenv().unwrap();
     env_logger::init();
     iced::application(App::new, App::update, App::view)
+        .subscription(App::subscription)
         .run()
         .unwrap();
 }
@@ -26,7 +30,10 @@ pub struct App {
     sheet: Arc<Mutex<Character>>,
     widgets: Vec<SWidget>,
     prev: Vec<Character>,
-    client: MyClient,
+    client: Option<Arc<MyClient<PathBuf>>>,
+    chat_history: Vec<String>,
+    tool_history: Vec<String>,
+    path: PathBuf,
 }
 
 impl App {
@@ -70,8 +77,32 @@ impl App {
         match message {
             Message::Increment => self.counter += 1,
             Message::Decrement => self.counter += -1,
+            Message::CreateClient(my_client) => {
+                if let Some(m) = my_client {
+                    debug!("Created client");
+                    self.client = Some(m);
+                }
+            }
         }
-        Task::none()
+        
+
+        if self.client.is_none() {
+            let path = self.path.clone();
+            let sheet = self.sheet.clone();
+            Task::future(async {
+                let client = ollama::Client::new(Nothing).expect("Ollama error");
+                match MyClient::new(path, client, sheet).await {
+                    Ok(client) => Some(Arc::new(client)),
+                    Err(e) => {
+                        error!("{:?}", e);
+                        None
+                    }
+                }
+            })
+            .map(Message::CreateClient)
+        } else {
+            Task::none()
+        }
     }
 
     fn new() -> Self {
@@ -80,7 +111,7 @@ impl App {
             .add_filter("json", &["json"])
             .pick_file();
 
-        let sheet = if let Some(f) = file {
+        let sheet = if let Some(ref f) = file {
             let s = fs::read_to_string(&f).expect("Invalid file path");
             let c: Character = serde_json::from_str(&s).unwrap_or_default();
             if c.name.is_empty() {
@@ -95,15 +126,12 @@ impl App {
 
         // CryptoProvider::install_default(rustls::crypto::aws_lc_rs::default_provider())
         //        .expect("failed to install crypto nonsense.");
-        let client = ollama::Client::new(Nothing).expect("Ollama error");
 
-        let client = serenity_agent::MyClient::new(
-            file.unwrap_or(PathBuf::from("/")),
-            client,
-            sheet.clone(),
-        );
-
-        let client = pollster::block_on(client).unwrap();
+        // let client = serenity_agent::MyClient::new(
+        //     file.unwrap_or(PathBuf::from("/")),
+        //     client,
+        //     sheet.clone(),
+        // );
 
         Self {
             counter: 0,
@@ -114,14 +142,27 @@ impl App {
                 SWidget::Skills(SkillsWidget),
             ],
             prev: vec![],
-            client,
+            client: None,
+            path: file.unwrap_or(PathBuf::from("/")),
         }
     }
+
+    fn subscription(&self) -> Subscription<Message> {
+        // if self.client.is_none() {
+        //     let client = ollama::Client::new(Nothing).expect("Ollama error");
+        //     let client =
+        //         MyClient::new(self.path.clone(), client, self.sheet.clone()).map(Subscription::run);
+        //     client
+        // // } else {
+        Subscription::none()
+        // }
+    }
 }
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone)]
 pub enum Message {
     Increment,
     Decrement,
+    CreateClient(Option<Arc<MyClient<PathBuf>>>),
 }
 
 pub enum SWidget {
