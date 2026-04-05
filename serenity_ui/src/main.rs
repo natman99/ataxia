@@ -1,20 +1,28 @@
 use std::fs;
+use std::hash::Hash;
+use std::ops::Sub;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::time::Duration;
 
-use iced::futures::FutureExt;
+use iced::futures::{FutureExt, SinkExt, Stream, TryFutureExt};
 use iced::theme::Style;
-use iced::widget::{Column, Container, Text, button, column, container, row, text};
+use iced::widget::{self, Column, Container, Text, button, column, container, row, text};
 
-use iced::{Application, Background, Element, Subscription, Task, Theme};
-use log::{error, info, warn};
-use parking_lot::Mutex;
+use iced::{Application, Background, Border, Color, Element, Subscription, Task, Theme};
+use iced_futures::MaybeSend;
+use log::{debug, error, info, warn};
 use rfd::FileDialog;
-use rig::client::Nothing;
-use rig::providers::ollama;
+use rig::client::{Client, Nothing};
+use rig::providers::ollama::{self, OllamaExt};
+use rustls::crypto::CryptoProvider;
 use serenity_agent::MyClient;
 use serenity_types::skills::Skill;
 use serenity_types::{Character, sheet};
+use tokio::sync::mpsc::{Receiver, Sender, channel};
+use tokio::sync::{Mutex, mpsc};
+
+mod chat_widget;
 
 fn main() {
     dotenvy::dotenv().unwrap();
@@ -25,18 +33,23 @@ fn main() {
         .unwrap();
 }
 
-pub struct App {
+pub struct App<'a> {
     counter: i64,
-    sheet: Arc<Mutex<Character>>,
+    sheet: Arc<parking_lot::Mutex<Character>>,
     widgets: Vec<SWidget>,
     prev: Vec<Character>,
-    client: Option<Arc<MyClient<PathBuf>>>,
-    chat_history: Vec<String>,
+    client: Option<ClientWrapper<PathBuf>>,
+    client_thinking: bool,
+    client_lock: bool,
+    chat_history: Vec<Text>,
     tool_history: Vec<String>,
     path: PathBuf,
+    text_box: String,
+    tool_recv: Option<Receiver<String>>,
+    tool_sender: Sender<String>,
 }
 
-impl App {
+impl<'a> App<'a> {
     fn view(&self) -> Element<'_, Message> {
         let counter_text = text(format!("{}", self.counter));
 
@@ -46,7 +59,13 @@ impl App {
 
         let sheet = self.sheet.lock();
 
-        let title: Text = text(sheet.name.clone()).size(20).style(|f: &Theme| {
+        let mut t = sheet.name.clone();
+
+        if self.client.is_none() {
+            t.push_str(" Client not connected");
+        }
+
+        let title: Text = text(t).size(20).style(|f: &Theme| {
             let e = f.palette();
             let mut style = text::Style::default();
             style.color = Some(e.success);
@@ -68,7 +87,9 @@ impl App {
             r = r.push(i);
         }
 
-        let cols = column![title, r].spacing(20).padding(20);
+        let chat_window = chat_widget::chat_widget(&self);
+
+        let cols = column![title, r, chat_window].spacing(20).padding(20);
 
         cols.into()
     }
@@ -81,18 +102,65 @@ impl App {
                 if let Some(m) = my_client {
                     debug!("Created client");
                     self.client = Some(m);
+                    self.client_lock = false;
                 }
             }
-        }
-        
+            Message::TextChanged(s) => self.text_box = s,
+            Message::PromptSent => {
+                if let Some(ref client) = self.client {
+                    let s = self.text_box.clone();
+                    self.text_box.clear();
+                    self.client_thinking = true;
+                    let client = client.clone();
+                    return Task::future(async move {
+                        let s = s;
+                        let c = client.clone();
+                        c.prompt(s).await
+                    })
+                    .map(|f| match f {
+                        Ok(e) => e,
+                        Err(e) => {
+                            error!("{:?}", e);
+                            "Error".to_string()
+                        }
+                    })
+                    .map(Message::PromptFinished);
+                }
+            }
+            Message::PromptFinished(e) => {
+                self.client_thinking = false;
 
-        if self.client.is_none() {
+                self.chat_history.push(text(e));
+            }
+            Message::ToolCalled(e) => self.tool_history.push(e),
+            Message::Nothing => (),
+            Message::ToolStreamEvent(event) => match event {
+                Event::Ready(sender) => {
+                    info!("Channel sent");
+                    let p = self
+                        .tool_recv
+                        .take()
+                        .expect("This should always be there once");
+                    return Task::perform(async move { sender.send(p).await }, |f| {
+                        f.expect("Sender failed");
+                        Message::Nothing
+                    });
+                }
+                Event::Item(e) => self.tool_history.push(e),
+            },
+        }
+
+        if self.client.is_none() && !self.client_lock {
             let path = self.path.clone();
             let sheet = self.sheet.clone();
+            info!("Loading client");
+            self.client_lock = true;
+            let sender = self.tool_sender.clone();
             Task::future(async {
                 let client = ollama::Client::new(Nothing).expect("Ollama error");
-                match MyClient::new(path, client, sheet).await {
-                    Ok(client) => Some(Arc::new(client)),
+
+                match ClientWrapper::new(path, client, sheet, sender).await {
+                    Ok(client) => Some(client),
                     Err(e) => {
                         error!("{:?}", e);
                         None
@@ -122,16 +190,12 @@ impl App {
             Character::default()
         };
 
-        let sheet = Arc::new(Mutex::new(sheet));
+        let sheet = Arc::new(parking_lot::Mutex::new(sheet));
 
-        // CryptoProvider::install_default(rustls::crypto::aws_lc_rs::default_provider())
-        //        .expect("failed to install crypto nonsense.");
+        let (sender, recv) = channel(20);
 
-        // let client = serenity_agent::MyClient::new(
-        //     file.unwrap_or(PathBuf::from("/")),
-        //     client,
-        //     sheet.clone(),
-        // );
+        CryptoProvider::install_default(rustls::crypto::aws_lc_rs::default_provider())
+            .expect("failed to install crypto nonsense.");
 
         Self {
             counter: 0,
@@ -142,27 +206,68 @@ impl App {
                 SWidget::Skills(SkillsWidget),
             ],
             prev: vec![],
+            client_lock: false,
+            client_thinking: false,
             client: None,
             path: file.unwrap_or(PathBuf::from("/")),
+            chat_history: vec![],
+            tool_history: vec![],
+            text_box: String::new(),
+            tool_recv: Some(recv),
+            tool_sender: sender,
         }
     }
 
     fn subscription(&self) -> Subscription<Message> {
-        // if self.client.is_none() {
-        //     let client = ollama::Client::new(Nothing).expect("Ollama error");
-        //     let client =
-        //         MyClient::new(self.path.clone(), client, self.sheet.clone()).map(Subscription::run);
-        //     client
-        // // } else {
-        Subscription::none()
+        let mut subs = vec![];
+
+        let s = Subscription::run(some_worker).map(Message::ToolStreamEvent);
+        subs.push(s);
+
+        Subscription::batch(subs)
         // }
     }
 }
 #[derive(Clone)]
+enum Event {
+    Ready(Sender<Receiver<String>>),
+    Item(String),
+}
+fn some_worker() -> impl Stream<Item = Event> {
+    use iced::futures::stream::StreamExt;
+
+    let (sender, mut recv) = channel::<Receiver<String>>(10);
+    iced::stream::channel(20, async move |mut output| {
+        output.send(Event::Ready(sender)).await.expect("Send error");
+
+        tokio::time::sleep(Duration::from_millis(300)).await;
+
+        let mut recv = recv.recv().await.expect("We should always get a value");
+
+        loop {
+            let val = recv.recv().await;
+
+            if let Some(val) = val {
+                let _ = output.send(Event::Item(val)).await;
+            } else {
+                error!("Channel closed");
+                break;
+            }
+        }
+    })
+}
+
+#[derive(Clone)]
 pub enum Message {
     Increment,
     Decrement,
-    CreateClient(Option<Arc<MyClient<PathBuf>>>),
+    CreateClient(Option<ClientWrapper<PathBuf>>),
+    TextChanged(String),
+    PromptSent,
+    PromptFinished(String),
+    ToolCalled(String),
+    Nothing,
+    ToolStreamEvent(Event),
 }
 
 pub enum SWidget {
@@ -269,5 +374,29 @@ impl HealthWidget {
             })
             .padding(10)
             .into()
+    }
+}
+#[derive(Clone)]
+pub struct ClientWrapper<T: AsRef<Path> + Clone> {
+    pub inner: Arc<Mutex<MyClient<T>>>,
+}
+
+impl<T: AsRef<Path> + Clone> ClientWrapper<T> {
+    pub async fn prompt<S: AsRef<str>>(&self, s: S) -> anyhow::Result<String> {
+        let mut guard = self.inner.lock().await;
+
+        guard.prompt(s).await
+    }
+
+    pub async fn new(
+        path: T,
+        client: Client<OllamaExt>,
+        sheet: Arc<parking_lot::Mutex<Character>>,
+        sender: Sender<String>,
+    ) -> anyhow::Result<Self> {
+        let inner = MyClient::new(path, client, sheet, sender).await?;
+        Ok(Self {
+            inner: Arc::new(Mutex::new(inner)),
+        })
     }
 }

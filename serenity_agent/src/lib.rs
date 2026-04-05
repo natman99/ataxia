@@ -1,9 +1,10 @@
 use std::path::Path;
 
-use std::fs;
 use std::sync::Arc;
 use std::time::Instant;
+use std::{fs, future};
 
+use futures::SinkExt;
 use log::{debug, info, warn};
 use parking_lot::Mutex;
 use qdrant_client::qdrant::{CreateCollectionBuilder, VectorParamsBuilder};
@@ -20,6 +21,7 @@ use rig::tool::ToolSet;
 use schemars::JsonSchema;
 use serde::Deserialize;
 use serenity_types::Character;
+use tokio::sync::mpsc::Sender;
 
 use crate::tools::basic::{Adder, Multiply, Subtract};
 use crate::tools::damage::Damage;
@@ -45,6 +47,7 @@ pub struct MyClient<T: AsRef<Path> + Clone> {
     tokens: u64,
     prev_messages: Vec<String>,
     _path: T,
+    sender: tokio::sync::mpsc::Sender<String>,
 }
 
 impl<T: AsRef<Path> + Clone> MyClient<T> {
@@ -52,6 +55,7 @@ impl<T: AsRef<Path> + Clone> MyClient<T> {
         path: T,
         client: Client<OllamaExt>,
         sheet: Arc<Mutex<Character>>,
+        sender: Sender<String>,
     ) -> anyhow::Result<Self> {
         let toolset = ToolSet::builder()
             .dynamic_tool(Adder)
@@ -168,7 +172,7 @@ impl<T: AsRef<Path> + Clone> MyClient<T> {
         });
 
         let judge_agent = client.agent("qwen3:8b")
-                .preamble("You are an assistant for deciding if a prompt or question is the same topic as the previous conversation.
+                .preamble("You are an assistant for deciding if a prompt or question is the same topic as the previous conversation OR a new topic.
                     Follow the providing schema. 100 is the highest confidence, 0 is the lowest.").build();
 
         let agent = client
@@ -200,17 +204,19 @@ impl<T: AsRef<Path> + Clone> MyClient<T> {
             messages: vec![],
             prev_messages: vec![],
             _path: path,
+            sender,
         };
 
         Ok(se)
     }
 
-    pub async fn prompt(&mut self, s: &str) -> anyhow::Result<String> {
+    pub async fn prompt<S: AsRef<str>>(&mut self, s: S) -> anyhow::Result<String> {
         let result: CheckOutput = self
             .judge_agent
             .prompt_typed(format!(
                 "new prompt: {}. \n\nPrevious context: {:#?}",
-                s, &self.prev_messages
+                s.as_ref(),
+                &self.prev_messages
             ))
             .await?;
         if result.confidence > 60 {
@@ -227,10 +233,13 @@ impl<T: AsRef<Path> + Clone> MyClient<T> {
             }
         }
 
-        let mut response = self.agent.stream_chat(s, self.messages.clone()).await;
+        let mut response = self
+            .agent
+            .stream_chat(s.as_ref(), self.messages.clone())
+            .await;
         use futures::StreamExt;
 
-        let mut output = String::new();
+        let mut out = String::new();
 
         while let Some(e) = response.next().await {
             match e {
@@ -246,9 +255,11 @@ impl<T: AsRef<Path> + Clone> MyClient<T> {
                                 if tool_call.function.name == "think" {
                                     debug!("Thoughts: {}", tool_call.function.arguments)
                                 }
+
+                                let _ = self.sender.send(tool_call.function.name).await;
                             }
                             _ => (),
-                        } // Add an item called wooden sword. Make up a description. It deals 2d6 damage
+                        }
                         // println!("{:?}", e)
                     }
                     MultiTurnStreamItem::FinalResponse(e) => {
@@ -256,8 +267,8 @@ impl<T: AsRef<Path> + Clone> MyClient<T> {
                             self.messages.clear();
                             self.messages.append(&mut history.to_vec());
                         }
-                        output.push_str(e.response());
-                        self.prev_messages.push(format!("user: {}", s));
+                        out.push_str(e.response());
+                        self.prev_messages.push(format!("user: {}", s.as_ref()));
                         self.prev_messages.push(format!("agent: {}", e.response()));
                         self.tokens += e.usage().total_tokens;
                         debug!("tokens: {}", self.tokens);
@@ -277,8 +288,7 @@ impl<T: AsRef<Path> + Clone> MyClient<T> {
                 }
             }
         }
-
-        Ok(output)
+        Ok(out)
     }
 }
 
