@@ -12,7 +12,7 @@ use iced::widget::{self, Column, Container, Text, button, column, container, row
 use iced::{Application, Background, Border, Color, Element, Subscription, Task, Theme};
 use iced_futures::MaybeSend;
 use log::{debug, error, info, warn};
-use rfd::FileDialog;
+use rfd::{FileDialog, FileHandle};
 use rig::client::{Client, Nothing};
 use rig::providers::ollama::{self, OllamaExt};
 use rustls::crypto::CryptoProvider;
@@ -33,7 +33,7 @@ fn main() {
         .unwrap();
 }
 
-pub struct App<'a> {
+pub struct App {
     counter: i64,
     sheet: Arc<parking_lot::Mutex<Character>>,
     widgets: Vec<SWidget>,
@@ -41,7 +41,7 @@ pub struct App<'a> {
     client: Option<ClientWrapper<PathBuf>>,
     client_thinking: bool,
     client_lock: bool,
-    chat_history: Vec<Text>,
+    chat_history: Vec<String>,
     tool_history: Vec<String>,
     path: PathBuf,
     text_box: String,
@@ -49,9 +49,13 @@ pub struct App<'a> {
     tool_sender: Sender<String>,
 }
 
-impl<'a> App<'a> {
+impl App {
     fn view(&self) -> Element<'_, Message> {
         let counter_text = text(format!("{}", self.counter));
+
+        let save_button = button("save").on_press(Message::SaveSheet);
+
+        // let top_row = row![save_button, open_button, reload_button];
 
         let button1 = button("press").on_press(Message::Increment);
         let button2 = button("press").on_press(Message::Decrement);
@@ -107,30 +111,39 @@ impl<'a> App<'a> {
             }
             Message::TextChanged(s) => self.text_box = s,
             Message::PromptSent => {
-                if let Some(ref client) = self.client {
-                    let s = self.text_box.clone();
+                if self.text_box.starts_with("/") {
+                    match self.text_box.replace("/", "").as_str() {
+                        "save" => return Task::done(Message::SaveSheet),
+                        "reload" => return Task::done(Message::ReloadSheet),
+                        _ => (),
+                    }
                     self.text_box.clear();
-                    self.client_thinking = true;
-                    let client = client.clone();
-                    return Task::future(async move {
-                        let s = s;
-                        let c = client.clone();
-                        c.prompt(s).await
-                    })
-                    .map(|f| match f {
-                        Ok(e) => e,
-                        Err(e) => {
-                            error!("{:?}", e);
-                            "Error".to_string()
-                        }
-                    })
-                    .map(Message::PromptFinished);
+                } else {
+                    if let Some(ref client) = self.client {
+                        let s = self.text_box.clone();
+                        self.text_box.clear();
+                        self.client_thinking = true;
+                        let client = client.clone();
+                        return Task::future(async move {
+                            let s = s;
+                            let c = client.clone();
+                            c.prompt(s).await
+                        })
+                        .map(|f| match f {
+                            Ok(e) => e,
+                            Err(e) => {
+                                error!("{:?}", e);
+                                "Error".to_string()
+                            }
+                        })
+                        .map(Message::PromptFinished);
+                    }
                 }
             }
             Message::PromptFinished(e) => {
                 self.client_thinking = false;
 
-                self.chat_history.push(text(e));
+                self.chat_history.push(e);
             }
             Message::ToolCalled(e) => self.tool_history.push(e),
             Message::Nothing => (),
@@ -148,6 +161,56 @@ impl<'a> App<'a> {
                 }
                 Event::Item(e) => self.tool_history.push(e),
             },
+            Message::SheetLoaded(character) => {
+                *self.sheet.lock() = character;
+
+                let s = self.tool_sender.clone();
+                return Task::future(async move { s.send("Sheet reloaded".to_string()).await })
+                    .map(|_| Message::Nothing);
+                // TODO add history for undo
+            }
+            Message::SheetSaved(_) => {
+                let s = self.tool_sender.clone();
+                return Task::future(async move { s.send("Sheet saved".to_string()).await })
+                    .map(|_| Message::Nothing);
+            }
+            Message::FileSelected(file_handle) => {
+                let future = load(file_handle.path().to_path_buf());
+                return Task::perform(future, |f| match f {
+                    Ok(e) => Message::SheetLoaded(e),
+                    Err(_) => Message::Nothing,
+                });
+            }
+            Message::ChooseFile => {
+                return Task::future(file_dialog()).map(|f| match f {
+                    Some(e) => Message::FileSelected(e),
+                    None => Message::Nothing,
+                });
+            }
+            Message::SaveSheet => {
+                let f = { self.sheet.lock().clone() };
+                let p = self.path.clone();
+                return Task::future(async move {
+                    let f = f;
+                    save(&f, p).await
+                })
+                .map(|f| {
+                    if let Ok(m) = f {
+                        Message::SheetSaved(m)
+                    } else {
+                        Message::Nothing
+                    }
+                });
+            }
+            Message::ReloadSheet => {
+                return Task::perform(load(self.path.clone()), |f| {
+                    if let Ok(c) = f {
+                        Message::SheetLoaded(c)
+                    } else {
+                        Message::Nothing
+                    }
+                });
+            }
         }
 
         if self.client.is_none() && !self.client_lock {
@@ -234,8 +297,6 @@ enum Event {
     Item(String),
 }
 fn some_worker() -> impl Stream<Item = Event> {
-    use iced::futures::stream::StreamExt;
-
     let (sender, mut recv) = channel::<Receiver<String>>(10);
     iced::stream::channel(20, async move |mut output| {
         output.send(Event::Ready(sender)).await.expect("Send error");
@@ -268,6 +329,12 @@ pub enum Message {
     ToolCalled(String),
     Nothing,
     ToolStreamEvent(Event),
+    SheetLoaded(Character),
+    SheetSaved(()),
+    FileSelected(FileHandle),
+    SaveSheet,
+    ReloadSheet,
+    ChooseFile,
 }
 
 pub enum SWidget {
@@ -399,4 +466,25 @@ impl<T: AsRef<Path> + Clone> ClientWrapper<T> {
             inner: Arc::new(Mutex::new(inner)),
         })
     }
+}
+
+async fn save<T: AsRef<Path>>(sheet: &Character, path: T) -> anyhow::Result<()> {
+    let s = serde_json::to_string_pretty(&sheet)?;
+    tokio::fs::write(path.as_ref(), s).await?;
+    Ok(())
+}
+
+async fn load<T: AsRef<Path>>(path: T) -> anyhow::Result<Character> {
+    let s = tokio::fs::read_to_string(path.as_ref()).await?;
+    let c = serde_json::from_str::<Character>(&s)?;
+    Ok(c)
+}
+
+async fn file_dialog() -> Option<FileHandle> {
+    let res = rfd::AsyncFileDialog::new()
+        .add_filter("json", &["json"])
+        .set_directory("/")
+        .pick_file()
+        .await;
+    res
 }

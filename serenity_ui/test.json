@@ -13,6 +13,13 @@
   },
   "class": "Fighter",
   "inventory": {
+    "wand_of_smiles": {
+      "id": "wand_of_smiles",
+      "name": "Wand of Smiles",
+      "description": "A magical wand that can influence emotions or social interactions.",
+      "quantity": 1,
+      "roll": null
+    },
     "wooden_sword": {
       "id": "wooden_sword",
       "name": "Wooden Sword",

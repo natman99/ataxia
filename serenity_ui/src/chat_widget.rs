@@ -1,5 +1,6 @@
 use iced::{
-    Border, Color, Element,
+    Border, Color, Element, Length, Theme,
+    alignment::Horizontal::Left,
     widget::{self, Column, Container, column, container, row, text},
 };
 
@@ -10,9 +11,22 @@ pub fn chat_widget<'a>(app: &'a App) -> Element<'a, Message> {
         let texts = app
             .chat_history
             .iter()
-            .map(|f| container(f).style(container::rounded_box).into())
+            .map(|f| {
+                let c = container(text(f))
+                    .center(Length::Shrink)
+                    .style(|f: &Theme| {
+                        let pair = f.extended_palette().primary.base;
+                        let color = f.extended_palette().primary.weak.color;
+                        container::Style::default()
+                            .background(pair.color)
+                            .color(pair.text)
+                            .border(Border::default().width(8).rounded(12).color(color))
+                    })
+                    .padding(20);
+                c.into()
+            })
             .collect();
-        let content = Column::from_vec(texts);
+        let content = Column::from_vec(texts).spacing(10);
         let s = iced::widget::scrollable(content)
             .height(400)
             .anchor_bottom()
