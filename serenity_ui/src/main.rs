@@ -54,8 +54,10 @@ impl App {
         let counter_text = text(format!("{}", self.counter));
 
         let save_button = button("save").on_press(Message::SaveSheet);
+        let open_button = button("open").on_press(Message::ChooseFile);
+        let reload_button = button("reload").on_press(Message::ReloadSheet);
 
-        // let top_row = row![save_button, open_button, reload_button];
+        let control_buttons = row![save_button, open_button, reload_button];
 
         let button1 = button("press").on_press(Message::Increment);
         let button2 = button("press").on_press(Message::Decrement);
@@ -93,7 +95,9 @@ impl App {
 
         let chat_window = chat_widget::chat_widget(&self);
 
-        let cols = column![title, r, chat_window].spacing(20).padding(20);
+        let cols = column![title, control_buttons, r, chat_window]
+            .spacing(20)
+            .padding(20);
 
         cols.into()
     }
