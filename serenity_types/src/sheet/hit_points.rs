@@ -74,7 +74,7 @@ impl HitPoints {
     }
     pub fn heal(&mut self, healing: i32) {
         self.current += healing;
-        self.current = self.current.max(self.max as i32);
+        self.current = self.current.min(self.max as i32);
     }
 }
 

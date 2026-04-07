@@ -5,6 +5,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
 
+use iced::alignment::Horizontal;
 use iced::futures::{FutureExt, SinkExt, Stream, TryFutureExt};
 use iced::theme::Style;
 use iced::widget::{self, Column, Container, Text, button, column, container, row, text};
@@ -21,6 +22,7 @@ use serenity_types::skills::Skill;
 use serenity_types::{Character, sheet};
 use tokio::sync::mpsc::{Receiver, Sender, channel};
 use tokio::sync::{Mutex, mpsc};
+use tokio::task;
 
 mod chat_widget;
 
@@ -57,7 +59,7 @@ impl App {
         let open_button = button("open").on_press(Message::ChooseFile);
         let reload_button = button("reload").on_press(Message::ReloadSheet);
 
-        let control_buttons = row![save_button, open_button, reload_button];
+        let control_buttons = row![open_button, save_button, reload_button];
 
         let button1 = button("press").on_press(Message::Increment);
         let button2 = button("press").on_press(Message::Decrement);
@@ -116,12 +118,15 @@ impl App {
             Message::TextChanged(s) => self.text_box = s,
             Message::PromptSent => {
                 if self.text_box.starts_with("/") {
+                    let mut output = Task::none();
                     match self.text_box.replace("/", "").as_str() {
-                        "save" => return Task::done(Message::SaveSheet),
-                        "reload" => return Task::done(Message::ReloadSheet),
+                        "save" => output = Task::done(Message::SaveSheet),
+                        "reload" => output = Task::done(Message::ReloadSheet),
+                        "clear" => output = Task::done(Message::ClearChat),
                         _ => (),
                     }
                     self.text_box.clear();
+                    return output;
                 } else {
                     if let Some(ref client) = self.client {
                         let s = self.text_box.clone();
@@ -173,12 +178,13 @@ impl App {
                     .map(|_| Message::Nothing);
                 // TODO add history for undo
             }
-            Message::SheetSaved(_) => {
+            Message::SheetSaved(()) => {
                 let s = self.tool_sender.clone();
                 return Task::future(async move { s.send("Sheet saved".to_string()).await })
                     .map(|_| Message::Nothing);
             }
             Message::FileSelected(file_handle) => {
+                self.path = file_handle.path().to_path_buf();
                 let future = load(file_handle.path().to_path_buf());
                 return Task::perform(future, |f| match f {
                     Ok(e) => Message::SheetLoaded(e),
@@ -202,6 +208,7 @@ impl App {
                     if let Ok(m) = f {
                         Message::SheetSaved(m)
                     } else {
+                        error!("Sheet failed to save");
                         Message::Nothing
                     }
                 });
@@ -214,6 +221,20 @@ impl App {
                         Message::Nothing
                     }
                 });
+            }
+            Message::ClearChat => {
+                if let Some(ref client) = self.client {
+                    let c = client.clone();
+                    self.tool_history.clear();
+                    self.chat_history.clear();
+                    let s = self.tool_sender.clone();
+                    return Task::future(async move {
+                        let c = c;
+                        let _ = s.send("Clear chat".to_string()).await;
+                        c.clear().await
+                    })
+                    .map(|_| Message::Nothing);
+                }
             }
         }
 
@@ -241,21 +262,7 @@ impl App {
     }
 
     fn new() -> Self {
-        let file = FileDialog::new()
-            .set_directory("../")
-            .add_filter("json", &["json"])
-            .pick_file();
-
-        let sheet = if let Some(ref f) = file {
-            let s = fs::read_to_string(&f).expect("Invalid file path");
-            let c: Character = serde_json::from_str(&s).unwrap_or_default();
-            if c.name.is_empty() {
-                warn!("Loading likely failed!");
-            }
-            c
-        } else {
-            Character::default()
-        };
+        let sheet = Character::default();
 
         let sheet = Arc::new(parking_lot::Mutex::new(sheet));
 
@@ -276,7 +283,7 @@ impl App {
             client_lock: false,
             client_thinking: false,
             client: None,
-            path: file.unwrap_or(PathBuf::from("/")),
+            path: PathBuf::from("/"),
             chat_history: vec![],
             tool_history: vec![],
             text_box: String::new(),
@@ -296,7 +303,7 @@ impl App {
     }
 }
 #[derive(Clone)]
-enum Event {
+pub enum Event {
     Ready(Sender<Receiver<String>>),
     Item(String),
 }
@@ -339,6 +346,7 @@ pub enum Message {
     SaveSheet,
     ReloadSheet,
     ChooseFile,
+    ClearChat,
 }
 
 pub enum SWidget {
@@ -354,16 +362,33 @@ impl Scores {
         let list = sheet
             .ability_scores
             .iter()
-            .map(|f| format!("{} ({:+})", f.get(), f.get_bonus()))
+            .map(|f| format!("{}", f.get()))
             .into_iter()
             .collect::<Vec<String>>();
-
-        let names = ["str", "dex", "con", "int", "wis", "char"];
 
         let list = list
             .into_iter()
             .map(|f| iced::widget::text(f).into())
             .collect();
+
+        let base_numbers = iced::widget::Column::from_vec(list).align_x(Horizontal::Right);
+
+        let list = sheet
+            .ability_scores
+            .iter()
+            .map(|f| format!("({:+})", f.modifier()))
+            .into_iter()
+            .collect::<Vec<String>>();
+
+        let list = list
+            .into_iter()
+            .map(|f| iced::widget::text(f).into())
+            .collect();
+
+        let bonuses = Column::from_vec(list);
+
+        let names = ["str", "dex", "con", "int", "wis", "char"];
+
         let titles = Column::from_vec(
             names
                 .into_iter()
@@ -371,8 +396,7 @@ impl Scores {
                 .map(|f| text(f).into())
                 .collect::<Vec<Element<_>>>(),
         );
-        let numbers = iced::widget::Column::from_vec(list);
-        let r = row![titles, numbers].spacing(20).padding(10);
+        let r = row![titles, base_numbers, bonuses].spacing(20).padding(10);
 
         Container::new(r)
             .style(|theme: &Theme| {
@@ -393,7 +417,7 @@ impl SkillsWidget {
         let names = Skill::ALL_ITER.iter().map(|f| format!("{}", f));
         let numbers = Skill::ALL_ITER
             .iter()
-            .map(|f| format!("+{}", sheet.skills.check(f, &sheet.ability_scores)));
+            .map(|f| format!("{:+}", sheet.skills.check(f, &sheet.ability_scores)));
 
         let names = names.map(|f| text(f).into()).collect::<Vec<Element<_>>>();
 
@@ -450,13 +474,16 @@ impl HealthWidget {
 #[derive(Clone)]
 pub struct ClientWrapper<T: AsRef<Path> + Clone> {
     pub inner: Arc<Mutex<MyClient<T>>>,
+    pub tokens: Arc<parking_lot::Mutex<u64>>,
 }
 
 impl<T: AsRef<Path> + Clone> ClientWrapper<T> {
     pub async fn prompt<S: AsRef<str>>(&self, s: S) -> anyhow::Result<String> {
         let mut guard = self.inner.lock().await;
 
-        guard.prompt(s).await
+        let res = guard.prompt(s).await;
+        *self.tokens.lock() = guard.get_tokens();
+        res
     }
 
     pub async fn new(
@@ -468,7 +495,18 @@ impl<T: AsRef<Path> + Clone> ClientWrapper<T> {
         let inner = MyClient::new(path, client, sheet, sender).await?;
         Ok(Self {
             inner: Arc::new(Mutex::new(inner)),
+            tokens: Arc::new(parking_lot::Mutex::new(0)),
         })
+    }
+
+    pub fn get_tokens(&self) -> u64 {
+        *self.tokens.lock()
+    }
+
+    pub async fn clear(&self) {
+        let mut guard = self.inner.lock().await;
+        guard.clear();
+        *self.tokens.lock() = 0;
     }
 }
 

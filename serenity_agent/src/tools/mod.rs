@@ -13,8 +13,7 @@ pub mod armor;
 pub mod get_sheet;
 pub mod inventory;
 pub mod recalculate;
-pub mod reload;
-pub mod save_sheet;
+
 pub mod skills;
 
 pub mod search;

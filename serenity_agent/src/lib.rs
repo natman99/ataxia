@@ -27,7 +27,6 @@ use crate::tools::basic::{Adder, Multiply, Subtract};
 use crate::tools::damage::Damage;
 use crate::tools::get_sheet::GetSheet;
 use crate::tools::heal::Heal;
-use crate::tools::save_sheet::SaveSheet;
 use crate::tools::search::Search;
 
 mod database;
@@ -70,9 +69,6 @@ impl<T: AsRef<Path> + Clone> MyClient<T> {
             .dynamic_tool(Damage {
                 inner: sheet.clone(),
             })
-            .dynamic_tool(SaveSheet {
-                inner: sheet.clone(),
-            })
             .dynamic_tool(Heal {
                 inner: sheet.clone(),
             })
@@ -102,10 +98,6 @@ impl<T: AsRef<Path> + Clone> MyClient<T> {
             })
             .dynamic_tool(tools::recalculate::Recalculate {
                 inner: sheet.clone(),
-            })
-            .dynamic_tool(tools::reload::Reload {
-                inner: sheet.clone(),
-                path: path.as_ref().to_path_buf(),
             })
             .dynamic_tool(tools::feature::add::AddFeature {
                 inner: sheet.clone(),
@@ -211,27 +203,27 @@ impl<T: AsRef<Path> + Clone> MyClient<T> {
     }
 
     pub async fn prompt<S: AsRef<str>>(&mut self, s: S) -> anyhow::Result<String> {
-        let result: CheckOutput = self
-            .judge_agent
-            .prompt_typed(format!(
-                "new prompt: {}. \n\nPrevious context: {:#?}",
-                s.as_ref(),
-                &self.prev_messages
-            ))
-            .await?;
-        if result.confidence > 60 {
-            debug!("{:?}: {:?}", result.classification, result.reason);
-            match result.classification {
-                PromptClassification::SameTopic => {}
-                PromptClassification::NewTopic => {
-                    debug!("Clearing messages");
+        // let result: CheckOutput = self
+        //     .judge_agent
+        //     .prompt_typed(format!(
+        //         "new prompt: {}. \n\nPrevious context: {:#?}",
+        //         s.as_ref(),
+        //         &self.prev_messages
+        //     ))
+        //     .await?;
+        // if result.confidence > 60 {
+        //     debug!("{:?}: {:?}", result.classification, result.reason);
+        //     match result.classification {
+        //         PromptClassification::SameTopic => {}
+        //         PromptClassification::NewTopic => {
+        //             debug!("Clearing messages");
 
-                    self.messages.clear();
-                    self.tokens = 0;
-                    self.prev_messages.clear();
-                }
-            }
-        }
+        //             self.messages.clear();
+        //             self.tokens = 0;
+        //             self.prev_messages.clear();
+        //         }
+        //     }
+        // }
 
         let mut response = self
             .agent
@@ -256,7 +248,21 @@ impl<T: AsRef<Path> + Clone> MyClient<T> {
                                     debug!("Thoughts: {}", tool_call.function.arguments)
                                 }
 
-                                let _ = self.sender.send(tool_call.function.name).await;
+                                if tool_call.function.name == "Search" {
+                                    let text = format!(
+                                        "Search: {}",
+                                        tool_call
+                                            .function
+                                            .arguments
+                                            .get("search_term")
+                                            .unwrap_or(Default::default())
+                                            .as_str()
+                                            .unwrap_or("")
+                                    );
+                                    let _ = self.sender.send(text).await;
+                                } else {
+                                    let _ = self.sender.send(tool_call.function.name).await;
+                                }
                             }
                             _ => (),
                         }
@@ -289,6 +295,16 @@ impl<T: AsRef<Path> + Clone> MyClient<T> {
             }
         }
         Ok(out)
+    }
+
+    pub fn get_tokens(&self) -> u64 {
+        self.tokens
+    }
+
+    pub fn clear(&mut self) {
+        self.messages.clear();
+        self.tokens = 0;
+        self.prev_messages.clear();
     }
 }
 

@@ -1,12 +1,22 @@
 use iced::{
     Border, Color, Element, Length, Theme,
     alignment::Horizontal::Left,
-    widget::{self, Column, Container, column, container, row, text},
+    widget::{self, Column, Container, Scrollable, column, container, row, text},
 };
 
 use crate::{App, Message};
 
 pub fn chat_widget<'a>(app: &'a App) -> Element<'a, Message> {
+    let tokens = {
+        if let Some(ref client) = app.client {
+            client.get_tokens()
+        } else {
+            0
+        }
+    };
+
+    let context_message = text(format!("Total tokens: {}", tokens));
+
     let chat_history: Element<_> = {
         let texts = app
             .chat_history
@@ -49,6 +59,7 @@ pub fn chat_widget<'a>(app: &'a App) -> Element<'a, Message> {
             .map(|f| text(f).into())
             .collect::<Vec<Element<_>>>();
         let i = Column::from_vec(tools).spacing(10).width(100);
+        let i = Scrollable::new(i).anchor_bottom();
         let c = Container::new(i).style(|f| {
             let pair = f.extended_palette().secondary.strong;
             widget::container::Style::default()
@@ -59,9 +70,15 @@ pub fn chat_widget<'a>(app: &'a App) -> Element<'a, Message> {
         c.into()
     };
 
-    let chat_window = row![column![chat_history, chat_box], tool_history];
+    let top_row = row![context_message];
 
-    let container = Container::new(chat_window)
+    let chat_col = column![chat_history, chat_box];
+
+    let chat_window = row![chat_col, tool_history].spacing(20);
+
+    let main_row = column![top_row, chat_window];
+
+    let container = Container::new(main_row)
         .style(|f| {
             let pair = f.extended_palette().primary.base;
 

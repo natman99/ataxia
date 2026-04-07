@@ -13,49 +13,49 @@
   },
   "class": "Fighter",
   "inventory": {
-    "wand_of_smiles": {
-      "id": "wand_of_smiles",
-      "name": "Wand of Smiles",
-      "description": "A magical wand that can influence emotions or social interactions.",
-      "quantity": 1,
-      "roll": null
-    },
     "wooden_sword": {
       "id": "wooden_sword",
       "name": "Wooden Sword",
       "description": "A simple wooden sword, suitable for a beginner warrior. It is light and easy to handle.",
       "quantity": 1,
       "roll": null
+    },
+    "wand_of_smiles": {
+      "id": "wand_of_smiles",
+      "name": "Wand of Smiles",
+      "description": "A magical wand that can influence emotions or social interactions.",
+      "quantity": 1,
+      "roll": null
     }
   },
   "ability_scores": {
     "str": {
-      "base": 10,
+      "base": 9,
       "bonus": 0,
       "override_score": null
     },
     "dex": {
-      "base": 10,
+      "base": 14,
       "bonus": 0,
       "override_score": null
     },
     "con": {
-      "base": 10,
-      "bonus": 2,
+      "base": 15,
+      "bonus": 0,
       "override_score": null
     },
     "int": {
-      "base": 10,
+      "base": 18,
       "bonus": 0,
       "override_score": null
     },
     "wis": {
-      "base": 10,
+      "base": 16,
       "bonus": 0,
       "override_score": null
     },
     "char": {
-      "base": 10,
+      "base": 20,
       "bonus": 0,
       "override_score": null
     }
@@ -78,8 +78,8 @@
     "deception": false,
     "intimidation": false,
     "performance": false,
-    "persuasion": false,
-    "proficiency_bonus": 0
+    "persuasion": true,
+    "proficiency_bonus": 2
   },
   "spells": {
     "spells": {}
