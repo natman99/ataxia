@@ -21,24 +21,24 @@ pub use item::Item;
 use ability_score::AbilityScore;
 
 use crate::{
+    class::{Class, Classes, Level},
     feature::{Feature, Features, MeterAdd},
     lore::Lore,
     meter::{Meter, Meters, Metric},
     senses::Senses,
-    sheet::{class::Class, skills::Skills, spells::Spells},
+    sheet::{class::ClassType, skills::Skills, spells::Spells},
 };
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default, JsonSchema)]
 #[serde(default)]
 pub struct Character {
     pub name: String,
-    pub level: Level,
     pub race: String,
-    // TODO fix later
+
+    pub class: Classes,
     pub initiative: Initiative,
     pub armor_class: ArmorClass,
     pub health: HitPoints,
-    pub class: Class,
     pub inventory: Inventory,
     pub ability_scores: AbilityScores,
     pub skills: Skills,
@@ -55,14 +55,21 @@ impl Character {
         name: String,
         level: u32,
         health: HitPoints,
-        class: Class,
+        class: ClassType,
         ability_scores: AbilityScores,
     ) -> Self {
         Self {
             name,
-            level: Level(level),
             health,
-            class,
+            class: Classes {
+                classes: vec![Class {
+                    level: Level(level),
+                    hit_dice: class.get_hit_dice(),
+                    health_bonus_per_level: 0,
+
+                    class,
+                }],
+            },
             skills: Skills::default(),
             inventory: Default::default(),
             ability_scores,
@@ -150,7 +157,7 @@ impl Character {
         }
 
         // do last
-        s.health = s.health.fixed(s.level, &s.ability_scores);
+        s.health = s.health.fixed(&s.ability_scores, &s.class);
         s
     }
 }
@@ -290,20 +297,5 @@ impl Initiative {
     fn new(scores: &AbilityScores) -> Self {
         // safety: negative modifier can never be above 10.
         Self((10 + scores.dex.modifier()) as u32)
-    }
-}
-
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Serialize, Deserialize, JsonSchema)]
-pub struct Level(pub u32);
-
-impl Default for Level {
-    fn default() -> Self {
-        Self(1)
-    }
-}
-
-impl Display for Level {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
     }
 }

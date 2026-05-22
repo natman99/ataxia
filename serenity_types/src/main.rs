@@ -1,8 +1,6 @@
 use std::fs;
 
-use serenity_types::{
-    AbilityScores, Character, HitPoints, Level, ability_score::AbilityScore, database,
-};
+use serenity_types::{AbilityScores, Character, HitPoints, ability_score::AbilityScore, database};
 
 fn main() {
     // let s = std::fs::read_to_string(r"../5e-database\src\2014\5e-SRD-Spells.json").unwrap();

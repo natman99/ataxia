@@ -1,18 +1,12 @@
 {
-  "name": "Billy Bob Jones",
-  "race": "Human",
+  "name": "test",
+  "race": "",
   "class": {
     "classes": [
       {
         "class": "Fighter",
         "level": 1,
-        "hit_dice": "D8",
-        "health_bonus_per_level": 0
-      },
-      {
-        "class": "Warlock",
-        "level": 2,
-        "hit_dice": "D6",
+        "hit_dice": "D20",
         "health_bonus_per_level": 0
       }
     ]

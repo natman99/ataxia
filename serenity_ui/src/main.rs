@@ -79,6 +79,10 @@ impl App {
             style.color = Some(e.success);
             style
         });
+        let level = {
+            let c = format!("{}", sheet.class);
+            text(c)
+        };
 
         let w = self
             .widgets
@@ -97,7 +101,7 @@ impl App {
 
         let chat_window = chat_widget::chat_widget(&self);
 
-        let cols = column![title, control_buttons, r, chat_window]
+        let cols = column![title, level, control_buttons, r, chat_window]
             .spacing(20)
             .padding(20);
 

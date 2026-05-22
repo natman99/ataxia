@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -37,15 +39,29 @@ pub enum Sense {
     TrueSight,
 }
 
-// impl Display for ExtraSenses {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         let s = match self {
-//             ExtraSenses::BlindSight => "Blindsight",
-//             ExtraSenses::DarkVision => "Darkvision",
-//             ExtraSenses::TremorSense => "Tremorsense",
-//             ExtraSenses::TrueSight => "Truesight",
-//         };
+impl Display for ExtraSenses {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut out = String::new();
 
-//         write!(f, "{}", s)
-//     }
-// }
+        if self.blind_sight {
+            out.push_str("BlindSight ");
+        }
+
+        if self.dark_vision {
+            out.push_str("DarkVision");
+        }
+
+        if self.tremor_sense {
+            out.push_str("TremorSense");
+        }
+
+        if self.true_sight {
+            out.push_str("TrueSight");
+        }
+
+        if out.is_empty() {
+            out.push_str("None");
+        }
+        write!(f, "{}", out)
+    }
+}

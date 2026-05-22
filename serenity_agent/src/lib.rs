@@ -35,8 +35,9 @@ mod tools;
 const QDRANT_URL: &str = "http://localhost:6334";
 const INFO_COLLECTION: &str = "info";
 const VECTOR_SIZE: u64 = 768;
+// const VECTOR_SIZE: u64 = 384;
 
-const DOC_PATH: &str = r"C:\Users\Nathaniel\Nextcloud\Documents\Dnd";
+const DOC_PATH: &str = r"~/Nextcloud/Documents/Dnd";
 
 const BLACKLIST: [&str; 4] = ["Wiki", "base", "Templates", "Categories"];
 pub struct MyClient<T: AsRef<Path> + Clone> {
@@ -340,7 +341,7 @@ impl Reranker {
         //
         use ort::ep::{CPU, CUDA, DirectML};
         let execution_providers: Vec<ExecutionProviderDispatch> = vec![
-            CUDA::default().build().error_on_failure(),
+            CUDA::default().build(),
             DirectML::default().build(),
             CPU::default().build(),
         ];
