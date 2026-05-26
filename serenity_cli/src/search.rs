@@ -1,4 +1,4 @@
-use std::{fs, sync::Arc};
+use std::sync::Arc;
 
 use edit_distance::edit_distance;
 use serenity_types::database::{condition::Condition, spell::Spell};

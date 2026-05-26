@@ -1,12 +1,9 @@
 use std::fs;
 
-use edit_distance::edit_distance;
-use serenity_types::{Character, database::spell::Spell};
-
 use crate::{
     App,
     command::{self, CommandError},
-    commands, search,
+    search,
 };
 
 pub fn add(command: &str, app: &mut App) -> command::Result<()> {
