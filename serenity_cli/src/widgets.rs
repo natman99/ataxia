@@ -12,8 +12,8 @@ use crate::FocusedContent;
 pub enum State {
     #[default]
     Main,
-    Spells(Option<usize>),
-    Features(Option<usize>),
+    Spells,
+    Features,
     Inventory,
     // Stats,
     // Skills,
@@ -28,9 +28,9 @@ impl State {
     ) {
         match self {
             State::Main => render_main(frame, area, sheet, focused_content),
-            State::Spells(page) => render_spells(frame, area, sheet, *page),
-            State::Features(_) => todo!(),
-            State::Inventory => todo!(),
+            State::Spells => render_spells(frame, area, sheet),
+            State::Features => frame.render_widget("todo", area),
+            State::Inventory => frame.render_widget("todo", area),
             // State::Stats => todo!(),
             // State::Skills => todo!(),
         }
@@ -156,7 +156,7 @@ fn render_main_right(sheet: &Character, frame: &mut Frame, area: Rect) {
     frame.render_widget(table, area);
 }
 
-fn render_spells<'a>(frame: &mut Frame, area: Rect, sheet: &'a Character, page: Option<usize>) {
+fn render_spells<'a>(frame: &mut Frame, area: Rect, sheet: &'a Character) {
     let mut rows = vec![];
 
     let header = Row::new(["Name", "Time", "Range", "Hit/DC", "Effect", "Duration"]);
