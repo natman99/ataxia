@@ -90,16 +90,13 @@ pub fn search<'a>(term: &str, data: &'a Data) -> Vec<String> {
 
     let spells = search_spells(&term, &data.spells);
 
-    fs::write("spell.txt", format!("{:#?}", spells)).unwrap();
-
     let mut spells = spells
         .iter()
         .map(|f| f.to_string())
         .collect::<Vec<String>>();
 
     let conditions = search_conditions(&term, &data.conditions);
-    fs::write("text.txt", format!("{:#?}", conditions)).unwrap();
-    fs::write("len.txt", format!("{:#?}", data.conditions)).unwrap();
+
     let mut conditions = conditions
         .iter()
         .map(|f| f.to_string())

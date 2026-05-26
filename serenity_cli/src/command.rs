@@ -2,7 +2,7 @@ use std::fmt::Debug;
 
 use thiserror::Error;
 
-use crate::{App, commands, widgets::State};
+use crate::{App, commands};
 
 macro_rules! command {
     ($key:literal, $command:expr) => {
@@ -87,10 +87,7 @@ pub struct Command {
 
 impl Debug for Command {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Command")
-            .field("key", &self.key)
-            // .field("function", &self.function)
-            .finish()
+        f.debug_struct("Command").field("key", &self.key).finish()
     }
 }
 
