@@ -5,11 +5,14 @@ use serenity_types::database::{condition::Condition, spell::Spell};
 
 use crate::data::Data;
 
+const THRESHHOLD: usize = 3;
+
 pub fn search_spells<'a>(term: &str, spells: &'a Arc<[Spell]>) -> Vec<&'a Spell> {
     let data = spells
         .iter()
-        .map(|f| f.name.as_str())
-        .collect::<Vec<&str>>();
+        .map(|f| f.index.replace("-", " "))
+        .collect::<Vec<String>>();
+    let data = data.iter().map(|f| f.as_str()).collect::<Vec<&str>>();
     let elements = filter(term, &data);
 
     let mut results = vec![];
@@ -28,10 +31,11 @@ pub fn search_conditions<'a>(term: &str, conditions: &'a Arc<[Condition]>) -> Ve
 
 fn filter<'a>(term: &str, data: &[&str]) -> Vec<usize> {
     let mut out = vec![];
+
     let fuzzy = data
         .iter()
         .enumerate()
-        .filter(|(_i, f)| edit_distance(**f, term) < 2)
+        .filter(|(_i, f)| edit_distance(**f, term) < THRESHHOLD)
         .map(|f| (f.0, *f.1))
         .collect::<Vec<(usize, &str)>>();
 
@@ -41,14 +45,14 @@ fn filter<'a>(term: &str, data: &[&str]) -> Vec<usize> {
     let fuzzy_first = data
         .iter()
         .enumerate()
-        .filter(|(_i, f)| edit_distance(&&f, &first) < 2)
+        .filter(|(_i, f)| edit_distance(&&f, &first) < THRESHHOLD)
         .map(|f| (f.0, *f.1))
         .collect::<Vec<(usize, &str)>>();
 
     let exact_first = data
         .iter()
         .enumerate()
-        .filter(|(_i, f)| f.starts_with(term))
+        .filter(|(_i, f)| f.to_lowercase().starts_with(&term))
         .map(|f| (f.0, *f.1))
         .collect::<Vec<(usize, &str)>>();
 
@@ -67,17 +71,26 @@ fn filter<'a>(term: &str, data: &[&str]) -> Vec<usize> {
     out
 }
 
-pub fn search<'a, T: Display>(term: &str, data: &'a Data) -> Vec<String> {
+pub fn search<'a>(term: &str, data: &'a Data) -> Vec<String> {
     let mut out = vec![];
 
-    let spells = search_spells(term, &data.spells);
+    let term = term.to_lowercase();
 
-    let conditions = search_conditions(term, &data.conditions);
+    let spells = search_spells(&term, &data.spells);
+
+    let mut spells = spells
+        .iter()
+        .map(|f| f.to_string())
+        .collect::<Vec<String>>();
+
+    let conditions = search_conditions(&term, &data.conditions);
     let mut conditions = conditions
         .iter()
         .map(|f| f.to_string())
         .collect::<Vec<String>>();
+
     out.append(&mut conditions);
+    out.append(&mut spells);
 
     out
 }

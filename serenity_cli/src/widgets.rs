@@ -2,10 +2,10 @@ use std::io;
 
 use ratatui::{
     Frame,
-    layout::{Constraint, Direction, Layout, Rect},
+    layout::{Constraint, Direction, Layout, Margin, Rect},
     style::Stylize,
-    text::Text,
-    widgets::{Block, Cell, Paragraph, Row, Table},
+    text::{Line, Text},
+    widgets::{Block, Cell, Paragraph, Row, Scrollbar, Table, Wrap},
 };
 use serenity_types::{
     Character,
@@ -13,7 +13,7 @@ use serenity_types::{
     skills::{Skill, Skills},
 };
 
-use crate::{SpellsBuffer, commands::spell};
+use crate::FocusedContent;
 
 #[derive(Debug, Default)]
 pub enum State {
@@ -26,9 +26,15 @@ pub enum State {
     // Skills,
 }
 impl State {
-    pub fn render<'a>(&self, frame: &mut Frame, area: Rect, sheet: &'a Character) {
+    pub fn render<'a>(
+        &self,
+        frame: &mut Frame,
+        area: Rect,
+        sheet: &'a Character,
+        focused_content: &mut FocusedContent,
+    ) {
         match self {
-            State::Main => render_main(frame, area, sheet),
+            State::Main => render_main(frame, area, sheet, focused_content),
             State::Spells(page) => render_spells(frame, area, sheet, *page),
             State::Features(_) => todo!(),
             State::Inventory => todo!(),
@@ -38,7 +44,7 @@ impl State {
     }
 }
 
-fn render_main(frame: &mut Frame, area: Rect, sheet: &Character) {
+fn render_main(frame: &mut Frame, area: Rect, sheet: &Character, content: &mut FocusedContent) {
     let (top, bottom) = {
         let layout = Layout::default()
             .direction(Direction::Vertical)
@@ -57,6 +63,33 @@ fn render_main(frame: &mut Frame, area: Rect, sheet: &Character) {
 
     render_main_left(sheet, frame, top_left);
     render_main_right(sheet, frame, top_right);
+    render_focused_content(frame, bottom, content);
+}
+
+fn render_focused_content(frame: &mut Frame, area: Rect, content: &mut FocusedContent) {
+    let scrollbar = Scrollbar::new(ratatui::widgets::ScrollbarOrientation::VerticalRight);
+
+    // let lines = content
+    // .items
+    // .iter()
+    // .map(|f| Paragraph::from(f.as_str()))
+    // .collect::<Vec<Paragraph>>();
+
+    let p = Paragraph::new(content.buf.as_str())
+        .wrap(Wrap { trim: false })
+        .scroll((content.scroll.get_position() as u16, 0))
+        .block(Block::bordered());
+
+    frame.render_stateful_widget(
+        scrollbar,
+        area.inner(Margin {
+            vertical: 1,
+            horizontal: 0,
+        }),
+        &mut content.scroll,
+    );
+
+    frame.render_widget(p, area);
 }
 
 fn render_main_left(sheet: &Character, frame: &mut Frame, area: Rect) {

@@ -47,18 +47,18 @@ impl Display for Spell {
 
         out.push_str(&format!("{}\n", self.name));
         out.push_str(&format!(
-            "Range: {}. Duration: {}",
+            "Range: {}; Duration: {}; ",
             self.range, self.duration
         ));
         out.push_str(&format!(
-            "Cast time: {}. Level: {}\n",
+            "Cast time; {}. Level: {};\n",
             self.casting_time, self.level
         ));
 
         if let Some(ref dmg) = self.damage {
             let mut inner = String::new();
             if let Some(ref d) = dmg.damage_at_slot_level {
-                let t = "Damage error".to_string();
+                let t = "".to_string();
                 let min_damage = {
                     d.n1.as_ref()
                         .unwrap_or(d.n2.as_ref().unwrap_or(d.n3.as_ref().unwrap_or(
@@ -87,6 +87,46 @@ impl Display for Spell {
 
             out.push_str(&inner);
         }
+        {
+            if self.concentration {
+                out.push_str("Concentation; ");
+            }
+
+            if let Some(ref dc) = self.dc {
+                out.push_str(&format!(
+                    "DC: {}, Success: {}; ",
+                    dc.dc_type.name, dc.dc_success
+                ));
+            }
+
+            out.push_str(&format!("{}; ", self.components.join(",")));
+
+            if self.components.is_empty() {
+                out.push_str("None; ");
+            }
+
+            if self.ritual {
+                out.push_str("Ritual;");
+            }
+
+            out.push_str(&format!("{};\n", self.school.name));
+        }
+
+        let mut desc = String::new();
+        self.desc
+            .iter()
+            .for_each(|f| desc.push_str(&format!("{}\n", f)));
+
+        out.push_str(&desc);
+        out.push('\n');
+
+        out.push_str(&format!(
+            "Classes: {:#?}",
+            self.classes
+                .iter()
+                .map(|f| f.name.as_str())
+                .collect::<Vec<&str>>()
+        ));
 
         write!(f, "{out}")
     }

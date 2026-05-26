@@ -8,22 +8,22 @@ use std::{
 };
 
 use clap::{Parser, Subcommand};
+use ratatui::crossterm;
 use ratatui::{
     DefaultTerminal, Frame,
-    crossterm::{
-        self,
-        event::{Event, KeyCode, KeyEvent, KeyModifiers},
+    crossterm::event::{
+        DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEvent, KeyModifiers,
     },
     layout::{Constraint, Direction, Layout, Rect},
     style::Color,
-    widgets::{Block, Paragraph, Table},
+    widgets::{Block, Paragraph, ScrollbarState, Table},
 };
 use serde::Serialize;
 use serenity_types::{Character, database::spell::Spell};
 use tui_input::{Input, backend::crossterm::EventHandler};
 
 use crate::{
-    command::{CommandHandler, make_command_handler},
+    command::{CommandError, CommandHandler, make_command_handler},
     data::Data,
     widgets::State,
 };
@@ -104,20 +104,26 @@ fn main() -> color_eyre::Result<()> {
     let str = sheet.name.clone() + ".json";
     let path = cli.path.unwrap_or(PathBuf::from(str));
 
-    let spells = {
-        let s = fs::read_to_string(PATH).unwrap();
-        let s: Vec<Spell> = serde_json::from_str(&s).unwrap();
-        s
-    };
-
-    let mut app = App::new(sheet, path, spells);
+    let mut app = App::new(sheet, path);
     ratatui::run(|term| app.run(term))?;
     Ok(())
 }
-#[derive(Debug, Default, Clone)]
-struct SpellsBuffer<'a> {
-    pub len: usize,
-    pub buff: Table<'a>,
+#[derive(Debug, Default)]
+struct FocusedContent {
+    // items: Vec<String>,
+    buf: String,
+    scroll: ScrollbarState,
+}
+
+impl FocusedContent {
+    pub fn new(content: String) -> Self {
+        let scroll = ScrollbarState::new(content.split("\n").count()).viewport_content_length(3);
+        Self {
+            // items: content,
+            buf: content,
+            scroll,
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -129,11 +135,15 @@ struct App {
     path: PathBuf,
     command_output: String,
     data: Data,
+    focused_content: FocusedContent,
+    prev_commands: Vec<String>,
+    prev_command_idx: usize,
 }
 
 impl App {
-    pub fn new(sheet: Character, path: PathBuf, spells: Vec<Spell>) -> Self {
-        let spells = Arc::new(spells);
+    pub fn new(sheet: Character, path: PathBuf) -> Self {
+        let data = Data::new().unwrap();
+
         Self {
             input: Input::new("".to_string()),
             exit: false,
@@ -141,16 +151,23 @@ impl App {
             sheet,
             path,
             command_output: String::new(),
-            spells,
+            data,
+            focused_content: Default::default(),
+            prev_commands: Default::default(),
+            prev_command_idx: 0,
         }
     }
     fn run(&mut self, terminal: &mut DefaultTerminal) -> std::io::Result<()> {
+        crossterm::execute!(terminal.backend_mut(), EnableMouseCapture)?;
+
         loop {
             terminal.draw(|frame| self.render(frame))?;
             self.handle_events()?;
             if self.exit {
                 let s = serde_json::to_string_pretty(&self.sheet).expect("Serde error");
                 fs::write(&self.path, s)?;
+
+                crossterm::execute!(terminal.backend_mut(), DisableMouseCapture)?;
 
                 break Ok(());
             }
@@ -166,7 +183,8 @@ impl App {
             (split[0], split[1], split[2])
         };
 
-        self.state.render(frame, area, &self.sheet);
+        self.state
+            .render(frame, area, &self.sheet, &mut self.focused_content);
         frame.render_widget(Paragraph::new(self.command_output.as_str()), output);
         self.render_input(frame, text_box_frame);
     }
@@ -186,30 +204,118 @@ impl App {
 
     fn handle_events(&mut self) -> io::Result<()> {
         let event = crossterm::event::read()?;
+
+        if let Event::Mouse(e) = event {
+            if e.kind.is_scroll_down() {
+                self.focused_content.scroll.next();
+                self.focused_content.scroll.next();
+                self.focused_content.scroll.next();
+            }
+
+            if e.kind.is_scroll_up() {
+                self.focused_content.scroll.prev();
+                self.focused_content.scroll.prev();
+                self.focused_content.scroll.prev();
+            }
+        }
+
         if let Event::Key(KeyEvent {
             code, modifiers, ..
         }) = event
         {
             if modifiers.contains(KeyModifiers::CONTROL) && code == KeyCode::Char('c') {
                 self.input.reset();
+                self.prev_command_idx = 0;
                 return Ok(());
             }
+
             match code {
                 KeyCode::Esc => self.exit = true,
                 KeyCode::Enter => self.execute_command(),
+                KeyCode::Up => {
+                    if self.prev_commands.is_empty() {
+                        return Ok(());
+                    }
+                    self.prev_command_idx = self
+                        .prev_command_idx
+                        .saturating_add(1)
+                        .min(self.prev_commands.len());
+
+                    let idx = self
+                        .prev_commands
+                        .len()
+                        .saturating_sub(self.prev_command_idx);
+                    // .saturating_sub(1);
+
+                    self.input = self
+                        .input
+                        .clone()
+                        .with_value(self.prev_commands[idx].clone());
+                }
+                KeyCode::Down => {
+                    if self.prev_commands.is_empty() {
+                        return Ok(());
+                    }
+                    self.prev_command_idx = self.prev_command_idx.saturating_sub(1);
+
+                    let idx = self
+                        .prev_commands
+                        .len()
+                        .saturating_sub(self.prev_command_idx);
+                    // .saturating_sub(1);
+
+                    if idx == self.prev_commands.len() {
+                        self.input.reset();
+                        self.prev_command_idx = 0;
+                        return Ok(());
+                    }
+
+                    self.input = self
+                        .input
+                        .clone()
+                        .with_value(self.prev_commands[idx].clone());
+                }
+                KeyCode::Tab => self.autocomplete(),
                 _ => {
                     self.input.handle_event(&event);
                 }
             }
         }
+
         Ok(())
     }
 
     fn execute_command(&mut self) {
         let cmd = self.input.value_and_reset();
         match COMMAND_HANDLER.lock().execute(&cmd, self) {
-            Ok(()) => (),
+            Ok(()) => self.command_output.clear(),
             Err(e) => self.command_output = e.to_string(),
         }
+        self.prev_command_idx = 0;
+        self.prev_commands.push(cmd);
+    }
+
+    fn autocomplete(&mut self) {
+        use command::Result;
+        let val = self.input.value();
+        let res: Result<usize> = COMMAND_HANDLER.lock().find(val);
+        match res {
+            Ok(n) => {
+                let binding = COMMAND_HANDLER;
+                let binding2 = binding.lock();
+                let cmd = binding2.get_name(n);
+                if let Some(v) = cmd {
+                    self.input = self.input.clone().with_value(v.to_string());
+                }
+                self.command_output.clear();
+            }
+            Err(e) => match e {
+                CommandError::MultipleMatches(opts) => {
+                    self.command_output = opts.join(", ");
+                }
+                _ => (),
+            },
+        };
+        //
     }
 }

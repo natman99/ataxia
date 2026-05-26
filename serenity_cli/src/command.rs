@@ -18,7 +18,7 @@ pub enum CommandError {
     #[error("Unknown command")]
     Unknown,
     #[error("Substring matches for multiple commands")]
-    MultipleMatches,
+    MultipleMatches(Vec<String>),
     #[error("Invalid arguments")]
     ArgumentError,
     #[error("Could not find target")]
@@ -57,8 +57,18 @@ impl CommandHandler {
         } else if res.is_empty() {
             Err(CommandError::Unknown)
         } else {
-            Err(CommandError::MultipleMatches)
+            let opts = res
+                .iter()
+                .map(|f| &f.1.key)
+                .cloned()
+                .collect::<Vec<String>>();
+            Err(CommandError::MultipleMatches(opts))
         }
+    }
+
+    /// Get command name from index. For autocomplete.
+    pub fn get_name(&self, idx: usize) -> Option<&str> {
+        self.commands.get(idx).map(|f| f.key.as_str())
     }
 
     pub fn execute(&mut self, command: &str, state: &mut App) -> Result<()> {
@@ -91,6 +101,7 @@ pub fn make_command_handler() -> CommandHandler {
     handler.push(command!("inventory", commands::inventory));
     handler.push(command!("main", commands::g_main));
     handler.push(command!("add", commands::add));
+    handler.push(command!("search", commands::search));
 
     handler
 }
