@@ -34,7 +34,6 @@ use crate::{
 pub struct Character {
     pub name: String,
     pub race: String,
-
     pub class: Classes,
     pub initiative: Initiative,
     pub armor_class: ArmorClass,
@@ -48,6 +47,7 @@ pub struct Character {
     pub ability_modifier: Score,
     pub meters: Meters,
     pub lore: Lore,
+    pub walking_speed: WalkingSpeed,
 }
 
 impl Character {
@@ -82,6 +82,7 @@ impl Character {
             features: Default::default(),
             race: Default::default(),
             lore: Default::default(),
+            walking_speed: Default::default(),
         }
     }
 
@@ -159,6 +160,11 @@ impl Character {
         // do last
         s.health = s.health.fixed(&s.ability_scores, &s.class);
         s
+    }
+
+    pub fn save_dc(&self) -> i32 {
+        let a = self.ability_scores.get(&self.ability_modifier);
+        8 + self.skills.proficiency_bonus as i32 + a.modifier()
     }
 }
 
@@ -297,5 +303,21 @@ impl Initiative {
     fn new(scores: &AbilityScores) -> Self {
         // safety: negative modifier can never be above 10.
         Self((10 + scores.dex.modifier()) as u32)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Hash, JsonSchema)]
+/// Walking speed in feet.
+pub struct WalkingSpeed(u32);
+
+impl Default for WalkingSpeed {
+    fn default() -> Self {
+        Self(30)
+    }
+}
+
+impl Display for WalkingSpeed {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} ft", &self.0)
     }
 }

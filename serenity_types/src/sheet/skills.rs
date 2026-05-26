@@ -58,6 +58,27 @@ impl Skill {
         "persuasion",
     ];
 
+    pub const ALL_STR_PRETTY: [&'static str; 18] = [
+        "Athletics",
+        "Acrobatics",
+        "Sleight Of Hand",
+        "Stealth",
+        "Arcana",
+        "History",
+        "Investigation",
+        "Nature",
+        "Religion",
+        "Animal Handling",
+        "Insight",
+        "Medicine",
+        "Perception",
+        "Survival",
+        "Deception",
+        "Intimidation",
+        "Performance",
+        "Persuasion",
+    ];
+
     pub const ALL_ITER: [Skill; 18] = [
         Skill::Athletics,
         Skill::Acrobatics,

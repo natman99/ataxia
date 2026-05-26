@@ -1,4 +1,11 @@
-use std::{fs, io, path::PathBuf};
+use parking_lot::Mutex;
+use std::{
+    cell::{LazyCell, RefCell},
+    collections::HashMap,
+    fs, io,
+    path::PathBuf,
+    sync::Arc,
+};
 
 use clap::{Parser, Subcommand};
 use ratatui::{
@@ -9,13 +16,26 @@ use ratatui::{
     },
     layout::{Constraint, Direction, Layout, Rect},
     style::Color,
-    widgets::{Block, Paragraph},
+    widgets::{Block, Paragraph, Table},
 };
 use serde::Serialize;
-use serenity_types::Character;
+use serenity_types::{Character, database::spell::Spell};
 use tui_input::{Input, backend::crossterm::EventHandler};
 
+use crate::{
+    command::{CommandHandler, make_command_handler},
+    data::Data,
+    widgets::State,
+};
+
+mod command;
+mod commands;
+mod data;
+mod search;
 mod widgets;
+
+const COMMAND_HANDLER: LazyCell<Mutex<CommandHandler>> =
+    LazyCell::new(|| Mutex::new(make_command_handler()));
 
 #[derive(clap::Parser, Debug)]
 #[command(version, about)]
@@ -84,10 +104,22 @@ fn main() -> color_eyre::Result<()> {
     let str = sheet.name.clone() + ".json";
     let path = cli.path.unwrap_or(PathBuf::from(str));
 
-    let mut app = App::new(sheet, path);
+    let spells = {
+        let s = fs::read_to_string(PATH).unwrap();
+        let s: Vec<Spell> = serde_json::from_str(&s).unwrap();
+        s
+    };
+
+    let mut app = App::new(sheet, path, spells);
     ratatui::run(|term| app.run(term))?;
     Ok(())
 }
+#[derive(Debug, Default, Clone)]
+struct SpellsBuffer<'a> {
+    pub len: usize,
+    pub buff: Table<'a>,
+}
+
 #[derive(Debug)]
 struct App {
     input: Input,
@@ -95,16 +127,21 @@ struct App {
     sheet: Character,
     state: State,
     path: PathBuf,
+    command_output: String,
+    data: Data,
 }
 
 impl App {
-    pub fn new(sheet: Character, path: PathBuf) -> Self {
+    pub fn new(sheet: Character, path: PathBuf, spells: Vec<Spell>) -> Self {
+        let spells = Arc::new(spells);
         Self {
             input: Input::new("".to_string()),
             exit: false,
             state: State::default(),
             sheet,
             path,
+            command_output: String::new(),
+            spells,
         }
     }
     fn run(&mut self, terminal: &mut DefaultTerminal) -> std::io::Result<()> {
@@ -121,15 +158,16 @@ impl App {
     }
 
     fn render(&mut self, frame: &mut Frame) {
-        let (area, text_box_frame) = {
+        let (area, output, text_box_frame) = {
             let layout = Layout::default()
                 .direction(Direction::Vertical)
-                .constraints([Constraint::Fill(1), Constraint::Max(3)]);
+                .constraints([Constraint::Fill(1), Constraint::Max(1), Constraint::Max(3)]);
             let split = layout.split(frame.area());
-            (split[0], split[1])
+            (split[0], split[1], split[2])
         };
 
-        frame.render_widget("hello world", area);
+        self.state.render(frame, area, &self.sheet);
+        frame.render_widget(Paragraph::new(self.command_output.as_str()), output);
         self.render_input(frame, text_box_frame);
     }
 
@@ -158,12 +196,20 @@ impl App {
             }
             match code {
                 KeyCode::Esc => self.exit = true,
-                KeyCode::Enter => return Ok(()),
+                KeyCode::Enter => self.execute_command(),
                 _ => {
                     self.input.handle_event(&event);
                 }
             }
         }
         Ok(())
+    }
+
+    fn execute_command(&mut self) {
+        let cmd = self.input.value_and_reset();
+        match COMMAND_HANDLER.lock().execute(&cmd, self) {
+            Ok(()) => (),
+            Err(e) => self.command_output = e.to_string(),
+        }
     }
 }

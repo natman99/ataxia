@@ -1,3 +1,5 @@
+use std::fmt::{Display, write};
+
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -37,6 +39,57 @@ pub struct Spell {
     pub dc: Option<Dc>,
     pub heal_at_slot_level: Option<HealAtSlotLevel>,
     pub area_of_effect: Option<AreaOfEffect>,
+}
+
+impl Display for Spell {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut out = String::new();
+
+        out.push_str(&format!("{}\n", self.name));
+        out.push_str(&format!(
+            "Range: {}. Duration: {}",
+            self.range, self.duration
+        ));
+        out.push_str(&format!(
+            "Cast time: {}. Level: {}\n",
+            self.casting_time, self.level
+        ));
+
+        if let Some(ref dmg) = self.damage {
+            let mut inner = String::new();
+            if let Some(ref d) = dmg.damage_at_slot_level {
+                let t = "Damage error".to_string();
+                let min_damage = {
+                    d.n1.as_ref()
+                        .unwrap_or(d.n2.as_ref().unwrap_or(d.n3.as_ref().unwrap_or(
+                            d.n4.as_ref().unwrap_or(d.n5.as_ref().unwrap_or(
+                                d.n6.as_ref().unwrap_or(d.n7.as_ref().unwrap_or(
+                                    d.n8.as_ref().unwrap_or(d.n9.as_ref().unwrap_or(&t)),
+                                )),
+                            )),
+                        )))
+                };
+                inner.push_str(&min_damage);
+                inner.push(' ');
+
+                if let Some(ref dmg_type) = dmg.damage_type {
+                    inner.push_str(&dmg_type.name);
+
+                    inner.push(' ');
+                }
+
+                if let Some(ref cantrip_dmg) = dmg.damage_at_character_level {
+                    inner.push_str(&format!("{}", cantrip_dmg.n1));
+                }
+
+                inner.push('\n');
+            }
+
+            out.push_str(&inner);
+        }
+
+        write!(f, "{out}")
+    }
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
@@ -113,6 +166,12 @@ pub struct Dc {
     pub dc_type: DcType,
     pub dc_success: String,
     pub desc: Option<String>,
+}
+
+impl Display for Dc {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}, {}", self.dc_type.name, self.dc_success)
+    }
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]

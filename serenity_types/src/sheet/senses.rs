@@ -48,15 +48,15 @@ impl Display for ExtraSenses {
         }
 
         if self.dark_vision {
-            out.push_str("DarkVision");
+            out.push_str("DarkVision ");
         }
 
         if self.tremor_sense {
-            out.push_str("TremorSense");
+            out.push_str("TremorSense ");
         }
 
         if self.true_sight {
-            out.push_str("TrueSight");
+            out.push_str("TrueSight ");
         }
 
         if out.is_empty() {
