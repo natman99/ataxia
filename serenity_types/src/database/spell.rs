@@ -51,7 +51,7 @@ impl Display for Spell {
             self.range, self.duration
         ));
         out.push_str(&format!(
-            "Cast time; {}. Level: {};\n",
+            "Cast time: {}. Level: {};\n",
             self.casting_time, self.level
         ));
 
@@ -110,6 +110,10 @@ impl Display for Spell {
             }
 
             out.push_str(&format!("{};\n", self.school.name));
+        }
+
+        if let Some(ref m) = self.material {
+            out.push_str(&format!("Requires: {}\n\n", m));
         }
 
         let mut desc = String::new();

@@ -1,13 +1,7 @@
 use parking_lot::Mutex;
-use std::{
-    cell::{LazyCell, RefCell},
-    collections::HashMap,
-    fs, io,
-    path::PathBuf,
-    sync::Arc,
-};
+use std::{cell::LazyCell, fs, io, path::PathBuf};
 
-use clap::{Parser, Subcommand};
+use clap::Parser;
 use ratatui::crossterm;
 use ratatui::{
     DefaultTerminal, Frame,
@@ -16,10 +10,10 @@ use ratatui::{
     },
     layout::{Constraint, Direction, Layout, Rect},
     style::Color,
-    widgets::{Block, Paragraph, ScrollbarState, Table},
+    widgets::{Block, Paragraph, ScrollbarState},
 };
 use serde::Serialize;
-use serenity_types::{Character, database::spell::Spell};
+use serenity_types::Character;
 use tui_input::{Input, backend::crossterm::EventHandler};
 
 use crate::{
@@ -189,6 +183,7 @@ impl App {
         self.render_input(frame, text_box_frame);
     }
 
+    /// Render the input text box.
     fn render_input(&self, frame: &mut Frame, area: Rect) {
         let width = area.width.max(3) - 1;
         let scroll = self.input.visual_scroll(width as usize);
@@ -201,7 +196,7 @@ impl App {
         let x = self.input.visual_cursor().max(scroll) - scroll + 1;
         frame.set_cursor_position((area.x + x as u16, area.y + 1));
     }
-
+    /// Handle input.
     fn handle_events(&mut self) -> io::Result<()> {
         let event = crossterm::event::read()?;
 
@@ -245,7 +240,6 @@ impl App {
                         .prev_commands
                         .len()
                         .saturating_sub(self.prev_command_idx);
-                    // .saturating_sub(1);
 
                     self.input = self
                         .input
@@ -262,7 +256,6 @@ impl App {
                         .prev_commands
                         .len()
                         .saturating_sub(self.prev_command_idx);
-                    // .saturating_sub(1);
 
                     if idx == self.prev_commands.len() {
                         self.input.reset();
@@ -316,6 +309,5 @@ impl App {
                 _ => (),
             },
         };
-        //
     }
 }

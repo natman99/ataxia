@@ -6,11 +6,11 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct Condition {
     /// Machine index
-    index: String,
+    pub index: String,
     /// Human readable name
-    name: String,
+    pub name: String,
     /// Effect description
-    desc: Vec<String>,
+    pub desc: Vec<String>,
 }
 
 impl Display for Condition {

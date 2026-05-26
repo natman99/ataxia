@@ -1,17 +1,10 @@
-use std::io;
-
 use ratatui::{
     Frame,
     layout::{Constraint, Direction, Layout, Margin, Rect},
-    style::Stylize,
-    text::{Line, Text},
+    text::Text,
     widgets::{Block, Cell, Paragraph, Row, Scrollbar, Table, Wrap},
 };
-use serenity_types::{
-    Character,
-    class::{Class, ClassType},
-    skills::{Skill, Skills},
-};
+use serenity_types::{Character, skills::Skill};
 
 use crate::FocusedContent;
 

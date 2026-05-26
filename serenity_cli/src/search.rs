@@ -1,11 +1,12 @@
-use std::{fmt::Display, sync::Arc};
+use std::{fs, sync::Arc};
 
 use edit_distance::edit_distance;
 use serenity_types::database::{condition::Condition, spell::Spell};
 
 use crate::data::Data;
 
-const THRESHHOLD: usize = 3;
+const SPELL_THRESHHOLD: usize = 3;
+const CONDITION_THERSHOLD: usize = 4;
 
 pub fn search_spells<'a>(term: &str, spells: &'a Arc<[Spell]>) -> Vec<&'a Spell> {
     let data = spells
@@ -13,7 +14,7 @@ pub fn search_spells<'a>(term: &str, spells: &'a Arc<[Spell]>) -> Vec<&'a Spell>
         .map(|f| f.index.replace("-", " "))
         .collect::<Vec<String>>();
     let data = data.iter().map(|f| f.as_str()).collect::<Vec<&str>>();
-    let elements = filter(term, &data);
+    let elements = filter(term, &data, SPELL_THRESHHOLD);
 
     let mut results = vec![];
     for i in elements {
@@ -26,16 +27,27 @@ pub fn search_spells<'a>(term: &str, spells: &'a Arc<[Spell]>) -> Vec<&'a Spell>
 pub fn search_conditions<'a>(term: &str, conditions: &'a Arc<[Condition]>) -> Vec<&'a Condition> {
     let mut out = vec![];
 
+    let data = conditions
+        .iter()
+        .map(|f| f.index.as_str())
+        .collect::<Vec<&str>>();
+
+    let elements = filter(term, &data, CONDITION_THERSHOLD);
+
+    for i in elements {
+        out.push(&conditions[i]);
+    }
+
     out
 }
 
-fn filter<'a>(term: &str, data: &[&str]) -> Vec<usize> {
+fn filter<'a>(term: &str, data: &[&str], threshold: usize) -> Vec<usize> {
     let mut out = vec![];
 
     let fuzzy = data
         .iter()
         .enumerate()
-        .filter(|(_i, f)| edit_distance(**f, term) < THRESHHOLD)
+        .filter(|(_i, f)| edit_distance(**f, term) < threshold)
         .map(|f| (f.0, *f.1))
         .collect::<Vec<(usize, &str)>>();
 
@@ -45,7 +57,7 @@ fn filter<'a>(term: &str, data: &[&str]) -> Vec<usize> {
     let fuzzy_first = data
         .iter()
         .enumerate()
-        .filter(|(_i, f)| edit_distance(&&f, &first) < THRESHHOLD)
+        .filter(|(_i, f)| edit_distance(&&f, &first) < threshold)
         .map(|f| (f.0, *f.1))
         .collect::<Vec<(usize, &str)>>();
 
@@ -78,12 +90,16 @@ pub fn search<'a>(term: &str, data: &'a Data) -> Vec<String> {
 
     let spells = search_spells(&term, &data.spells);
 
+    fs::write("spell.txt", format!("{:#?}", spells)).unwrap();
+
     let mut spells = spells
         .iter()
         .map(|f| f.to_string())
         .collect::<Vec<String>>();
 
     let conditions = search_conditions(&term, &data.conditions);
+    fs::write("text.txt", format!("{:#?}", conditions)).unwrap();
+    fs::write("len.txt", format!("{:#?}", data.conditions)).unwrap();
     let mut conditions = conditions
         .iter()
         .map(|f| f.to_string())
