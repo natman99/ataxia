@@ -1,10 +1,12 @@
+use itertools::Itertools;
 use ratatui::{
     Frame,
     layout::{Constraint, Direction, Layout, Margin, Rect},
-    text::Text,
-    widgets::{Block, Cell, Paragraph, Row, Scrollbar, Table, Wrap},
+    symbols::merge::MergeStrategy,
+    text::{Line, Span, Text},
+    widgets::{Block, Cell, Padding, Paragraph, Row, Scrollbar, Table, Wrap},
 };
-use serenity_types::{Character, skills::Skill};
+use serenity_types::{Character, Score, ability_score::AbilityScore, skills::Skill};
 
 use crate::FocusedContent;
 
@@ -41,7 +43,8 @@ fn render_main(frame: &mut Frame, area: Rect, sheet: &Character, content: &mut F
     let (top, bottom) = {
         let layout = Layout::default()
             .direction(Direction::Vertical)
-            .constraints([Constraint::Percentage(40), Constraint::Percentage(60)])
+            // 18 skills + 2 border
+            .constraints([Constraint::Min(20), Constraint::Percentage(60)])
             .split(area);
         (layout[0], layout[1])
     };
@@ -86,6 +89,15 @@ fn render_focused_content(frame: &mut Frame, area: Rect, content: &mut FocusedCo
 }
 
 fn render_main_left(sheet: &Character, frame: &mut Frame, area: Rect) {
+    let (top, bottom) = {
+        let split = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Length(11), Constraint::Fill(1)])
+            // .margin(1)
+            .split(area);
+        (split[0], split[1])
+    };
+
     let titles = [
         "Class",
         "Health",
@@ -95,6 +107,8 @@ fn render_main_left(sheet: &Character, frame: &mut Frame, area: Rect) {
         "Proficiency Mod",
         "Walking speed",
         "Save DC",
+        "Passive",
+        "Senses",
     ];
 
     let values = [
@@ -109,6 +123,11 @@ fn render_main_left(sheet: &Character, frame: &mut Frame, area: Rect) {
         format!("{}", sheet.skills.proficiency_bonus),
         format!("{}", sheet.walking_speed),
         format!("{}", sheet.save_dc()),
+        format!(
+            "Per {}, Inv {}, Ins {}",
+            sheet.senses.perception, sheet.senses.investigation, sheet.senses.insight
+        ),
+        format!("{}", sheet.senses.extra),
     ];
 
     let rows = titles
@@ -117,20 +136,103 @@ fn render_main_left(sheet: &Character, frame: &mut Frame, area: Rect) {
         .map(|(f, m)| Row::new([f.to_string(), m]));
     let rows = Vec::from_iter(rows);
 
-    let widths = [Constraint::Length(15), Constraint::Length(10)];
+    let widths = [Constraint::Length(15), Constraint::Length(30)];
 
-    let table = Table::new(rows, widths)
-        .block(
-            Block::bordered()
-                .title(sheet.name.as_str())
-                .title_bottom("Info"),
-        )
-        .column_spacing(1);
+    let table = Table::new(rows, widths).column_spacing(1);
 
-    frame.render_widget(table, area);
+    frame.render_widget(
+        Block::bordered()
+            .title(sheet.name.as_str())
+            // .merge_borders(MergeStrategy::Exact)
+            .title_bottom("Info"),
+        area,
+    );
+
+    let table = table.block(Block::new().padding(Padding::new(1, 0, 1, 0)));
+
+    frame.render_widget(table, top);
+
+    let conditions = sheet
+        .conditions
+        .conditions
+        .iter()
+        .map(|f| f.to_string())
+        .join(", ");
+
+    let cond = Paragraph::new(conditions).block(
+        Block::bordered()
+            .merge_borders(MergeStrategy::Exact)
+            .title("Conditions"),
+    );
+    frame.render_widget(cond, bottom);
 }
 
 fn render_main_right(sheet: &Character, frame: &mut Frame, area: Rect) {
+    let layout = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Percentage(50), Constraint::Min(10)])
+        .split(area);
+
+    let left = layout[0];
+    let right = layout[1];
+
+    render_scores_and_lang(sheet, frame, left);
+
+    render_skills(sheet, frame, right);
+}
+
+fn render_scores_and_lang(sheet: &Character, frame: &mut Frame, area: Rect) {
+    let (top, bottom) = {
+        let split = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Length(8), Constraint::Fill(1)])
+            .split(area);
+        (split[0], split[1])
+    };
+
+    frame.render_widget(scores(sheet), top);
+
+    let p = Paragraph::new([Line::raw(format!("{}", sheet.languages))].to_vec())
+        .block(Block::bordered().title_bottom("Languages"));
+
+    frame.render_widget(p, bottom);
+}
+
+fn scores<'a>(sheet: &'a Character) -> Table<'a> {
+    let names = [
+        Score::Str,
+        Score::Dex,
+        Score::Con,
+        Score::Int,
+        Score::Wis,
+        Score::Char,
+    ];
+    let scores = sheet.ability_scores.iter().map(|f| (f.get(), f.modifier()));
+
+    let rows = names.iter().zip(scores).map(|(name, (n, modifier))| {
+        Row::new([
+            Cell::new(Text::from(name.to_string())),
+            Cell::new(
+                Text::from(format!("{}", n)).alignment(ratatui::layout::HorizontalAlignment::Right),
+            ),
+            Cell::new(Text::from(format!("({:+})", modifier))),
+        ])
+    });
+
+    let widths = [
+        Constraint::Length(5),
+        Constraint::Length(2),
+        Constraint::Length(6),
+    ];
+
+    let table = Table::new(rows, widths)
+        .block(Block::bordered().title_bottom("Scores"))
+        .column_spacing(1);
+
+    table
+}
+
+fn render_skills(sheet: &Character, frame: &mut Frame, area: Rect) {
     let skills: Vec<i32> = Skill::ALL_ITER
         .iter()
         .map(|f| sheet.skills.check(f, &sheet.ability_scores))

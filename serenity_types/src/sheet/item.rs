@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use crate::{roll::Die, sheet::roll::Roll};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(default)]
 /// An item.
 pub struct Item {
     /// Id of the item. This is an all lowercase version of the item's name with underscores instead of spaces.

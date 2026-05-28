@@ -1,16 +1,48 @@
 use std::{
     fmt::Display,
-    ops::{Deref, Index},
+    ops::{Deref, Index, IndexMut},
 };
 
+use rand::RngExt;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::roll::Die;
+use crate::{AbilityScores, HitPoints, roll::Die};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(default)]
 pub struct Classes {
     pub classes: Vec<Class>,
+}
+
+impl Classes {
+    pub fn heal(
+        &mut self,
+        index: usize,
+        roll: bool,
+        health: &mut HitPoints,
+        ability_scores: &AbilityScores,
+    ) {
+        self[index].heal(roll, health, ability_scores);
+    }
+
+    pub fn heal_first(
+        &mut self,
+        roll: bool,
+        health: &mut HitPoints,
+        ability_scores: &AbilityScores,
+    ) -> Option<()> {
+        if let Some(class) = self
+            .classes
+            .iter_mut()
+            .find(|f| f.healing_die_remaining > 0)
+        {
+            class.heal(roll, health, ability_scores);
+            Some(())
+        } else {
+            None
+        }
+    }
 }
 
 impl Default for Classes {
@@ -48,12 +80,20 @@ impl Index<usize> for Classes {
     }
 }
 
+impl IndexMut<usize> for Classes {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.classes[index]
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(default)]
 pub struct Class {
     pub class: ClassType,
     pub level: Level,
     pub hit_dice: Die,
     pub health_bonus_per_level: i32,
+    pub healing_die_remaining: u32,
 }
 
 impl Default for Class {
@@ -63,7 +103,23 @@ impl Default for Class {
             level: Default::default(),
             hit_dice: Default::default(),
             health_bonus_per_level: 0,
+            healing_die_remaining: 1,
         }
+    }
+}
+
+impl Class {
+    pub fn heal(&mut self, roll: bool, health: &mut HitPoints, ability_scores: &AbilityScores) {
+        if self.healing_die_remaining == 0 {
+            return;
+        }
+        if roll {
+            let mut rng = rand::rng();
+            let healing_amount =
+                rng.random_range(1..=self.hit_dice.max()) as i32 + ability_scores.con.modifier();
+            health.heal(healing_amount);
+        }
+        self.healing_die_remaining = self.healing_die_remaining.saturating_sub(1);
     }
 }
 

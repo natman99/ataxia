@@ -4,6 +4,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(default)]
 pub struct Senses {
     pub perception: i32,
     pub investigation: i32,
@@ -23,6 +24,7 @@ impl Default for Senses {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default, Serialize, Deserialize, JsonSchema)]
+#[serde(default)]
 pub struct ExtraSenses {
     pub blind_sight: bool,
     pub dark_vision: bool,
@@ -62,6 +64,6 @@ impl Display for ExtraSenses {
         if out.is_empty() {
             out.push_str("None");
         }
-        write!(f, "{}", out)
+        write!(f, "{}", out.trim())
     }
 }

@@ -9,6 +9,7 @@ pub struct Meters {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default, JsonSchema)]
+#[serde(default)]
 /// A meter item. These are for counting any consumable resources including spell slots.
 pub struct Meter {
     /// The name of the meter.
@@ -85,7 +86,8 @@ impl Meter {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, JsonSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, JsonSchema, Default)]
+#[serde(default)]
 /// A metric slot.
 pub struct Metric {
     /// The level of the spell slot.
@@ -95,16 +97,27 @@ pub struct Metric {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Copy, Serialize, Deserialize, Hash, JsonSchema, Default)]
+#[serde(default)]
 /// The level of the spell slot.
 pub struct SpellLevel(pub u8);
 
 #[derive(
-    Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Hash, Serialize, Deserialize, JsonSchema, Default,
+    Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Hash, Serialize, Deserialize, JsonSchema,
 )]
+#[serde(default)]
 /// When the slot is restored. These can both be false.
 pub struct RestoreTime {
     /// Restore on short rest.
     pub short_rest: bool,
     /// Restore on long rest.
     pub long_rest: bool,
+}
+
+impl Default for RestoreTime {
+    fn default() -> Self {
+        Self {
+            short_rest: Default::default(),
+            long_rest: true,
+        }
+    }
 }

@@ -41,7 +41,7 @@ pub fn search_conditions<'a>(term: &str, conditions: &'a Arc<[Condition]>) -> Ve
     out
 }
 
-fn filter<'a>(term: &str, data: &[&str], threshold: usize) -> Vec<usize> {
+pub fn filter<'a>(term: &str, data: &[&str], threshold: usize) -> Vec<usize> {
     let mut out = vec![];
 
     let fuzzy = data
@@ -51,8 +51,8 @@ fn filter<'a>(term: &str, data: &[&str], threshold: usize) -> Vec<usize> {
         .map(|f| (f.0, *f.1))
         .collect::<Vec<(usize, &str)>>();
 
-    let binding = term.split(" ").collect::<Vec<&str>>();
-    let first = binding.first().expect("Search should always have one word");
+    let mut binding = term.split(" ");
+    let first = binding.next().expect("Search should always have one word");
 
     let fuzzy_first = data
         .iter()
@@ -68,6 +68,30 @@ fn filter<'a>(term: &str, data: &[&str], threshold: usize) -> Vec<usize> {
         .map(|f| (f.0, *f.1))
         .collect::<Vec<(usize, &str)>>();
 
+    let any_first_exact = data
+        .iter()
+        .enumerate()
+        .filter(|(_i, f)| f.split(" ").any(|f| f.to_lowercase().starts_with(&term)))
+        .map(|(i, f)| (i, *f))
+        .collect::<Vec<(usize, &str)>>();
+
+    let any_first_fuzzy = data
+        .iter()
+        .enumerate()
+        .filter(|f| {
+            let s = f.1;
+            for i in s.split(" ") {
+                if edit_distance(i, first) < threshold {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+            false
+        })
+        .map(|(i, f)| (i, *f))
+        .collect::<Vec<(usize, &str)>>();
+
     let mut f = exact_first.iter().map(|f| f.0).collect();
     out.append(&mut f);
 
@@ -76,6 +100,13 @@ fn filter<'a>(term: &str, data: &[&str], threshold: usize) -> Vec<usize> {
 
     let mut f = fuzzy_first.iter().map(|f| f.0).collect();
     out.append(&mut f);
+
+    let mut f = any_first_exact.iter().map(|f| f.0).collect();
+    out.append(&mut f);
+
+    let mut f = any_first_fuzzy.iter().map(|f| f.0).collect();
+    out.append(&mut f);
+
     use itertools::Itertools;
 
     let out = out.iter().unique().copied().collect();

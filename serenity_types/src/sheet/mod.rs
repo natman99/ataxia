@@ -10,7 +10,9 @@ pub mod roll;
 pub mod skills;
 pub mod spells;
 
+pub mod condition;
 pub mod feature;
+pub mod language;
 pub mod lore;
 pub mod meter;
 pub mod senses;
@@ -22,9 +24,11 @@ use ability_score::AbilityScore;
 
 use crate::{
     class::{Class, Classes, Level},
-    feature::{Feature, Features, MeterAdd},
+    condition::Conditions,
+    feature::Features,
+    language::Languages,
     lore::Lore,
-    meter::{Meter, Meters, Metric},
+    meter::Meters,
     senses::Senses,
     sheet::{class::ClassType, skills::Skills, spells::Spells},
 };
@@ -48,6 +52,8 @@ pub struct Character {
     pub meters: Meters,
     pub lore: Lore,
     pub walking_speed: WalkingSpeed,
+    pub languages: Languages,
+    pub conditions: Conditions,
 }
 
 impl Character {
@@ -66,8 +72,8 @@ impl Character {
                     level: Level(level),
                     hit_dice: class.get_hit_dice(),
                     health_bonus_per_level: 0,
-
                     class,
+                    healing_die_remaining: level,
                 }],
             },
             skills: Skills::default(),
@@ -83,6 +89,8 @@ impl Character {
             race: Default::default(),
             lore: Default::default(),
             walking_speed: Default::default(),
+            languages: Default::default(),
+            conditions: Default::default(),
         }
     }
 
@@ -169,10 +177,12 @@ impl Character {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default, JsonSchema)]
+#[serde(default)]
 /// An inventory containing a hash map of `Item`s
 pub struct Inventory(pub HashMap<String, Item>);
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default, JsonSchema)]
+#[serde(default)]
 /// Ability scores. Defaults to ten.
 pub struct AbilityScores {
     pub str: AbilityScore,
@@ -251,6 +261,7 @@ impl Display for Score {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(default)]
 /// The armor class of a character.
 pub struct ArmorClass(u32);
 
@@ -283,6 +294,7 @@ impl Display for ArmorClass {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(default)]
 /// Initiative score.
 pub struct Initiative(u32);
 
@@ -307,6 +319,7 @@ impl Initiative {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Hash, JsonSchema)]
+#[serde(default)]
 /// Walking speed in feet.
 pub struct WalkingSpeed(u32);
 

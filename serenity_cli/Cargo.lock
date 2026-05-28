@@ -1737,6 +1737,7 @@ dependencies = [
  "parking_lot",
  "rand 0.10.1",
  "ratatui",
+ "schemars",
  "serde",
  "serde_json",
  "serenity_types",

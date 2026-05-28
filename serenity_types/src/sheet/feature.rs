@@ -13,6 +13,7 @@ use crate::{
 };
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, JsonSchema)]
+#[serde(default)]
 pub struct Feature {
     /// Name of the feature. Must be unique.
     pub name: String,
@@ -37,6 +38,7 @@ impl Default for Feature {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, Default, PartialEq, JsonSchema)]
+#[serde(default)]
 pub struct Features {
     pub inner: BTreeMap<String, Feature>,
 }
@@ -73,8 +75,10 @@ pub struct MeterAdd {
     pub slot_number: usize,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, JsonSchema, Copy)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, JsonSchema, Copy, Default)]
 pub struct AbilityScoreBonus {
+    /// The abilty score to boost.
     pub score: Score,
+    /// The amount to increase by.
     pub bonus: u32,
 }

@@ -23,6 +23,12 @@ pub enum CommandError {
     ArgumentError,
     #[error("Could not find target")]
     NotFound,
+    #[error("Command Error: {0}")]
+    CommandError(Box<dyn std::error::Error>),
+}
+
+pub fn to_command_error<T: std::error::Error + 'static>(f: T) -> CommandError {
+    CommandError::CommandError(Box::new(f))
 }
 
 pub type Result<T> = std::result::Result<T, CommandError>;
@@ -79,10 +85,20 @@ impl CommandHandler {
 
         Ok(())
     }
+
+    pub fn iter(&self) -> impl Iterator<Item = &Box<Command>> {
+        self.commands.iter()
+    }
 }
 pub struct Command {
     key: String,
     function: Box<dyn FnMut(&str, &mut App) -> Result<()>>,
+}
+
+impl Command {
+    pub fn key(&self) -> &str {
+        self.key.as_str()
+    }
 }
 
 impl Debug for Command {
@@ -99,6 +115,12 @@ pub fn make_command_handler() -> CommandHandler {
     handler.push(command!("main", commands::g_main));
     handler.push(command!("add", commands::add));
     handler.push(command!("search", commands::search));
+    handler.push(command!("damage", commands::damage));
+    handler.push(command!("heal", commands::heal));
+    handler.push(command!("remove", commands::remove));
+    handler.push(command!("help", commands::help));
+    handler.push(command!("buff", commands::buff));
+    handler.push(command!("tick", commands::tick));
 
     handler
 }

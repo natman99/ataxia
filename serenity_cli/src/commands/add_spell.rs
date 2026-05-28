@@ -30,3 +30,36 @@ pub fn add(command: &str, app: &mut App) -> command::Result<()> {
 
     Ok(())
 }
+
+pub fn remove(command: &str, app: &mut App) -> command::Result<()> {
+    let mut args: Vec<_> = command.split(" ").collect();
+
+    if args.len() < 2 {
+        return Err(CommandError::ArgumentError);
+    }
+
+    args.remove(0);
+
+    let term = args.join(" ");
+
+    let target = {
+        let data: Vec<_> = app
+            .sheet
+            .spells
+            .spells
+            .iter()
+            .map(|f| f.0.as_str())
+            .collect();
+
+        let results = search::filter(&term, &data, 1);
+        if results.len() != 1 {
+            return Err(CommandError::ArgumentError);
+        } else {
+            data[results[0]].to_string()
+        }
+    };
+
+    app.sheet.spells.spells.remove(&target);
+
+    Ok(())
+}

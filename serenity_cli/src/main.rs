@@ -1,4 +1,5 @@
 use parking_lot::Mutex;
+use schemars::JsonSchema;
 use std::{cell::LazyCell, fs, io, path::PathBuf};
 
 use clap::Parser;
@@ -42,6 +43,7 @@ struct Cli {
 enum Command {
     New { name: String },
     Generate { kind: GenerateKind },
+    Schema { kind: GenerateKind },
 }
 #[derive(clap::ValueEnum, Debug, Clone, Copy)]
 enum GenerateKind {
@@ -56,10 +58,15 @@ fn generate<T: Serialize + Default>() -> Result<String, serde_json::Error> {
     Ok(s)
 }
 
+fn generate_schema<T: JsonSchema + Default>() -> Result<String, serde_json::Error> {
+    let t = schemars::schema_for!(T);
+    let s = serde_json::to_string_pretty(&t)?;
+    Ok(s)
+}
+
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
     let cli = Cli::parse();
-    println!("Hello, world!");
 
     let sheet = {
         if let Some(command) = cli.subcommand {
@@ -74,6 +81,20 @@ fn main() -> color_eyre::Result<()> {
                         GenerateKind::Spell => generate::<serenity_types::database::spell::Spell>(),
                         GenerateKind::Item => generate::<serenity_types::Item>(),
                         GenerateKind::Feature => generate::<serenity_types::feature::Feature>(),
+                    };
+                    let string = string.unwrap();
+                    println!("{}", string);
+                    return Ok(());
+                }
+                Command::Schema { kind } => {
+                    let string = match kind {
+                        GenerateKind::Spell => {
+                            generate_schema::<serenity_types::database::spell::Spell>()
+                        }
+                        GenerateKind::Item => generate_schema::<serenity_types::Item>(),
+                        GenerateKind::Feature => {
+                            generate_schema::<serenity_types::feature::Feature>()
+                        }
                     };
                     let string = string.unwrap();
                     println!("{}", string);

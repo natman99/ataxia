@@ -5,6 +5,7 @@ use std::collections::BTreeMap;
 use crate::database::spell::Spell;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default, JsonSchema)]
+#[serde(default)]
 /// A character's spells.
 pub struct Spells {
     /// Map of spells

@@ -11,93 +11,88 @@ use crate::sheet::AbilityScores;
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, JsonSchema)]
 /// Skills enum.
 pub enum Skill {
-    //str scaling
-    Athletics,
-    //dex scaling
     Acrobatics,
-    SleightOfHand,
-    Stealth,
-    // int scaling
-    Arcana,
-    History,
-    Investigation,
-    Nature,
-    Religion,
-    // wis scaling
     AnimalHandling,
-    Insight,
-    Medicine,
-    Perception,
-    Survival,
-    // char scaling
+    Arcana,
+    Athletics,
     Deception,
+    History,
+    Insight,
     Intimidation,
+    Investigation,
+    Medicine,
+    Nature,
+    Perception,
     Performance,
     Persuasion,
+    Religion,
+    SleightOfHand,
+    Stealth,
+    Survival,
 }
 
 impl Skill {
     pub const ALL_STR: [&'static str; 18] = [
-        "athletics",
         "acrobatics",
-        "sleightOfHand",
-        "stealth",
-        "arcana",
-        "history",
-        "investigation",
-        "nature",
-        "religion",
         "animalHandling",
-        "insight",
-        "medicine",
-        "perception",
-        "survival",
+        "arcana",
+        "athletics",
         "deception",
+        "history",
+        "insight",
         "intimidation",
+        "investigation",
+        "medicine",
+        "nature",
+        "perception",
         "performance",
         "persuasion",
+        "religion",
+        "sleightOfHand",
+        "stealth",
+        "survival",
     ];
 
     pub const ALL_STR_PRETTY: [&'static str; 18] = [
-        "Athletics",
         "Acrobatics",
-        "Sleight Of Hand",
-        "Stealth",
-        "Arcana",
-        "History",
-        "Investigation",
-        "Nature",
-        "Religion",
         "Animal Handling",
-        "Insight",
-        "Medicine",
-        "Perception",
-        "Survival",
+        "Arcana",
+        "Athletics",
         "Deception",
+        "History",
+        "Insight",
         "Intimidation",
+        "Investigation",
+        "Medicine",
+        "Nature",
+        "Perception",
         "Performance",
         "Persuasion",
+        "Religion",
+        "Sleight Of Hand",
+        "Stealth",
+        "Survival",
     ];
 
     pub const ALL_ITER: [Skill; 18] = [
-        Skill::Athletics,
         Skill::Acrobatics,
-        Skill::SleightOfHand,
-        Skill::Stealth,
-        Skill::Arcana,
-        Skill::History,
-        Skill::Investigation,
-        Skill::Nature,
-        Skill::Religion,
         Skill::AnimalHandling,
-        Skill::Insight,
-        Skill::Medicine,
-        Skill::Perception,
-        Skill::Survival,
+        Skill::Arcana,
+        Skill::Athletics,
         Skill::Deception,
+        Skill::History,
+        Skill::Insight,
         Skill::Intimidation,
+        Skill::Investigation,
+        Skill::Medicine,
+        Skill::Nature,
+        Skill::Perception,
         Skill::Performance,
         Skill::Persuasion,
+        Skill::Religion,
+        Skill::SleightOfHand,
+        Skill::Stealth,
+        Skill::Survival,
     ];
 }
 
@@ -179,6 +174,7 @@ struct SkillsJson {
 }
 
 #[derive(Debug, Clone, PartialEq, Default, JsonSchema, Serialize, Deserialize)]
+#[serde(default)]
 #[serde(from = "SkillsJson")]
 #[serde(into = "SkillsJson")]
 /// The characters proficiency skills.

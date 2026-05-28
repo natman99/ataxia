@@ -7,12 +7,13 @@
         "class": "Fighter",
         "level": 1,
         "hit_dice": "D20",
-        "health_bonus_per_level": 0
+        "health_bonus_per_level": 0,
+        "healing_die_remaining": 1
       }
     ]
   },
-  "initiative": 10,
-  "armor_class": 10,
+  "initiative": 12,
+  "armor_class": 15,
   "health": {
     "current": 12,
     "max": 12,
@@ -27,12 +28,12 @@
       "override_score": null
     },
     "dex": {
-      "base": 12,
+      "base": 15,
       "bonus": 0,
       "override_score": null
     },
     "con": {
-      "base": 18,
+      "base": 16,
       "bonus": 0,
       "override_score": null
     },
@@ -53,641 +54,28 @@
     }
   },
   "skills": {
-    "athletics": false,
+    "athletics": true,
     "acrobatics": false,
     "sleightofhand": false,
-    "stealth": false,
+    "stealth": true,
     "arcana": false,
     "history": false,
     "investigation": false,
-    "nature": true,
+    "nature": false,
     "religion": false,
     "animalhandling": false,
-    "insight": false,
-    "medicine": true,
+    "insight": true,
+    "medicine": false,
     "perception": false,
     "survival": false,
     "deception": false,
     "intimidation": false,
     "performance": false,
     "persuasion": false,
-    "proficiency_bonus": 2
+    "proficiency_bonus": 0
   },
   "spells": {
-    "spells": {
-      "Acid Arrow": {
-        "index": "acid-arrow",
-        "name": "Acid Arrow",
-        "desc": [
-          "A shimmering green arrow streaks toward a target within range and bursts in a spray of acid. Make a ranged spell attack against the target. On a hit, the target takes 4d4 acid damage immediately and 2d4 acid damage at the end of its next turn. On a miss, the arrow splashes the target with acid for half as much of the initial damage and no damage at the end of its next turn."
-        ],
-        "higher_level": [
-          "When you cast this spell using a spell slot of 3rd level or higher, the damage (both initial and later) increases by 1d4 for each slot level above 2nd."
-        ],
-        "range": "90 feet",
-        "components": [
-          "V",
-          "S",
-          "M"
-        ],
-        "material": "Powdered rhubarb leaf and an adder's stomach.",
-        "ritual": false,
-        "duration": "Instantaneous",
-        "concentration": false,
-        "casting_time": "1 action",
-        "level": 2,
-        "attack_type": "ranged",
-        "damage": {
-          "damage_type": {
-            "index": "acid",
-            "name": "Acid",
-            "url": "/api/2014/damage-types/acid"
-          },
-          "damage_at_slot_level": {
-            "3": "5d4",
-            "6": "8d4",
-            "7": "9d4",
-            "8": "10d4",
-            "9": "11d4",
-            "4": "6d4",
-            "5": "7d4",
-            "1": null,
-            "2": "4d4"
-          },
-          "damage_at_character_level": null
-        },
-        "school": {
-          "index": "evocation",
-          "name": "Evocation",
-          "url": "/api/2014/magic-schools/evocation"
-        },
-        "classes": [
-          {
-            "index": "wizard",
-            "name": "Wizard",
-            "url": "/api/2014/classes/wizard"
-          }
-        ],
-        "subclasses": [
-          {
-            "index": "lore",
-            "name": "Lore",
-            "url": "/api/2014/subclasses/lore"
-          },
-          {
-            "index": "land",
-            "name": "Land",
-            "url": "/api/2014/subclasses/land"
-          }
-        ],
-        "url": "/api/2014/spells/acid-arrow",
-        "dc": null,
-        "heal_at_slot_level": null,
-        "area_of_effect": null
-      },
-      "Aid": {
-        "index": "aid",
-        "name": "Aid",
-        "desc": [
-          "Your spell bolsters your allies with toughness and resolve. Choose up to three creatures within range. Each target's hit point maximum and current hit points increase by 5 for the duration."
-        ],
-        "higher_level": [
-          "When you cast this spell using a spell slot of 3rd level or higher, a target's hit points increase by an additional 5 for each slot level above 2nd."
-        ],
-        "range": "30 feet",
-        "components": [
-          "V",
-          "S",
-          "M"
-        ],
-        "material": "A tiny strip of white cloth.",
-        "ritual": false,
-        "duration": "8 hours",
-        "concentration": false,
-        "casting_time": "1 action",
-        "level": 2,
-        "attack_type": null,
-        "damage": null,
-        "school": {
-          "index": "abjuration",
-          "name": "Abjuration",
-          "url": "/api/2014/magic-schools/abjuration"
-        },
-        "classes": [
-          {
-            "index": "cleric",
-            "name": "Cleric",
-            "url": "/api/2014/classes/cleric"
-          },
-          {
-            "index": "paladin",
-            "name": "Paladin",
-            "url": "/api/2014/classes/paladin"
-          }
-        ],
-        "subclasses": [
-          {
-            "index": "lore",
-            "name": "Lore",
-            "url": "/api/2014/subclasses/lore"
-          }
-        ],
-        "url": "/api/2014/spells/aid",
-        "dc": null,
-        "heal_at_slot_level": {
-          "7": "30",
-          "2": "5",
-          "3": "10",
-          "4": "15",
-          "5": "20",
-          "6": "25",
-          "8": "35",
-          "9": "40",
-          "1": null
-        },
-        "area_of_effect": null
-      },
-      "Alarm": {
-        "index": "alarm",
-        "name": "Alarm",
-        "desc": [
-          "You set an alarm against unwanted intrusion. Choose a door, a window, or an area within range that is no larger than a 20-foot cube. Until the spell ends, an alarm alerts you whenever a Tiny or larger creature touches or enters the warded area. When you cast the spell, you can designate creatures that won't set off the alarm. You also choose whether the alarm is mental or audible.",
-          "A mental alarm alerts you with a ping in your mind if you are within 1 mile of the warded area. This ping awakens you if you are sleeping.",
-          "An audible alarm produces the sound of a hand bell for 10 seconds within 60 feet."
-        ],
-        "higher_level": [],
-        "range": "30 feet",
-        "components": [
-          "V",
-          "S",
-          "M"
-        ],
-        "material": "A tiny bell and a piece of fine silver wire.",
-        "ritual": true,
-        "duration": "8 hours",
-        "concentration": false,
-        "casting_time": "1 minute",
-        "level": 1,
-        "attack_type": null,
-        "damage": null,
-        "school": {
-          "index": "abjuration",
-          "name": "Abjuration",
-          "url": "/api/2014/magic-schools/abjuration"
-        },
-        "classes": [
-          {
-            "index": "ranger",
-            "name": "Ranger",
-            "url": "/api/2014/classes/ranger"
-          },
-          {
-            "index": "wizard",
-            "name": "Wizard",
-            "url": "/api/2014/classes/wizard"
-          }
-        ],
-        "subclasses": [
-          {
-            "index": "lore",
-            "name": "Lore",
-            "url": "/api/2014/subclasses/lore"
-          }
-        ],
-        "url": "/api/2014/spells/alarm",
-        "dc": null,
-        "heal_at_slot_level": null,
-        "area_of_effect": {
-          "type": "cube",
-          "size": 20
-        }
-      },
-      "Alter Self": {
-        "index": "alter-self",
-        "name": "Alter Self",
-        "desc": [
-          "You assume a different form. When you cast the spell, choose one of the following options, the effects of which last for the duration of the spell. While the spell lasts, you can end one option as an action to gain the benefits of a different one.",
-          "***Aquatic Adaptation.*** You adapt your body to an aquatic environment, sprouting gills and growing webbing between your fingers. You can breathe underwater and gain a swimming speed equal to your walking speed.",
-          "***Change Appearance.*** You transform your appearance. You decide what you look like, including your height, weight, facial features, sound of your voice, hair length, coloration, and distinguishing characteristics, if any. You can make yourself appear as a member of another race, though none of your statistics change. You also can't appear as a creature of a different size than you, and your basic shape stays the same; if you're bipedal, you can't use this spell to become quadrupedal, for instance. At any time for the duration of the spell, you can use your action to change your appearance in this way again.",
-          "***Natural Weapons.*** You grow claws, fangs, spines, horns, or a different natural weapon of your choice. Your unarmed strikes deal 1d6 bludgeoning, piercing, or slashing damage, as appropriate to the natural weapon you chose, and you are proficient with your unarmed strikes. Finally, the natural weapon is magic and you have a +1 bonus to the attack and damage rolls you make using it."
-        ],
-        "higher_level": [],
-        "range": "Self",
-        "components": [
-          "V",
-          "S"
-        ],
-        "material": null,
-        "ritual": false,
-        "duration": "Up to 1 hour",
-        "concentration": true,
-        "casting_time": "1 action",
-        "level": 2,
-        "attack_type": null,
-        "damage": null,
-        "school": {
-          "index": "transmutation",
-          "name": "Transmutation",
-          "url": "/api/2014/magic-schools/transmutation"
-        },
-        "classes": [
-          {
-            "index": "sorcerer",
-            "name": "Sorcerer",
-            "url": "/api/2014/classes/sorcerer"
-          },
-          {
-            "index": "wizard",
-            "name": "Wizard",
-            "url": "/api/2014/classes/wizard"
-          }
-        ],
-        "subclasses": [
-          {
-            "index": "lore",
-            "name": "Lore",
-            "url": "/api/2014/subclasses/lore"
-          }
-        ],
-        "url": "/api/2014/spells/alter-self",
-        "dc": null,
-        "heal_at_slot_level": null,
-        "area_of_effect": null
-      },
-      "Blindness/Deafness": {
-        "index": "blindness-deafness",
-        "name": "Blindness/Deafness",
-        "desc": [
-          "You can blind or deafen a foe. Choose one creature that you can see within range to make a constitution saving throw. If it fails, the target is either blinded or deafened (your choice) for the duration. At the end of each of its turns, the target can make a constitution saving throw. On a success, the spell ends."
-        ],
-        "higher_level": [
-          "When you cast this spell using a spell slot of 3rd level or higher, you can target one additional creature for each slot level above 2nd."
-        ],
-        "range": "30 feet",
-        "components": [
-          "V"
-        ],
-        "material": null,
-        "ritual": false,
-        "duration": "1 minute",
-        "concentration": false,
-        "casting_time": "1 action",
-        "level": 2,
-        "attack_type": null,
-        "damage": null,
-        "school": {
-          "index": "necromancy",
-          "name": "Necromancy",
-          "url": "/api/2014/magic-schools/necromancy"
-        },
-        "classes": [
-          {
-            "index": "bard",
-            "name": "Bard",
-            "url": "/api/2014/classes/bard"
-          },
-          {
-            "index": "cleric",
-            "name": "Cleric",
-            "url": "/api/2014/classes/cleric"
-          },
-          {
-            "index": "sorcerer",
-            "name": "Sorcerer",
-            "url": "/api/2014/classes/sorcerer"
-          },
-          {
-            "index": "wizard",
-            "name": "Wizard",
-            "url": "/api/2014/classes/wizard"
-          }
-        ],
-        "subclasses": [
-          {
-            "index": "lore",
-            "name": "Lore",
-            "url": "/api/2014/subclasses/lore"
-          },
-          {
-            "index": "fiend",
-            "name": "Fiend",
-            "url": "/api/2014/subclasses/fiend"
-          }
-        ],
-        "url": "/api/2014/spells/blindness-deafness",
-        "dc": {
-          "dc_type": {
-            "index": "con",
-            "name": "CON",
-            "url": "/api/2014/ability-scores/con"
-          },
-          "dc_success": "none",
-          "desc": null
-        },
-        "heal_at_slot_level": null,
-        "area_of_effect": null
-      },
-      "Fabricate": {
-        "index": "fabricate",
-        "name": "Fabricate",
-        "desc": [
-          "You convert raw materials into products of the same material. For example, you can fabricate a wooden bridge from a clump of trees, a rope from a patch of hemp, and clothes from flax or wool.",
-          "Choose raw materials that you can see within range. You can fabricate a Large or smaller object (contained within a 10-foot cube, or eight connected 5-foot cubes), given a sufficient quantity of raw material. If you are working with metal, stone, or another mineral substance, however, the fabricated object can be no larger than Medium (contained within a single 5-foot cube). The quality of objects made by the spell is commensurate with the quality of the raw materials.",
-          "Creatures or magic items can't be created or transmuted by this spell. You also can't use it to create items that ordinarily require a high degree of craftsmanship, such as jewelry, weapons, glass, or armor, unless you have proficiency with the type of artisan's tools used to craft such objects."
-        ],
-        "higher_level": [],
-        "range": "120 feet",
-        "components": [
-          "V",
-          "S"
-        ],
-        "material": null,
-        "ritual": false,
-        "duration": "Instantaneous",
-        "concentration": false,
-        "casting_time": "10 minutes",
-        "level": 4,
-        "attack_type": null,
-        "damage": null,
-        "school": {
-          "index": "transmutation",
-          "name": "Transmutation",
-          "url": "/api/2014/magic-schools/transmutation"
-        },
-        "classes": [
-          {
-            "index": "wizard",
-            "name": "Wizard",
-            "url": "/api/2014/classes/wizard"
-          }
-        ],
-        "subclasses": [],
-        "url": "/api/2014/spells/fabricate",
-        "dc": null,
-        "heal_at_slot_level": null,
-        "area_of_effect": null
-      },
-      "Fireball": {
-        "index": "fireball",
-        "name": "Fireball",
-        "desc": [
-          "A bright streak flashes from your pointing finger to a point you choose within range and then blossoms with a low roar into an explosion of flame. Each creature in a 20-foot-radius sphere centered on that point must make a dexterity saving throw. A target takes 8d6 fire damage on a failed save, or half as much damage on a successful one.",
-          "The fire spreads around corners. It ignites flammable objects in the area that aren't being worn or carried."
-        ],
-        "higher_level": [
-          "When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d6 for each slot level above 3rd."
-        ],
-        "range": "150 feet",
-        "components": [
-          "V",
-          "S",
-          "M"
-        ],
-        "material": "A tiny ball of bat guano and sulfur.",
-        "ritual": false,
-        "duration": "Instantaneous",
-        "concentration": false,
-        "casting_time": "1 action",
-        "level": 3,
-        "attack_type": null,
-        "damage": {
-          "damage_type": {
-            "index": "fire",
-            "name": "Fire",
-            "url": "/api/2014/damage-types/fire"
-          },
-          "damage_at_slot_level": {
-            "3": "8d6",
-            "6": "11d6",
-            "7": "12d6",
-            "8": "13d6",
-            "9": "14d6",
-            "4": "9d6",
-            "5": "10d6",
-            "1": null,
-            "2": null
-          },
-          "damage_at_character_level": null
-        },
-        "school": {
-          "index": "evocation",
-          "name": "Evocation",
-          "url": "/api/2014/magic-schools/evocation"
-        },
-        "classes": [
-          {
-            "index": "sorcerer",
-            "name": "Sorcerer",
-            "url": "/api/2014/classes/sorcerer"
-          },
-          {
-            "index": "wizard",
-            "name": "Wizard",
-            "url": "/api/2014/classes/wizard"
-          }
-        ],
-        "subclasses": [
-          {
-            "index": "lore",
-            "name": "Lore",
-            "url": "/api/2014/subclasses/lore"
-          },
-          {
-            "index": "fiend",
-            "name": "Fiend",
-            "url": "/api/2014/subclasses/fiend"
-          }
-        ],
-        "url": "/api/2014/spells/fireball",
-        "dc": {
-          "dc_type": {
-            "index": "dex",
-            "name": "DEX",
-            "url": "/api/2014/ability-scores/dex"
-          },
-          "dc_success": "half",
-          "desc": null
-        },
-        "heal_at_slot_level": null,
-        "area_of_effect": {
-          "type": "sphere",
-          "size": 20
-        }
-      },
-      "Gate": {
-        "index": "gate",
-        "name": "Gate",
-        "desc": [
-          "You conjure a portal linking an unoccupied space you can see within range to a precise location on a different plane of existence. The portal is a circular opening, which you can make 5 to 20 feet in diameter. You can orient the portal in any direction you choose. The portal lasts for the duration.",
-          "The portal has a front and a back on each plane where it appears. Travel through the portal is possible only by moving through its front. Anything that does so is instantly transported to the other plane, appearing in the unoccupied space nearest to the portal.",
-          "Deities and other planar rulers can prevent portals created by this spell from opening in their presence or anywhere within their domains.",
-          "When you cast this spell, you can speak the name of a specific creature (a pseudonym, title, or nickname doesn't work). If that creature is on a plane other than the one you are on, the portal opens in the named creature's immediate vicinity and draws the creature through it to the nearest unoccupied space on your side of the portal. You gain no special power over the creature, and it is free to act as the GM deems appropriate. It might leave, attack you, or help you."
-        ],
-        "higher_level": [],
-        "range": "60 feet",
-        "components": [
-          "V",
-          "S",
-          "M"
-        ],
-        "material": "A diamond worth at least 5,000gp.",
-        "ritual": false,
-        "duration": "Up to 1 minute",
-        "concentration": true,
-        "casting_time": "1 action",
-        "level": 9,
-        "attack_type": null,
-        "damage": null,
-        "school": {
-          "index": "conjuration",
-          "name": "Conjuration",
-          "url": "/api/2014/magic-schools/conjuration"
-        },
-        "classes": [
-          {
-            "index": "cleric",
-            "name": "Cleric",
-            "url": "/api/2014/classes/cleric"
-          },
-          {
-            "index": "sorcerer",
-            "name": "Sorcerer",
-            "url": "/api/2014/classes/sorcerer"
-          },
-          {
-            "index": "wizard",
-            "name": "Wizard",
-            "url": "/api/2014/classes/wizard"
-          }
-        ],
-        "subclasses": [],
-        "url": "/api/2014/spells/gate",
-        "dc": null,
-        "heal_at_slot_level": null,
-        "area_of_effect": null
-      },
-      "Greater Invisibility": {
-        "index": "greater-invisibility",
-        "name": "Greater Invisibility",
-        "desc": [
-          "You or a creature you touch becomes invisible until the spell ends. Anything the target is wearing or carrying is invisible as long as it is on the target's person."
-        ],
-        "higher_level": [],
-        "range": "Touch",
-        "components": [
-          "V",
-          "S"
-        ],
-        "material": null,
-        "ritual": false,
-        "duration": "Up to 1 minute",
-        "concentration": true,
-        "casting_time": "1 action",
-        "level": 4,
-        "attack_type": null,
-        "damage": null,
-        "school": {
-          "index": "illusion",
-          "name": "Illusion",
-          "url": "/api/2014/magic-schools/illusion"
-        },
-        "classes": [
-          {
-            "index": "bard",
-            "name": "Bard",
-            "url": "/api/2014/classes/bard"
-          },
-          {
-            "index": "sorcerer",
-            "name": "Sorcerer",
-            "url": "/api/2014/classes/sorcerer"
-          },
-          {
-            "index": "wizard",
-            "name": "Wizard",
-            "url": "/api/2014/classes/wizard"
-          }
-        ],
-        "subclasses": [
-          {
-            "index": "land",
-            "name": "Land",
-            "url": "/api/2014/subclasses/land"
-          }
-        ],
-        "url": "/api/2014/spells/greater-invisibility",
-        "dc": null,
-        "heal_at_slot_level": null,
-        "area_of_effect": null
-      },
-      "Guardian of Faith": {
-        "index": "guardian-of-faith",
-        "name": "Guardian of Faith",
-        "desc": [
-          "A Large spectral guardian appears and hovers for the duration in an unoccupied space of your choice that you can see within range. The guardian occupies that space and is indistinct except for a gleaming sword and shield emblazoned with the symbol of your deity.",
-          "Any creature hostile to you that moves to a space within 10 feet of the guardian for the first time on a turn must succeed on a dexterity saving throw. The creature takes 20 radiant damage on a failed save, or half as much damage on a successful one. The guardian vanishes when it has dealt a total of 60 damage."
-        ],
-        "higher_level": [],
-        "range": "30 feet",
-        "components": [
-          "V"
-        ],
-        "material": null,
-        "ritual": false,
-        "duration": "8 hours",
-        "concentration": false,
-        "casting_time": "1 action",
-        "level": 4,
-        "attack_type": null,
-        "damage": {
-          "damage_type": {
-            "index": "radiant",
-            "name": "Radiant",
-            "url": "/api/2014/damage-types/radiant"
-          },
-          "damage_at_slot_level": {
-            "3": null,
-            "6": null,
-            "7": null,
-            "8": null,
-            "9": null,
-            "4": "20",
-            "5": null,
-            "1": null,
-            "2": null
-          },
-          "damage_at_character_level": null
-        },
-        "school": {
-          "index": "conjuration",
-          "name": "Conjuration",
-          "url": "/api/2014/magic-schools/conjuration"
-        },
-        "classes": [
-          {
-            "index": "cleric",
-            "name": "Cleric",
-            "url": "/api/2014/classes/cleric"
-          }
-        ],
-        "subclasses": [],
-        "url": "/api/2014/spells/guardian-of-faith",
-        "dc": {
-          "dc_type": {
-            "index": "dex",
-            "name": "DEX",
-            "url": "/api/2014/ability-scores/dex"
-          },
-          "dc_success": "half",
-          "desc": null
-        },
-        "heal_at_slot_level": null,
-        "area_of_effect": {
-          "type": "cylinder",
-          "size": 10
-        }
-      }
-    }
+    "spells": {}
   },
   "senses": {
     "perception": 10,
@@ -718,5 +106,24 @@
       "order": "Lawful"
     }
   },
-  "walking_speed": 30
+  "walking_speed": 30,
+  "languages": {
+    "languages": [
+      "Common",
+      "Elvish",
+      "Draconic"
+    ]
+  },
+  "conditions": {
+    "conditions": [
+      {
+        "name": "burning",
+        "duration": 0
+      },
+      {
+        "name": "on_fire",
+        "duration": -5
+      }
+    ]
+  }
 }

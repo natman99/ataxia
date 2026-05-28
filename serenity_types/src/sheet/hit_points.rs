@@ -3,9 +3,10 @@ use std::fmt::Display;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::{AbilityScores, class::Classes, roll::Die};
+use crate::{AbilityScores, class::Classes};
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(default)]
 /// The hit points of the character. Default display displays the current health.
 pub struct HitPoints {
     /// Current health. Must never be higher than the max.
