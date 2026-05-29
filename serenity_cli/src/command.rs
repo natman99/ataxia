@@ -89,6 +89,11 @@ impl CommandHandler {
     pub fn iter(&self) -> impl Iterator<Item = &Box<Command>> {
         self.commands.iter()
     }
+
+    pub fn command(mut self, command: Box<Command>) -> CommandHandler {
+        self.commands.push(command);
+        self
+    }
 }
 pub struct Command {
     key: String,
@@ -109,18 +114,18 @@ impl Debug for Command {
 
 /// Populate the command handler.
 pub fn make_command_handler() -> CommandHandler {
-    let mut handler = CommandHandler::new();
-    handler.push(command!("spells", commands::spell));
-    handler.push(command!("inventory", commands::inventory));
-    handler.push(command!("main", commands::g_main));
-    handler.push(command!("add", commands::add));
-    handler.push(command!("search", commands::search));
-    handler.push(command!("damage", commands::damage));
-    handler.push(command!("heal", commands::heal));
-    handler.push(command!("remove", commands::remove));
-    handler.push(command!("help", commands::help));
-    handler.push(command!("buff", commands::buff));
-    handler.push(command!("tick", commands::tick));
+    let handler = CommandHandler::new()
+        .command(command!("spells", commands::spell))
+        .command(command!("inventory", commands::inventory))
+        .command(command!("main", commands::g_main))
+        .command(command!("add", commands::add))
+        .command(command!("search", commands::search))
+        .command(command!("damage", commands::damage))
+        .command(command!("heal", commands::heal))
+        .command(command!("remove", commands::remove))
+        .command(command!("help", commands::help))
+        .command(command!("buff", commands::buff))
+        .command(command!("tick", commands::tick));
 
     handler
 }

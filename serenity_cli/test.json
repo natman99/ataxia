@@ -109,21 +109,13 @@
   "walking_speed": 30,
   "languages": {
     "languages": [
-      "Common",
       "Elvish",
-      "Draconic"
+      "Common",
+      "Draconic",
+      "Human"
     ]
   },
   "conditions": {
-    "conditions": [
-      {
-        "name": "burning",
-        "duration": 0
-      },
-      {
-        "name": "on_fire",
-        "duration": -5
-      }
-    ]
+    "conditions": []
   }
 }

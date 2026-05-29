@@ -192,7 +192,8 @@ fn render_scores_and_lang(sheet: &Character, frame: &mut Frame, area: Rect) {
 
     frame.render_widget(scores(sheet), top);
 
-    let p = Paragraph::new([Line::raw(format!("{}", sheet.languages))].to_vec())
+    let p = Paragraph::new(format!("{}", sheet.languages))
+        .wrap(Wrap { trim: false })
         .block(Block::bordered().title_bottom("Languages"));
 
     frame.render_widget(p, bottom);

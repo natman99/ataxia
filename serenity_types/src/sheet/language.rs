@@ -31,6 +31,9 @@ impl Default for Languages {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq, Hash)]
+// #[serde(untagged)]
+// #[serde(from = "String")]
+// #[serde(into = "String")]
 pub enum Language {
     Common,
     Dwarvish,
@@ -49,6 +52,7 @@ pub enum Language {
     Sylvan,
     Undercommon,
     ThievesCant,
+    #[serde(untagged)]
     Other(String),
 }
 
@@ -81,6 +85,31 @@ impl Display for Language {
 
 impl From<&str> for Language {
     fn from(value: &str) -> Self {
+        match value.to_lowercase().as_str() {
+            "common" => Language::Common,
+            "dwarvish" => Language::Dwarvish,
+            "elvish" => Language::Elvish,
+            "giant" => Language::Giant,
+            "gnomish" => Language::Gnomish,
+            "goblin" => Language::Goblin,
+            "halfling" => Language::Halfling,
+            "orc" => Language::Orc,
+            "abyssal" => Language::Abyssal,
+            "celestial" => Language::Celestial,
+            "draconic" => Language::Draconic,
+            "deep speech" => Language::DeepSpeech,
+            "infernal" => Language::Infernal,
+            "primordial" => Language::Primordial,
+            "sylvan" => Language::Sylvan,
+            "undercommon" => Language::Undercommon,
+            "thieves' cant" => Language::ThievesCant,
+            e => Language::Other(e.to_string()),
+        }
+    }
+}
+
+impl From<String> for Language {
+    fn from(value: String) -> Self {
         match value.to_lowercase().as_str() {
             "common" => Language::Common,
             "dwarvish" => Language::Dwarvish,

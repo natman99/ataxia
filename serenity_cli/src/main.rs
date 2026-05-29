@@ -312,6 +312,11 @@ impl App {
     fn autocomplete(&mut self) {
         use command::Result;
         let val = self.input.value();
+
+        if val.trim().contains(" ") {
+            return;
+        }
+
         let res: Result<usize> = COMMAND_HANDLER.lock().find(val);
         match res {
             Ok(n) => {
