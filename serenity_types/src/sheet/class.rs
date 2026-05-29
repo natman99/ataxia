@@ -140,6 +140,7 @@ pub enum ClassType {
     Warlock,
     Bard,
     Druid,
+    #[serde(untagged)]
     Other(String),
 }
 
