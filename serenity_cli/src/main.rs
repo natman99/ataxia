@@ -157,7 +157,7 @@ struct App {
 
 impl App {
     pub fn new(sheet: Character, path: PathBuf) -> Self {
-        let data = Data::new().unwrap();
+        let data = Data::new().expect("Error loading database");
 
         Self {
             input: Input::new("".to_string()),
