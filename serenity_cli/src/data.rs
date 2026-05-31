@@ -4,12 +4,12 @@ use serenity_types::database::{
     condition::Condition, generic::Generic, spell::Spell, traits::Trait,
 };
 
-const SPELLS_PATH: &'static str = r"../5e-database/src/2014/5e-SRD-Spells.json";
-const CONDITIONS_PATH: &'static str = r"../5e-database/src/2014/5e-SRD-Conditions.json";
-const TRAITS_PATH: &'static str = r"../5e-database/src/2014/5e-SRD-Traits.json";
-const SKILLS_PATH: &'static str = r"../5e-database/src/2014/5e-SRD-Skills.json";
-const RULES_PATH: &'static str = r"../5e-database/src/2014/5e-SRD-Rule-Sections.json";
-const MAGIC_ITEMS_PATH: &'static str = r"../5e-database/src/2014/5e-SRD-Magic-Items.json";
+const SPELLS_PATH: &'static str = r"../5e-database/src/2014/en/5e-SRD-Spells.json";
+const CONDITIONS_PATH: &'static str = r"../5e-database/src/2014/en/5e-SRD-Conditions.json";
+const TRAITS_PATH: &'static str = r"../5e-database/src/2014/en/5e-SRD-Traits.json";
+const SKILLS_PATH: &'static str = r"../5e-database/src/2014/en/5e-SRD-Skills.json";
+const RULES_PATH: &'static str = r"../5e-database/src/2014/en/5e-SRD-Rule-Sections.json";
+const MAGIC_ITEMS_PATH: &'static str = r"../5e-database/src/2014/en/5e-SRD-Magic-Items.json";
 
 #[derive(Debug, Clone)]
 pub struct Data {

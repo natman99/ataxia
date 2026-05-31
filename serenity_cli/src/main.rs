@@ -1,4 +1,5 @@
 use parking_lot::Mutex;
+use ratatui::crossterm::event::KeyEventKind;
 use schemars::JsonSchema;
 use std::{cell::LazyCell, fs, io, path::PathBuf};
 
@@ -236,12 +237,20 @@ impl App {
         }
 
         if let Event::Key(KeyEvent {
-            code, modifiers, ..
+            code,
+            modifiers,
+            kind,
+            ..
         }) = event
         {
             if modifiers.contains(KeyModifiers::CONTROL) && code == KeyCode::Char('c') {
                 self.input.reset();
                 self.prev_command_idx = 0;
+                return Ok(());
+            }
+
+            if kind != KeyEventKind::Release {
+                self.input.handle_event(&event);
                 return Ok(());
             }
 
