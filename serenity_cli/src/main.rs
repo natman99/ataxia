@@ -249,7 +249,8 @@ impl App {
                 return Ok(());
             }
 
-            if kind != KeyEventKind::Release {
+            // Windows terminal
+            if kind != KeyEventKind::Press {
                 self.input.handle_event(&event);
                 return Ok(());
             }

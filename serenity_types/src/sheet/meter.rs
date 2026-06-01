@@ -12,94 +12,47 @@ pub struct Meters {
 #[serde(default)]
 /// A meter item. These are for counting any consumable resources including spell slots.
 pub struct Meter {
-    /// The name of the meter.
-    pub name: String,
+    pub slot_number: u32,
+    pub spent: u32,
 
-    pub slots: Vec<Metric>,
     pub restore: RestoreTime,
 }
 
 impl Meter {
-    pub fn new(
-        name: String,
-        slot_number: usize,
-        level: Option<SpellLevel>,
-        restore: RestoreTime,
-    ) -> Self {
-        let slot = Metric {
-            level: level.unwrap_or(SpellLevel::default()),
-            spent: false,
-        };
-
-        let slots = vec![slot; slot_number];
+    pub fn new(name: String, slot_number: u32, restore: RestoreTime) -> Self {
         Self {
-            name,
-            slots: slots,
             restore,
+            slot_number,
+            spent: 0,
         }
     }
 
     /// Check if a meter slot is available.
-    pub fn check(&self, level: SpellLevel) -> bool {
-        self.slots
-            .iter()
-            .any(|f| f.spent == false && f.level == level)
+    pub fn check(&self) -> bool {
+        self.spent < self.slot_number
     }
-    /// Returns true if the slot was successfully spent.
-    pub fn spend(&mut self, level: SpellLevel) -> bool {
-        if self.check(level) {
-            let idx = self
-                .slots
-                .iter()
-                .position(|f| f.spent == true && f.level == level)
-                .expect("We checked this before");
-            self.slots[idx].spent = false;
-
-            true
-        } else {
-            false
+    pub fn spend(&mut self) {
+        if self.spent < self.slot_number {
+            self.spent += 1;
         }
     }
 
-    /// Returns true if the slot was successfully restored.
-    pub fn restore(&mut self, level: SpellLevel) -> bool {
-        if !self.check(level) {
-            let idx = self
-                .slots
-                .iter()
-                .position(|f| f.spent == false && f.level == level)
-                .expect("We checked this before");
-            self.slots[idx].spent = true;
-
-            true
-        } else {
-            false
-        }
+    pub fn restore(&mut self) {
+        self.spent = self.spent.saturating_sub(1);
     }
     /// Restore all spell slots.
     pub fn restore_all(&mut self) -> () {
-        self.slots.iter_mut().for_each(|f| f.spent = false);
+        self.spent = 0;
     }
 
-    pub fn add(&mut self, s: Metric) {
-        self.slots.push(s);
+    pub fn add(&mut self) {
+        self.slot_number += 1;
+    }
+
+    pub fn remove(&mut self) {
+        self.slot_number = self.slot_number.saturating_sub(1);
     }
 }
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, JsonSchema, Default)]
-#[serde(default)]
-/// A metric slot.
-pub struct Metric {
-    /// The level of the spell slot.
-    pub level: SpellLevel,
-    /// Whether the slot is spent or not.
-    pub spent: bool,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Copy, Serialize, Deserialize, Hash, JsonSchema, Default)]
-#[serde(default)]
-/// The level of the spell slot.
-pub struct SpellLevel(pub u8);
 
 #[derive(
     Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Hash, Serialize, Deserialize, JsonSchema,

@@ -3,10 +3,10 @@ use ratatui::{
     Frame,
     layout::{Constraint, Direction, Layout, Margin, Rect},
     symbols::merge::MergeStrategy,
-    text::{Line, Span, Text},
+    text::Text,
     widgets::{Block, Cell, Padding, Paragraph, Row, Scrollbar, Table, Wrap},
 };
-use serenity_types::{Character, Score, ability_score::AbilityScore, skills::Skill};
+use serenity_types::{Character, Score, skills::Skill};
 
 use crate::FocusedContent;
 
@@ -243,9 +243,10 @@ fn render_skills(sheet: &Character, frame: &mut Frame, area: Rect) {
 
     let rows = names.into_iter().zip(skills).map(|(f, m)| {
         Row::new([
-            Cell::new(f.to_string()),
+            Cell::new(f),
             Cell::new(
-                Text::from(format!("{}", m)).alignment(ratatui::layout::HorizontalAlignment::Right),
+                Text::from(format!("{:+}", m))
+                    .alignment(ratatui::layout::HorizontalAlignment::Right),
             ),
         ])
     });
@@ -259,28 +260,87 @@ fn render_skills(sheet: &Character, frame: &mut Frame, area: Rect) {
     frame.render_widget(table, area);
 }
 
-fn render_spells<'a>(frame: &mut Frame, area: Rect, sheet: &'a Character) {
+fn render_spells(frame: &mut Frame, area: Rect, sheet: &Character) {
+    let (top, bottom) = {
+        let split = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Percentage(60), Constraint::Percentage(40)])
+            .split(area);
+
+        (split[0], split[1])
+    };
+
+    render_spells_list(frame, top, sheet);
+    render_meters(frame, bottom, sheet);
+}
+
+fn render_meters(frame: &mut Frame, area: Rect, sheet: &Character) {
+    const EMPTY_BOX: char = '\u{25A1}';
+    const FILLED_BOX: char = '\u{25A0}';
+
+    let widths = [Constraint::Length(8), Constraint::Fill(1)];
+
     let mut rows = vec![];
 
-    let header = Row::new(["Name", "Time", "Range", "Hit/DC", "Effect", "Duration"]);
+    for i in sheet.meters.meters.iter() {
+        let name = i.0.as_str();
+
+        let max = i.1.slot_number;
+        let filled = max - i.1.spent;
+        let not_filled = max - filled;
+
+        let mut out = String::new();
+
+        for _ in 0..not_filled {
+            out.push(FILLED_BOX);
+
+            // out.push(' ');
+        }
+        for _ in 0..filled {
+            out.push(EMPTY_BOX);
+
+            // out.push(' ');
+        }
+
+        rows.push(Row::new([Cell::new(name), Cell::new(out)]));
+    }
+
+    let table = Table::new(rows, widths).block(Block::bordered().title("Meters"));
+
+    frame.render_widget(table, area);
+}
+
+fn render_spells_list<'a>(frame: &mut Frame, area: Rect, sheet: &'a Character) {
+    let mut rows = vec![];
+
+    let header = Row::new([
+        "Name", "Time", "Range", "Hit/DC", "Effect", "Duration", "Level",
+    ]);
 
     let widths = [
         Constraint::Length(16),
         Constraint::Length(5),
         Constraint::Length(10),
+        Constraint::Length(14),
         Constraint::Length(16),
-        Constraint::Length(20),
-        Constraint::Length(10),
+        Constraint::Length(14),
+        Constraint::Length(5),
     ];
 
-    for i in sheet.spells.spells.iter() {
+    for i in sheet
+        .spells
+        .spells
+        .iter()
+        .sorted_by(|a, b| a.1.level.cmp(&b.1.level))
+    {
         let s = i.1;
         let dc = {
             if let Some(ref dc) = s.dc {
-                format!("{dc}")
+                format!("{} {}, {}", dc.dc_type.name, sheet.save_dc(), dc.dc_success)
             } else {
-                let spell_modifier = sheet.attack_bonus();
-                format!("{}", spell_modifier)
+                let spell_modifier = sheet.spell_bonus();
+
+                format!("{:+}", spell_modifier)
             }
         };
 
@@ -301,7 +361,7 @@ fn render_spells<'a>(frame: &mut Frame, area: Rect, sheet: &'a Character) {
                 }
 
                 if d.damage_at_slot_level.is_some() {
-                    output.push_str("Scaling");
+                    output.push_str("Scaling ");
                 }
 
                 if let Some(ref s) = d.damage_type {
@@ -316,17 +376,23 @@ fn render_spells<'a>(frame: &mut Frame, area: Rect, sheet: &'a Character) {
 
             output
         };
+
         let r = Row::new([
             Cell::new(s.name.as_str()),
             Cell::new(s.casting_time.as_str()),
             Cell::new(s.range.as_str()),
             Cell::new(dc),
             Cell::new(damage),
+            Cell::new(s.duration.as_str()),
+            Cell::new(s.level.to_string()),
         ]);
+
         rows.push(r);
     }
 
-    let t = Table::new(rows, widths).header(header.clone());
+    let t = Table::new(rows, widths)
+        .header(header.clone())
+        .block(Block::bordered().title("Spells"));
 
     frame.render_widget(t, area);
 }

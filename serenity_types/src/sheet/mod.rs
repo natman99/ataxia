@@ -97,10 +97,15 @@ impl Character {
     pub fn ability_modifier(&self) -> i32 {
         self.ability_scores.get(&self.ability_modifier).modifier()
     }
+    /// Attack bonus.
     /// Ability modifier + proficiency bonus.
     pub fn attack_bonus(&self) -> i32 {
         let f = self.ability_scores.get(&self.ability_modifier).modifier();
         self.skills.proficiency_bonus as i32 + f
+    }
+    /// Spell attack bonus. Alias for `self.attack_bonus()`
+    pub fn spell_bonus(&self) -> i32 {
+        self.attack_bonus()
     }
     /// Calculate the sheet, updating items, health, and stats.
     pub fn calculate(&self) -> Self {
@@ -144,7 +149,7 @@ impl Character {
                     feature::FeatureEffect::Meter(meter_add) => {
                         s.meters
                             .meters
-                            .insert(meter_add.meter.name.clone(), meter_add.meter.clone());
+                            .insert(meter_add.name.to_string(), meter_add.meter.clone());
                     }
 
                     feature::FeatureEffect::HealthBonusPerLevel(b) => {

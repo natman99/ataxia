@@ -75,7 +75,386 @@
     "proficiency_bonus": 0
   },
   "spells": {
-    "spells": {}
+    "spells": {
+      "Bane": {
+        "index": "bane",
+        "name": "Bane",
+        "desc": [
+          "Up to three creatures of your choice that you can see within range must make charisma saving throws. Whenever a target that fails this saving throw makes an attack roll or a saving throw before the spell ends, the target must roll a d4 and subtract the number rolled from the attack roll or saving throw."
+        ],
+        "higher_level": [
+          "When you cast this spell using a spell slot of 2nd level or higher, you can target one additional creature for each slot level above 1st."
+        ],
+        "range": "30 feet",
+        "components": [
+          "V",
+          "S",
+          "M"
+        ],
+        "material": "A drop of blood.",
+        "ritual": false,
+        "duration": "Up to 1 minute",
+        "concentration": true,
+        "casting_time": "1 action",
+        "level": 1,
+        "attack_type": null,
+        "damage": null,
+        "school": {
+          "index": "enchantment",
+          "name": "Enchantment",
+          "url": "/api/2014/magic-schools/enchantment"
+        },
+        "classes": [
+          {
+            "index": "bard",
+            "name": "Bard",
+            "url": "/api/2014/classes/bard"
+          },
+          {
+            "index": "cleric",
+            "name": "Cleric",
+            "url": "/api/2014/classes/cleric"
+          }
+        ],
+        "subclasses": [
+          {
+            "index": "lore",
+            "name": "Lore",
+            "url": "/api/2014/subclasses/lore"
+          }
+        ],
+        "url": "/api/2014/spells/bane",
+        "dc": {
+          "dc_type": {
+            "index": "cha",
+            "name": "CHA",
+            "url": "/api/2014/ability-scores/cha"
+          },
+          "dc_success": "none",
+          "desc": null
+        },
+        "heal_at_slot_level": null,
+        "area_of_effect": null
+      },
+      "Fire Bolt": {
+        "index": "fire-bolt",
+        "name": "Fire Bolt",
+        "desc": [
+          "You hurl a mote of fire at a creature or object within range. Make a ranged spell attack against the target. On a hit, the target takes 1d10 fire damage. A flammable object hit by this spell ignites if it isn't being worn or carried.",
+          "This spell's damage increases by 1d10 when you reach 5th level (2d10), 11th level (3d10), and 17th level (4d10)."
+        ],
+        "higher_level": [],
+        "range": "120 feet",
+        "components": [
+          "V",
+          "S"
+        ],
+        "material": null,
+        "ritual": false,
+        "duration": "Instantaneous",
+        "concentration": false,
+        "casting_time": "1 action",
+        "level": 0,
+        "attack_type": "ranged",
+        "damage": {
+          "damage_type": {
+            "index": "fire",
+            "name": "Fire",
+            "url": "/api/2014/damage-types/fire"
+          },
+          "damage_at_slot_level": null,
+          "damage_at_character_level": {
+            "1": "1d10",
+            "5": "2d10",
+            "11": "3d10",
+            "17": "4d10"
+          }
+        },
+        "school": {
+          "index": "evocation",
+          "name": "Evocation",
+          "url": "/api/2014/magic-schools/evocation"
+        },
+        "classes": [
+          {
+            "index": "sorcerer",
+            "name": "Sorcerer",
+            "url": "/api/2014/classes/sorcerer"
+          },
+          {
+            "index": "wizard",
+            "name": "Wizard",
+            "url": "/api/2014/classes/wizard"
+          }
+        ],
+        "subclasses": [],
+        "url": "/api/2014/spells/fire-bolt",
+        "dc": null,
+        "heal_at_slot_level": null,
+        "area_of_effect": null
+      },
+      "Fireball": {
+        "index": "fireball",
+        "name": "Fireball",
+        "desc": [
+          "A bright streak flashes from your pointing finger to a point you choose within range and then blossoms with a low roar into an explosion of flame. Each creature in a 20-foot-radius sphere centered on that point must make a dexterity saving throw. A target takes 8d6 fire damage on a failed save, or half as much damage on a successful one.",
+          "The fire spreads around corners. It ignites flammable objects in the area that aren't being worn or carried."
+        ],
+        "higher_level": [
+          "When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d6 for each slot level above 3rd."
+        ],
+        "range": "150 feet",
+        "components": [
+          "V",
+          "S",
+          "M"
+        ],
+        "material": "A tiny ball of bat guano and sulfur.",
+        "ritual": false,
+        "duration": "Instantaneous",
+        "concentration": false,
+        "casting_time": "1 action",
+        "level": 3,
+        "attack_type": null,
+        "damage": {
+          "damage_type": {
+            "index": "fire",
+            "name": "Fire",
+            "url": "/api/2014/damage-types/fire"
+          },
+          "damage_at_slot_level": {
+            "3": "8d6",
+            "6": "11d6",
+            "7": "12d6",
+            "8": "13d6",
+            "9": "14d6",
+            "4": "9d6",
+            "5": "10d6",
+            "1": null,
+            "2": null
+          },
+          "damage_at_character_level": null
+        },
+        "school": {
+          "index": "evocation",
+          "name": "Evocation",
+          "url": "/api/2014/magic-schools/evocation"
+        },
+        "classes": [
+          {
+            "index": "sorcerer",
+            "name": "Sorcerer",
+            "url": "/api/2014/classes/sorcerer"
+          },
+          {
+            "index": "wizard",
+            "name": "Wizard",
+            "url": "/api/2014/classes/wizard"
+          }
+        ],
+        "subclasses": [
+          {
+            "index": "lore",
+            "name": "Lore",
+            "url": "/api/2014/subclasses/lore"
+          },
+          {
+            "index": "fiend",
+            "name": "Fiend",
+            "url": "/api/2014/subclasses/fiend"
+          }
+        ],
+        "url": "/api/2014/spells/fireball",
+        "dc": {
+          "dc_type": {
+            "index": "dex",
+            "name": "DEX",
+            "url": "/api/2014/ability-scores/dex"
+          },
+          "dc_success": "half",
+          "desc": null
+        },
+        "heal_at_slot_level": null,
+        "area_of_effect": {
+          "type": "sphere",
+          "size": 20
+        }
+      },
+      "Hold Person": {
+        "index": "hold-person",
+        "name": "Hold Person",
+        "desc": [
+          "Choose a humanoid that you can see within range. The target must succeed on a wisdom saving throw or be paralyzed for the duration. At the end of each of its turns, the target can make another wisdom saving throw. On a success, the spell ends on the target."
+        ],
+        "higher_level": [
+          "When you cast this spell using a spell slot of 3rd level or higher, you can target one additional humanoid for each slot level above 2nd. The humanoids must be within 30 feet of each other when you target them."
+        ],
+        "range": "60 feet",
+        "components": [
+          "V",
+          "S",
+          "M"
+        ],
+        "material": "A small, straight piece of iron.",
+        "ritual": false,
+        "duration": "Up to 1 minute",
+        "concentration": true,
+        "casting_time": "1 action",
+        "level": 2,
+        "attack_type": null,
+        "damage": null,
+        "school": {
+          "index": "enchantment",
+          "name": "Enchantment",
+          "url": "/api/2014/magic-schools/enchantment"
+        },
+        "classes": [
+          {
+            "index": "bard",
+            "name": "Bard",
+            "url": "/api/2014/classes/bard"
+          },
+          {
+            "index": "cleric",
+            "name": "Cleric",
+            "url": "/api/2014/classes/cleric"
+          },
+          {
+            "index": "druid",
+            "name": "Druid",
+            "url": "/api/2014/classes/druid"
+          },
+          {
+            "index": "sorcerer",
+            "name": "Sorcerer",
+            "url": "/api/2014/classes/sorcerer"
+          },
+          {
+            "index": "warlock",
+            "name": "Warlock",
+            "url": "/api/2014/classes/warlock"
+          },
+          {
+            "index": "wizard",
+            "name": "Wizard",
+            "url": "/api/2014/classes/wizard"
+          }
+        ],
+        "subclasses": [
+          {
+            "index": "lore",
+            "name": "Lore",
+            "url": "/api/2014/subclasses/lore"
+          },
+          {
+            "index": "land",
+            "name": "Land",
+            "url": "/api/2014/subclasses/land"
+          }
+        ],
+        "url": "/api/2014/spells/hold-person",
+        "dc": {
+          "dc_type": {
+            "index": "wis",
+            "name": "WIS",
+            "url": "/api/2014/ability-scores/wis"
+          },
+          "dc_success": "none",
+          "desc": null
+        },
+        "heal_at_slot_level": null,
+        "area_of_effect": null
+      },
+      "Spare the Dying": {
+        "index": "spare-the-dying",
+        "name": "Spare the Dying",
+        "desc": [
+          "You touch a living creature that has 0 hit points. The creature becomes stable. This spell has no effect on undead or constructs."
+        ],
+        "higher_level": [],
+        "range": "Touch",
+        "components": [
+          "V",
+          "S"
+        ],
+        "material": null,
+        "ritual": false,
+        "duration": "Instantaneous",
+        "concentration": false,
+        "casting_time": "1 action",
+        "level": 0,
+        "attack_type": null,
+        "damage": null,
+        "school": {
+          "index": "necromancy",
+          "name": "Necromancy",
+          "url": "/api/2014/magic-schools/necromancy"
+        },
+        "classes": [
+          {
+            "index": "cleric",
+            "name": "Cleric",
+            "url": "/api/2014/classes/cleric"
+          }
+        ],
+        "subclasses": [],
+        "url": "/api/2014/spells/spare-the-dying",
+        "dc": null,
+        "heal_at_slot_level": null,
+        "area_of_effect": null
+      },
+      "Wish": {
+        "index": "wish",
+        "name": "Wish",
+        "desc": [
+          "Wish is the mightiest spell a mortal creature can cast. By simply speaking aloud, you can alter the very foundations of reality in accord with your desires.",
+          "The basic use of this spell is to duplicate any other spell of 8th level or lower. You don't need to meet any requirements in that spell, including costly components. The spell simply takes effect.",
+          "Alternatively, you can create one of the following effects of your choice:",
+          "- You create one object of up to 25,000 gp in value that isn't a magic item. The object can be no more than 300 feet in any dimension, and it appears in an unoccupied space you can see on the ground.",
+          "- You allow up to twenty creatures that you can see to regain all hit points, and you end all effects on them described in the greater restoration spell.",
+          "- You grant up to ten creatures that you can see resistance to a damage type you choose.",
+          "- You grant up to ten creatures you can see immunity to a single spell or other magical effect for 8 hours. For instance, you could make yourself and all your companions immune to a lich's life drain attack.",
+          "- You undo a single recent event by forcing a reroll of any roll made within the last round (including your last turn). Reality reshapes itself to accommodate the new result. For example, a wish spell could undo an opponent's successful save, a foe's critical hit, or a friend's failed save. You can force the reroll to be made with advantage or disadvantage, and you can choose whether to use the reroll or the original roll.",
+          "You might be able to achieve something beyond the scope of the above examples. State your wish to the GM as precisely as possible. The GM has great latitude in ruling what occurs in such an instance; the greater the wish, the greater the likelihood that something goes wrong. This spell might simply fail, the effect you desire might only be partly achieved, or you might suffer some unforeseen consequence as a result of how you worded the wish. For example, wishing that a villain were dead might propel you forward in time to a period when that villain is no longer alive, effectively removing you from the game. Similarly, wishing for a legendary magic item or artifact might instantly transport you to the presence of the item's current owner.",
+          "The stress of casting this spell to produce any effect other than duplicating another spell weakens you. After enduring that stress, each time you cast a spell until you finish a long rest, you take 1d10 necrotic damage per level of that spell. This damage can't be reduced or prevented in any way. In addition, your Strength drops to 3, if it isn't 3 or lower already, for 2d4 days. For each of those days that you spend resting and doing nothing more than light activity, your remaining recovery time decreases by 2 days. Finally, there is a 33 percent chance that you are unable to cast wish ever again if you suffer this stress."
+        ],
+        "higher_level": [],
+        "range": "Self",
+        "components": [
+          "V"
+        ],
+        "material": null,
+        "ritual": false,
+        "duration": "Instantaneous",
+        "concentration": false,
+        "casting_time": "1 action",
+        "level": 9,
+        "attack_type": null,
+        "damage": null,
+        "school": {
+          "index": "conjuration",
+          "name": "Conjuration",
+          "url": "/api/2014/magic-schools/conjuration"
+        },
+        "classes": [
+          {
+            "index": "sorcerer",
+            "name": "Sorcerer",
+            "url": "/api/2014/classes/sorcerer"
+          },
+          {
+            "index": "wizard",
+            "name": "Wizard",
+            "url": "/api/2014/classes/wizard"
+          }
+        ],
+        "subclasses": [],
+        "url": "/api/2014/spells/wish",
+        "dc": null,
+        "heal_at_slot_level": null,
+        "area_of_effect": null
+      }
+    }
   },
   "senses": {
     "perception": 10,
@@ -93,7 +472,24 @@
   },
   "ability_modifier": "Str",
   "meters": {
-    "meters": {}
+    "meters": {
+      "first": {
+        "slot_number": 4,
+        "spent": 0,
+        "restore": {
+          "short_rest": false,
+          "long_rest": true
+        }
+      },
+      "second": {
+        "slot_number": 4,
+        "spent": 0,
+        "restore": {
+          "short_rest": false,
+          "long_rest": true
+        }
+      }
+    }
   },
   "lore": {
     "backstory": "",

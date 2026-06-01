@@ -125,7 +125,10 @@ pub fn make_command_handler() -> CommandHandler {
         .command(command!("remove", commands::remove))
         .command(command!("help", commands::help))
         .command(command!("buff", commands::buff))
-        .command(command!("tick", commands::tick));
+        .command(command!("tick", commands::tick))
+        .command(command!("meter", commands::meter))
+        .command(command!("spend", commands::spend))
+        .command(command!("restore", commands::restore));
 
     handler
 }

@@ -70,6 +70,7 @@ pub enum FeatureEffect {
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, JsonSchema)]
 pub struct MeterAdd {
+    pub name: String,
     pub meter: Meter,
     /// Number of meter slots.
     pub slot_number: usize,
