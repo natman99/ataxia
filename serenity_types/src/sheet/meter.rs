@@ -19,7 +19,7 @@ pub struct Meter {
 }
 
 impl Meter {
-    pub fn new(name: String, slot_number: u32, restore: RestoreTime) -> Self {
+    pub fn new(slot_number: u32, restore: RestoreTime) -> Self {
         Self {
             restore,
             slot_number,

@@ -36,7 +36,7 @@ pub fn add(mut args: Split<&str>, app: &mut App) -> command::Result<()> {
             }
         };
 
-        let meter = Meter::new(name.to_string(), n.unwrap_or(1), Default::default());
+        let meter = Meter::new(n.unwrap_or(1), Default::default());
 
         _ = app.sheet.meters.meters.insert(name.to_string(), meter);
 

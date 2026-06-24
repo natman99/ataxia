@@ -476,7 +476,7 @@
   "ability_modifier": "Str",
   "meters": {
     "meters": {
-      "first": {
+      "second": {
         "slot_number": 4,
         "spent": 0,
         "restore": {
@@ -484,7 +484,7 @@
           "long_rest": true
         }
       },
-      "second": {
+      "first": {
         "slot_number": 4,
         "spent": 0,
         "restore": {
