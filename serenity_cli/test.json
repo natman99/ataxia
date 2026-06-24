@@ -72,7 +72,10 @@
     "intimidation": false,
     "performance": false,
     "persuasion": false,
-    "proficiency_bonus": 0
+    "proficiency_bonus": 0,
+    "expertise": [
+      "Acrobatics"
+    ]
   },
   "spells": {
     "spells": {

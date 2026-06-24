@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use enumflags2::{BitFlags, bitflags};
+use enumflags2::{BitFlag, BitFlags, bitflags};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -151,6 +151,7 @@ impl TryFrom<&str> for Skill {
     }
 }
 #[derive(Serialize, Deserialize, Debug, Clone, Default, JsonSchema)]
+#[serde(default)]
 struct SkillsJson {
     athletics: bool,
     acrobatics: bool,
@@ -171,6 +172,7 @@ struct SkillsJson {
     performance: bool,
     persuasion: bool,
     proficiency_bonus: u32,
+    expertise: Vec<Skill>,
 }
 
 #[derive(Debug, Clone, PartialEq, Default, JsonSchema, Serialize, Deserialize)]
@@ -181,6 +183,7 @@ struct SkillsJson {
 pub struct Skills {
     pub proficiency_bonus: u32,
     pub proficiencies: BitFlags<Skill>,
+    pub expertise: BitFlags<Skill>,
 }
 
 impl From<SkillsJson> for Skills {
@@ -209,6 +212,11 @@ impl From<SkillsJson> for Skills {
         out.proficiencies.set(Skill::Performance, value.performance);
         out.proficiencies.set(Skill::Persuasion, value.persuasion);
         out.proficiency_bonus = value.proficiency_bonus;
+        out.expertise = {
+            let mut m: BitFlags<Skill> = BitFlags::empty();
+            value.expertise.iter().for_each(|f| m.set(*f, true));
+            m
+        };
         out
     }
 }
@@ -238,35 +246,18 @@ impl From<&Skills> for SkillsJson {
             Skill::Persuasion => out.persuasion = true,
         });
 
+        out.expertise = {
+            let mut m = vec![];
+            value.expertise.into_iter().for_each(|f| m.push(f));
+            m
+        };
+
         out
     }
 }
 impl From<Skills> for SkillsJson {
     fn from(value: Skills) -> Self {
-        let mut out = SkillsJson::default();
-        out.proficiency_bonus = value.proficiency_bonus;
-        value.proficiencies.iter().for_each(|f| match f {
-            Skill::Athletics => out.athletics = true,
-            Skill::Acrobatics => out.acrobatics = true,
-            Skill::SleightOfHand => out.sleightofhand = true,
-            Skill::Stealth => out.stealth = true,
-            Skill::Arcana => out.arcana = true,
-            Skill::History => out.history = true,
-            Skill::Investigation => out.investigation = true,
-            Skill::Nature => out.nature = true,
-            Skill::Religion => out.religion = true,
-            Skill::AnimalHandling => out.animalhandling = true,
-            Skill::Insight => out.insight = true,
-            Skill::Medicine => out.medicine = true,
-            Skill::Perception => out.perception = true,
-            Skill::Survival => out.survival = true,
-            Skill::Deception => out.deception = true,
-            Skill::Intimidation => out.intimidation = true,
-            Skill::Performance => out.performance = true,
-            Skill::Persuasion => out.persuasion = true,
-        });
-
-        out
+        Self::from(&value)
     }
 }
 impl Skills {
@@ -284,12 +275,13 @@ impl Skills {
             | Skill::History
             | Skill::Investigation
             | Skill::Nature
-            | Skill::Religion
-            | Skill::AnimalHandling => ability_scores.int.modifier(),
+            | Skill::Religion => ability_scores.int.modifier(),
             // wis scaling
-            Skill::Insight | Skill::Medicine | Skill::Perception | Skill::Survival => {
-                ability_scores.wis.modifier()
-            }
+            Skill::AnimalHandling
+            | Skill::Insight
+            | Skill::Medicine
+            | Skill::Perception
+            | Skill::Survival => ability_scores.wis.modifier(),
             // char scaling
             Skill::Deception | Skill::Intimidation | Skill::Performance | Skill::Persuasion => {
                 ability_scores.char.modifier()
@@ -300,6 +292,12 @@ impl Skills {
             self.proficiency_bonus
         } else {
             0
+        };
+
+        let bonus = if self.expertise.contains(*skill) {
+            bonus * 2
+        } else {
+            bonus
         };
 
         let total = base_modifier + bonus as i32;
