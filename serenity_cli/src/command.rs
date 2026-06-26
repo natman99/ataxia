@@ -115,20 +115,22 @@ impl Debug for Command {
 /// Populate the command handler.
 pub fn make_command_handler() -> CommandHandler {
     let handler = CommandHandler::new()
-        .command(command!("spells", commands::spell))
-        .command(command!("inventory", commands::inventory))
-        .command(command!("main", commands::g_main))
         .command(command!("add", commands::add))
-        .command(command!("search", commands::search))
+        .command(command!("buff", commands::buff))
         .command(command!("damage", commands::damage))
         .command(command!("heal", commands::heal))
-        .command(command!("remove", commands::remove))
         .command(command!("help", commands::help))
-        .command(command!("buff", commands::buff))
-        .command(command!("tick", commands::tick))
+        .command(command!("inventory", commands::inventory))
+        .command(command!("m", commands::g_main))
+        .command(command!("main", commands::g_main))
         .command(command!("meter", commands::meter))
+        .command(command!("remove", commands::remove))
+        .command(command!("restore", commands::restore))
+        .command(command!("search", commands::search))
+        .command(command!("spells", commands::spell))
         .command(command!("spend", commands::spend))
-        .command(command!("restore", commands::restore));
+        .command(command!("tick", commands::tick))
+        .command(command!("create", commands::create));
 
     handler
 }

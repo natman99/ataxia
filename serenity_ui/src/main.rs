@@ -67,7 +67,9 @@ impl eframe::App for App {
             match &mut *data {
                 KindData::Spell(spell) => {
                     ui.label("Name");
-                    ui.text_edit_singleline(&mut spell.name);
+                    if ui.text_edit_singleline(&mut spell.name).changed() {
+                        spell.index = spell.name.to_lowercase().replace(" ", "_");
+                    }
                     ui.checkbox(&mut spell.concentration, "Concentration");
 
                     let mut buf = spell.desc.join("\n");

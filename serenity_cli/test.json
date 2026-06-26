@@ -456,6 +456,49 @@
         "dc": null,
         "heal_at_slot_level": null,
         "area_of_effect": null
+      },
+      "fireballs": {
+        "index": "",
+        "name": "fireballs",
+        "desc": [
+          "dasdas"
+        ],
+        "higher_level": [],
+        "range": "dasd",
+        "components": [],
+        "material": null,
+        "ritual": false,
+        "duration": "asdas",
+        "concentration": false,
+        "casting_time": "asd",
+        "level": 3,
+        "attack_type": null,
+        "damage": {
+          "damage_type": null,
+          "damage_at_slot_level": {
+            "3": null,
+            "6": null,
+            "7": null,
+            "8": null,
+            "9": null,
+            "4": null,
+            "5": null,
+            "1": "4d20",
+            "2": null
+          },
+          "damage_at_character_level": null
+        },
+        "school": {
+          "index": "",
+          "name": "",
+          "url": ""
+        },
+        "classes": [],
+        "subclasses": [],
+        "url": "",
+        "dc": null,
+        "heal_at_slot_level": null,
+        "area_of_effect": null
       }
     }
   },
@@ -476,7 +519,7 @@
   "ability_modifier": "Str",
   "meters": {
     "meters": {
-      "second": {
+      "first": {
         "slot_number": 4,
         "spent": 0,
         "restore": {
@@ -484,7 +527,7 @@
           "long_rest": true
         }
       },
-      "first": {
+      "second": {
         "slot_number": 4,
         "spent": 0,
         "restore": {
