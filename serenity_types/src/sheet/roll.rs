@@ -1,5 +1,5 @@
 use core::str;
-use std::sync::LazyLock;
+use std::{collections::HashMap, fmt::Display, sync::LazyLock};
 
 use rand::{Rng, RngExt};
 use regex::Regex;
@@ -127,6 +127,38 @@ impl TryFrom<&str> for Roll {
         } else {
             Err(())
         }
+    }
+}
+
+impl TryFrom<String> for Roll {
+    type Error = ();
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        Roll::try_from(value.as_str())
+    }
+}
+
+impl Display for Roll {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut out = String::new();
+        let mut m = HashMap::new();
+        for i in &self.dice {
+            if m.contains_key(&i.max()) {
+                let c = m.get_mut(&i.max()).unwrap();
+                *c += 1;
+            } else {
+                m.insert(i.max(), 1);
+            }
+        }
+
+        for i in m.iter() {
+            out.push_str(&format!("{}d{} ", i.1, i.0));
+        }
+        if self.bonus != 0 {
+            out.push_str(&format!("+ {}", self.bonus));
+        }
+
+        write!(f, "{}", out)
     }
 }
 
