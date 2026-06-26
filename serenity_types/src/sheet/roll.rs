@@ -98,35 +98,37 @@ impl TryFrom<&str> for Roll {
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         static M: LazyLock<Regex> = LazyLock::new(|| regex::Regex::new(r"(\d+)[dD](\d+)").unwrap());
 
-        if let Some(matches) = M.captures(value) {
-            let n = matches[0].parse::<u32>();
-            let d = matches[1].parse::<u32>();
+        let mut dice = vec![];
+        for m in M.captures_iter(value) {
+            let n = m[1].parse::<u32>();
+            let d = m[2].parse::<u32>();
 
             if let Ok(n) = n
                 && let Ok(d) = d
                 && let Ok(die) = Die::try_from(d)
             {
-                let bonus = {
-                    if value.contains("+") {
-                        if let Some(e) = value.split("+").collect::<Vec<&str>>().get(1) {
-                            e.parse().unwrap_or(0)
-                        } else {
-                            0
-                        }
-                    } else {
-                        0
-                    }
-                };
-                Ok(Self {
-                    dice: vec![die; n as usize],
-                    bonus: bonus,
-                })
+                dice.append(&mut vec![die; n as usize]);
             } else {
-                Err(())
+                continue;
             }
-        } else {
-            Err(())
         }
+
+        let bonus = {
+            if value.contains("+") {
+                if let Some(e) = value.split("+").collect::<Vec<&str>>().get(1) {
+                    e.parse().unwrap_or(0)
+                } else {
+                    0
+                }
+            } else {
+                0
+            }
+        };
+
+        if dice.is_empty() {
+            return Err(());
+        }
+        Ok(Self { dice, bonus: bonus })
     }
 }
 

@@ -9,3 +9,4 @@ eframe = "0.34.3"
 egui = "0.34.3"
 serde = "1.0.228"
 serde_json = "1.0.150"
+serenity_types = {path = "../serenity_types"}
