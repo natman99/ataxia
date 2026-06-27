@@ -121,7 +121,6 @@ pub fn make_command_handler() -> CommandHandler {
         .command(command!("heal", commands::heal))
         .command(command!("help", commands::help))
         .command(command!("inventory", commands::inventory))
-        .command(command!("m", commands::g_main))
         .command(command!("main", commands::g_main))
         .command(command!("meter", commands::meter))
         .command(command!("remove", commands::remove))
