@@ -98,10 +98,12 @@ pub struct Class {
 
 impl Default for Class {
     fn default() -> Self {
+        let class: ClassType = Default::default();
+        let hit_dice = class.get_hit_dice();
         Self {
-            class: Default::default(),
+            class,
             level: Default::default(),
-            hit_dice: Default::default(),
+            hit_dice,
             health_bonus_per_level: 0,
             healing_die_remaining: 1,
         }
