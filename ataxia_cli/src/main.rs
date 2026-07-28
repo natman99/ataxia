@@ -3,6 +3,7 @@ use ratatui::crossterm::event::KeyEventKind;
 use schemars::JsonSchema;
 use std::{cell::LazyCell, fs, io, path::PathBuf};
 
+use ataxia_types::Character;
 use clap::Parser;
 use ratatui::crossterm;
 use ratatui::{
@@ -15,7 +16,6 @@ use ratatui::{
     widgets::{Block, Paragraph, ScrollbarState},
 };
 use serde::Serialize;
-use serenity_types::Character;
 use tui_input::{Input, backend::crossterm::EventHandler};
 
 use crate::{
@@ -79,9 +79,9 @@ fn main() -> color_eyre::Result<()> {
                 }
                 Command::Generate { kind } => {
                     let string = match kind {
-                        GenerateKind::Spell => generate::<serenity_types::database::spell::Spell>(),
-                        GenerateKind::Item => generate::<serenity_types::Item>(),
-                        GenerateKind::Feature => generate::<serenity_types::feature::Feature>(),
+                        GenerateKind::Spell => generate::<ataxia_types::database::spell::Spell>(),
+                        GenerateKind::Item => generate::<ataxia_types::Item>(),
+                        GenerateKind::Feature => generate::<ataxia_types::feature::Feature>(),
                     };
                     let string = string.unwrap();
                     println!("{}", string);
@@ -90,11 +90,11 @@ fn main() -> color_eyre::Result<()> {
                 Command::Schema { kind } => {
                     let string = match kind {
                         GenerateKind::Spell => {
-                            generate_schema::<serenity_types::database::spell::Spell>()
+                            generate_schema::<ataxia_types::database::spell::Spell>()
                         }
-                        GenerateKind::Item => generate_schema::<serenity_types::Item>(),
+                        GenerateKind::Item => generate_schema::<ataxia_types::Item>(),
                         GenerateKind::Feature => {
-                            generate_schema::<serenity_types::feature::Feature>()
+                            generate_schema::<ataxia_types::feature::Feature>()
                         }
                     };
                     let string = string.unwrap();

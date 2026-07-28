@@ -3,14 +3,14 @@ use std::{
     sync::{Arc, Once},
 };
 
-use clap::{Parser, clap_derive::ValueEnum};
-use egui::{DragValue, mutex::Mutex};
-use serenity_types::{
-    Item,
+use ataxia_types::{
     database::spell::{Dc, DcType, Spell},
     feature::Feature,
     roll::Roll,
+    Item,
 };
+use clap::{clap_derive::ValueEnum, Parser};
+use egui::{mutex::Mutex, DragValue};
 fn main() {
     let cli = Cli::parse();
     let native_options = eframe::NativeOptions::default();

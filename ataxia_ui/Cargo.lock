@@ -434,6 +434,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "ataxia_types"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "enumflags2",
+ "rand",
+ "regex",
+ "schemars",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "ataxia_ui"
+version = "0.1.0"
+dependencies = [
+ "ataxia_types",
+ "clap",
+ "eframe",
+ "egui",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "atomic-waker"
 version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2954,32 +2980,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "serenity_types"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap",
- "enumflags2",
- "rand",
- "regex",
- "schemars",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "serenity_ui"
-version = "0.1.0"
-dependencies = [
- "clap",
- "eframe",
- "egui",
- "serde",
- "serde_json",
- "serenity_types",
 ]
 
 [[package]]

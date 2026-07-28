@@ -1,8 +1,6 @@
 use std::{fs, sync::Arc};
 
-use serenity_types::database::{
-    condition::Condition, generic::Generic, spell::Spell, traits::Trait,
-};
+use ataxia_types::database::{condition::Condition, generic::Generic, spell::Spell, traits::Trait};
 
 const SPELLS_PATH: &'static str = r"../5e-database/src/2014/en/5e-SRD-Spells.json";
 const CONDITIONS_PATH: &'static str = r"../5e-database/src/2014/en/5e-SRD-Conditions.json";

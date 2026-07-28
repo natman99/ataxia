@@ -1,6 +1,6 @@
 use std::str::Split;
 
-use serenity_types::condition::Condition;
+use ataxia_types::condition::Condition;
 
 use crate::{
     App,

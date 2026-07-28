@@ -109,6 +109,42 @@ dependencies = [
 ]
 
 [[package]]
+name = "ataxia_cli"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "arboard",
+ "ataxia_types",
+ "clap",
+ "color-eyre",
+ "edit-distance",
+ "enumflags2",
+ "itertools",
+ "parking_lot",
+ "rand 0.10.1",
+ "ratatui",
+ "schemars",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "tui-input",
+]
+
+[[package]]
+name = "ataxia_types"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "enumflags2",
+ "rand 0.10.1",
+ "regex",
+ "schemars",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "atomic"
 version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1722,42 +1758,6 @@ dependencies = [
  "serde",
  "serde_core",
  "zmij",
-]
-
-[[package]]
-name = "serenity_cli"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "arboard",
- "clap",
- "color-eyre",
- "edit-distance",
- "enumflags2",
- "itertools",
- "parking_lot",
- "rand 0.10.1",
- "ratatui",
- "schemars",
- "serde",
- "serde_json",
- "serenity_types",
- "thiserror 2.0.18",
- "tui-input",
-]
-
-[[package]]
-name = "serenity_types"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap",
- "enumflags2",
- "rand 0.10.1",
- "regex",
- "schemars",
- "serde",
- "serde_json",
 ]
 
 [[package]]

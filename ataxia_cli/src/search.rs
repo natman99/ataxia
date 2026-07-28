@@ -1,10 +1,8 @@
 use std::sync::Arc;
 
+use ataxia_types::database::{condition::Condition, generic::Generic, spell::Spell, traits::Trait};
 use edit_distance::edit_distance;
 use enumflags2::bitflags;
-use serenity_types::database::{
-    condition::Condition, generic::Generic, spell::Spell, traits::Trait,
-};
 
 use crate::data::Data;
 

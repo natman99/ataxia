@@ -1,5 +1,5 @@
+use ataxia_types::{Item, database::spell::Spell, feature::Feature};
 use itertools::Itertools;
-use serenity_types::{Item, database::spell::Spell, feature::Feature};
 
 use crate::{
     App,
@@ -12,7 +12,7 @@ pub fn create(cmd: &str, app: &mut App) -> command::Result<()> {
 
     if let Some(kind) = split.get(1) {
         if ["spell", "feature", "item"].contains(kind) {
-            let res = std::process::Command::new("serenity_ui").arg(kind).output();
+            let res = std::process::Command::new("ataxia_ui").arg(kind).output();
             match res {
                 Ok(res) => {
                     let s = match String::from_utf8(res.stdout) {

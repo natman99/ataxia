@@ -1,6 +1,6 @@
 use std::{ops::IndexMut, str::Split};
 
-use serenity_types::meter::Meter;
+use ataxia_types::meter::Meter;
 
 use crate::{
     App,

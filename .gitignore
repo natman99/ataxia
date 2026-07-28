@@ -1,4 +1,4 @@
 target/
 5e-database/
-serenity_agent/.fastembed_cache
-serenity_agent/.env
+ataxia_agent/.fastembed_cache
+ataxia_agent/.env

@@ -1,5 +1,5 @@
 [package]
-name = "serenity_ui"
+name = "ataxia_ui"
 version = "0.1.0"
 edition = "2024"
 
@@ -9,4 +9,4 @@ eframe = "0.34.3"
 egui = "0.34.3"
 serde = "1.0.228"
 serde_json = "1.0.150"
-serenity_types = {path = "../serenity_types"}
+ataxia_types = {path = "../ataxia_types"}

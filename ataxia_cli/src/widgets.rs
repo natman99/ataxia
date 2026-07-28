@@ -1,3 +1,4 @@
+use ataxia_types::{Character, Score, skills::Skill};
 use itertools::Itertools;
 use ratatui::{
     Frame,
@@ -6,7 +7,6 @@ use ratatui::{
     text::Text,
     widgets::{Block, Cell, Padding, Paragraph, Row, Scrollbar, Table, Wrap},
 };
-use serenity_types::{Character, Score, skills::Skill};
 
 use crate::FocusedContent;
 
