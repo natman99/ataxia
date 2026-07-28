@@ -2,3 +2,4 @@ target/
 5e-database/
 ataxia_agent/.fastembed_cache
 ataxia_agent/.env
+.github/
