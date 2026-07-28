@@ -251,6 +251,30 @@ pub enum Score {
     Char,
 }
 
+impl TryFrom<&str> for Score {
+    type Error = ();
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        Ok(match value.to_lowercase().as_str() {
+            "str" => Score::Str,
+            "dex" => Score::Dex,
+            "con" => Score::Con,
+            "int" => Score::Int,
+            "wis" => Score::Wis,
+            "char" => Score::Char,
+            _ => return Err(()),
+        })
+    }
+}
+
+impl TryFrom<String> for Score {
+    type Error = ();
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        Self::try_from(value.as_str())
+    }
+}
+
 impl Display for Score {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let s = match self {
