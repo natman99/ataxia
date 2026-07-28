@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{fmt::Display, str::FromStr};
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -105,6 +105,14 @@ impl From<&str> for Language {
             "thieves' cant" => Language::ThievesCant,
             e => Language::Other(e.to_string()),
         }
+    }
+}
+
+impl FromStr for Language {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Self::from(s))
     }
 }
 
