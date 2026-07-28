@@ -282,9 +282,9 @@ impl Skills {
             | Skill::Medicine
             | Skill::Perception
             | Skill::Survival => ability_scores.wis.modifier(),
-            // char scaling
+            // cha scaling
             Skill::Deception | Skill::Intimidation | Skill::Performance | Skill::Persuasion => {
-                ability_scores.char.modifier()
+                ability_scores.cha.modifier()
             }
         };
 

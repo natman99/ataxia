@@ -5,7 +5,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     Score,
-    database::spell::Spell,
     meter::Meter,
     roll::{Die, Roll},
     senses::Sense,
@@ -49,7 +48,7 @@ pub enum FeatureEffect {
     /// Flat armor class (ac) bonus.
     AcBonus(i32),
     /// Add a spell.
-    Spell(Spell),
+    Spell(crate::spells::Spell),
     /// Add a meter. e.g. spell slots or other limited resources.
     Meter(MeterAdd),
     // /// Flat bonus health.

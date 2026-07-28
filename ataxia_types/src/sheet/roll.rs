@@ -1,5 +1,5 @@
 use core::str;
-use std::{collections::HashMap, fmt::Display, sync::LazyLock};
+use std::{collections::HashMap, fmt::Display, str::FromStr, sync::LazyLock};
 
 use rand::{Rng, RngExt};
 use regex::Regex;
@@ -15,6 +15,12 @@ pub trait Rollable {
 pub enum RollModifier {
     Advantage,
     Disadvantage,
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum RollParseError {
+    #[error("Parsing failed")]
+    ParseFailed,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
@@ -98,10 +104,10 @@ impl Roll {
     // pub fn max(&self) -> u32 {}
 }
 
-impl TryFrom<&str> for Roll {
-    type Error = ();
+impl FromStr for Roll {
+    type Err = RollParseError;
 
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
         static M: LazyLock<Regex> = LazyLock::new(|| regex::Regex::new(r"(\d+)[dD](\d+)").unwrap());
 
         let mut dice = vec![];
@@ -120,29 +126,19 @@ impl TryFrom<&str> for Roll {
         }
 
         let bonus = {
-            if value.contains("+") {
-                if let Some(e) = value.split("+").collect::<Vec<&str>>().get(1) {
-                    e.parse().unwrap_or(0)
-                } else {
-                    0
+            let mut b = 0i32;
+            for i in value.split("+") {
+                if let Ok(e) = i.parse::<i32>() {
+                    b += e;
                 }
-            } else {
-                0
             }
+            b
         };
 
-        if dice.is_empty() {
-            return Err(());
+        if dice.is_empty() && bonus == 0 {
+            return Err(RollParseError::ParseFailed);
         }
         Ok(Self { dice, bonus: bonus })
-    }
-}
-
-impl TryFrom<String> for Roll {
-    type Error = ();
-
-    fn try_from(value: String) -> Result<Self, Self::Error> {
-        Roll::try_from(value.as_str())
     }
 }
 
@@ -190,6 +186,7 @@ impl TryFrom<u32> for Die {
         match value {
             4 => Ok(Self::D4),
             6 => Ok(Self::D6),
+            8 => Ok(Self::D8),
             10 => Ok(Self::D10),
             12 => Ok(Self::D12),
             20 => Ok(Self::D20),
@@ -215,5 +212,38 @@ impl Die {
     pub fn roll<T: Rng>(&self, rng: &mut T) -> i32 {
         let max = self.max();
         rng.random_range(1..=max) as i32
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn test_display() {
+        let roll = Roll::from_str("2d6").unwrap();
+        assert_eq!(roll.to_string().trim(), "2d6");
+    }
+
+    #[test]
+    fn test_parse() {
+        Roll::from_str("10d6").unwrap();
+        Roll::from_str("1d6 + 10").unwrap();
+        Roll::from_str("2d8").unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn invalid_die() {
+        Roll::from_str("1d5").unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn empty() {
+        Roll::from_str("").unwrap();
+    }
+
+    fn only_bonus() {
+        Roll::from_str("20").unwrap();
     }
 }

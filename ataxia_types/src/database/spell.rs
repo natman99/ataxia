@@ -4,7 +4,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
-pub(crate) struct Spell {
+pub(crate) struct DatabaseSpell {
     /// Internal identifier for spell.
     pub index: String,
     /// Name to display.
@@ -41,7 +41,7 @@ pub(crate) struct Spell {
     pub area_of_effect: Option<AreaOfEffect>,
 }
 
-impl Display for Spell {
+impl Display for DatabaseSpell {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut out = String::new();
 

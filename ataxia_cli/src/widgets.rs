@@ -206,7 +206,7 @@ fn scores<'a>(sheet: &'a Character) -> Table<'a> {
         Score::Con,
         Score::Int,
         Score::Wis,
-        Score::Char,
+        Score::Cha,
     ];
     let scores = sheet.ability_scores.iter().map(|f| (f.get(), f.modifier()));
 

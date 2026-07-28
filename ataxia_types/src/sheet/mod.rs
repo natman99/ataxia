@@ -1,6 +1,7 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, fmt::Display};
+use strum::EnumString;
 
 pub mod ability_score;
 pub mod class;
@@ -11,6 +12,7 @@ pub mod skills;
 pub mod spells;
 
 pub mod condition;
+pub mod damage;
 pub mod feature;
 pub mod language;
 pub mod lore;
@@ -195,14 +197,14 @@ pub struct AbilityScores {
     pub con: AbilityScore,
     pub int: AbilityScore,
     pub wis: AbilityScore,
-    pub char: AbilityScore,
+    pub cha: AbilityScore,
 }
 
 impl AbilityScores {
     /// Collect all scores into an iter
     pub fn iter<'a>(&'a self) -> [&'a AbilityScore; 6] {
         [
-            &self.str, &self.dex, &self.con, &self.int, &self.wis, &self.char,
+            &self.str, &self.dex, &self.con, &self.int, &self.wis, &self.cha,
         ]
     }
 
@@ -213,7 +215,7 @@ impl AbilityScores {
             Score::Con => &self.con,
             Score::Int => &self.int,
             Score::Wis => &self.wis,
-            Score::Char => &self.char,
+            Score::Cha => &self.cha,
         }
     }
 
@@ -224,7 +226,7 @@ impl AbilityScores {
             Score::Con => self.con.set_bonus(num),
             Score::Int => self.int.set_bonus(num),
             Score::Wis => self.wis.set_bonus(num),
-            Score::Char => self.char.set_bonus(num),
+            Score::Cha => self.cha.set_bonus(num),
         }
     }
 
@@ -234,12 +236,15 @@ impl AbilityScores {
         self.dex.reset();
         self.con.reset();
         self.int.reset();
-        self.char.reset();
+        self.cha.reset();
         self.wis.reset();
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Default, JsonSchema)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Default, JsonSchema, EnumString,
+)]
+#[strum(ascii_case_insensitive)]
 /// Scores enum.
 pub enum Score {
     #[default]
@@ -248,31 +253,7 @@ pub enum Score {
     Con,
     Int,
     Wis,
-    Char,
-}
-
-impl TryFrom<&str> for Score {
-    type Error = ();
-
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
-        Ok(match value.to_lowercase().as_str() {
-            "str" => Score::Str,
-            "dex" => Score::Dex,
-            "con" => Score::Con,
-            "int" => Score::Int,
-            "wis" => Score::Wis,
-            "char" => Score::Char,
-            _ => return Err(()),
-        })
-    }
-}
-
-impl TryFrom<String> for Score {
-    type Error = ();
-
-    fn try_from(value: String) -> Result<Self, Self::Error> {
-        Self::try_from(value.as_str())
-    }
+    Cha,
 }
 
 impl Display for Score {
@@ -283,7 +264,7 @@ impl Display for Score {
             Score::Con => "Con",
             Score::Int => "Int",
             Score::Wis => "Wis",
-            Score::Char => "Char",
+            Score::Cha => "Cha",
         };
         write!(f, "{}", s)
     }
@@ -361,5 +342,17 @@ impl Default for WalkingSpeed {
 impl Display for WalkingSpeed {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{} ft", &self.0)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::str::FromStr;
+
+    #[test]
+    fn test_scores() {
+        Score::from_str("str").unwrap();
+        Score::from_str("Str").unwrap();
     }
 }
