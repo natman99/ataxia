@@ -6,6 +6,12 @@ use regex::Regex;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
+/// Trait for dice rolls.
+pub trait Rollable {
+    /// Returns the roll result if the type has a valid roll on it.
+    fn roll(&self, rng: &mut impl rand::Rng, special: Option<RollModifier>) -> Option<RollResult>;
+}
+
 pub enum RollModifier {
     Advantage,
     Disadvantage,
