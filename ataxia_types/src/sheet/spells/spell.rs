@@ -270,6 +270,7 @@ mod tests {
 
     #[test]
     fn test_school() {
+        School::from_str("Conjuration").unwrap();
         let s = School::from_str("conjuration").unwrap();
         assert_eq!(s.to_string(), "Conjuration");
     }
