@@ -1,11 +1,13 @@
 use std::{
     fmt::Display,
     ops::{Deref, Index, IndexMut},
+    str::FromStr,
 };
 
 use rand::RngExt;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use strum::EnumString;
 
 use crate::{AbilityScores, HitPoints, roll::Die};
 
@@ -127,7 +129,8 @@ impl Class {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema, Default)]
 #[serde(from = "String")]
-/// The class of a character.
+/// The class of a character. `from_str` is infailable on this type.
+/// Implements `From<&str>` and `From<String>`
 pub enum ClassType {
     #[default]
     Fighter,
@@ -142,13 +145,28 @@ pub enum ClassType {
     Warlock,
     Bard,
     Druid,
+    Artificer,
     #[serde(untagged)]
     Other(String),
 }
 
 impl From<String> for ClassType {
     fn from(value: String) -> Self {
-        match value.to_lowercase().as_str() {
+        Self::from_str(&value).unwrap()
+    }
+}
+
+impl From<&str> for ClassType {
+    fn from(value: &str) -> Self {
+        Self::from_str(value).unwrap()
+    }
+}
+
+impl FromStr for ClassType {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s.to_lowercase().as_str() {
             "fighter" => ClassType::Fighter,
             "wizard" => ClassType::Wizard,
             "sorcerer" => ClassType::Sorcerer,
@@ -161,8 +179,8 @@ impl From<String> for ClassType {
             "warlock" => ClassType::Warlock,
             "bard" => ClassType::Bard,
             "druid" => ClassType::Druid,
-            _ => ClassType::Other(value),
-        }
+            _ => ClassType::Other(s.to_string()),
+        })
     }
 }
 
@@ -181,6 +199,7 @@ impl ClassType {
             ClassType::Warlock => Die::D8,
             ClassType::Bard => Die::D8,
             ClassType::Druid => Die::D8,
+            ClassType::Artificer => Die::D8,
             ClassType::Other(_) => Die::D8,
         }
     }
@@ -201,6 +220,7 @@ impl Display for ClassType {
             ClassType::Warlock => "Warlock",
             ClassType::Bard => "Bard",
             ClassType::Druid => "Druid",
+            ClassType::Artificer => "Artificer",
             ClassType::Other(name) => name.as_str(),
         };
 
@@ -220,5 +240,17 @@ impl Default for Level {
 impl Display for Level {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::str::FromStr;
+
+    use crate::class::ClassType;
+
+    #[test]
+    fn from_other() {
+        ClassType::from_str("test").unwrap();
     }
 }
