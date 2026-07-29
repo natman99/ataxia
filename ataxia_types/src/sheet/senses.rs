@@ -4,6 +4,8 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use strum::Display;
 
+use crate::{AbilityScores, Score};
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(default)]
 pub struct Senses {
@@ -11,6 +13,17 @@ pub struct Senses {
     pub investigation: i32,
     pub insight: i32,
     pub extra: ExtraSenses,
+}
+
+impl Senses {
+    pub fn new(scores: &AbilityScores) -> Self {
+        Self {
+            perception: scores.get(&Score::Wis).modifier(),
+            investigation: scores.get(&Score::Int).modifier(),
+            insight: scores.get(&Score::Wis).modifier(),
+            extra: Default::default(),
+        }
+    }
 }
 
 impl Default for Senses {
