@@ -6,42 +6,39 @@ use serde::{Deserialize, Serialize};
 /// An ability score. Values default to ten.
 pub struct AbilityScore {
     /// Base score.
-    base: u32,
+    base: i32,
     /// Bonus (from class or otherwise).
-    bonus: u32,
-    /// Flat override of both other values.
-    override_score: Option<u32>,
+    bonus: i32,
 }
 
 impl Default for AbilityScore {
     fn default() -> Self {
-        Self {
-            base: 10,
-            bonus: 0,
-            override_score: None,
-        }
+        Self { base: 10, bonus: 0 }
     }
 }
 
 impl AbilityScore {
-    pub fn new(base: u32, bonus: u32) -> Self {
+    pub fn new(base: i32, bonus: i32) -> Self {
         Self {
-            base,
+            base: base.max(1),
             bonus,
-            override_score: None,
         }
     }
     /// Get the total score.
-    pub fn get(&self) -> u32 {
-        self.override_score.unwrap_or(self.base + self.bonus)
+    pub fn get(&self) -> i32 {
+        self.base + self.bonus
     }
 
-    pub fn get_bonus(&self) -> u32 {
+    pub fn get_bonus(&self) -> i32 {
         self.bonus
     }
 
-    pub fn set_bonus(&mut self, num: u32) {
+    pub fn set_bonus(&mut self, num: i32) {
         self.bonus = num;
+    }
+
+    pub fn add_bonus(&mut self, num: i32) {
+        self.bonus += num;
     }
 
     /// Remove all bonuses.

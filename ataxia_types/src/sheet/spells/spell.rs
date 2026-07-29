@@ -11,6 +11,7 @@ use crate::{
     damage::DamageType,
     database::spell::DatabaseSpell,
     roll::{Roll, Rollable},
+    sheet::source::{HasSource, Source},
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, JsonSchema)]
@@ -28,6 +29,7 @@ pub struct Spell {
     pub school: School,
     pub area: Option<Area>,
     pub components: Vec<Component>,
+    source: Option<Source>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, JsonSchema)]
@@ -130,6 +132,16 @@ impl Rollable for Spell {
             },
             Effect::Other => return None,
         })
+    }
+}
+
+impl HasSource for Spell {
+    fn source(&self) -> Option<&Source> {
+        self.source.as_ref()
+    }
+
+    fn add_source(&mut self, source: Source) {
+        self.source = Some(source)
     }
 }
 
@@ -256,6 +268,7 @@ impl Spell {
                 None
             },
             components,
+            source: None,
         };
 
         Ok(s)

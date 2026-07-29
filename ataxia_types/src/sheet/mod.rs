@@ -18,6 +18,7 @@ pub mod language;
 pub mod lore;
 pub mod meter;
 pub mod senses;
+mod source;
 
 pub use hit_points::HitPoints;
 pub use item::Item;
@@ -109,74 +110,6 @@ impl Character {
     pub fn spell_bonus(&self) -> i32 {
         self.attack_bonus()
     }
-    /// Calculate the sheet, updating items, health, and stats.
-    pub fn calculate(&self) -> Self {
-        let mut s = self.clone();
-        // reset ability scores.
-        s.ability_scores.reset();
-        let mut stat_upgrades = vec![];
-        // first apply stat changes
-        for i in s.features.inner.iter() {
-            for f in &i.1.effects {
-                match f {
-                    feature::FeatureEffect::AbilityScoreBonus(ability_score_bonus) => {
-                        stat_upgrades.push(ability_score_bonus)
-                    }
-                    _ => (),
-                }
-            }
-        }
-
-        for i in stat_upgrades {
-            let bonus = s.ability_scores.get(&i.score).get_bonus() + i.bonus;
-            s.ability_scores.set_bonus(&i.score, bonus);
-        }
-        // reset other stats, after stats have been applied
-        s.armor_class = ArmorClass::new(&s.ability_scores);
-        s.initiative = Initiative::new(&s.ability_scores);
-
-        for i in s.features.inner.iter() {
-            for f in &i.1.effects {
-                match f {
-                    // ignore this the second time
-                    feature::FeatureEffect::AbilityScoreBonus(_) => (),
-                    feature::FeatureEffect::AcBonus(b) => {
-                        let i = s.armor_class.0 as i32 + b;
-                        // Negative bonus should never be bigger than 10
-                        s.armor_class.0 = i as u32;
-                    }
-                    feature::FeatureEffect::Spell(spell) => {
-                        s.spells.spells.insert(spell.name.clone(), spell.clone());
-                    }
-                    feature::FeatureEffect::Meter(meter_add) => {
-                        s.meters
-                            .meters
-                            .insert(meter_add.name.to_string(), meter_add.meter.clone());
-                    }
-
-                    feature::FeatureEffect::HealthBonusPerLevel(b) => {
-                        s.health.level_bonus += b;
-                    }
-                    feature::FeatureEffect::Sense(sense) => match sense {
-                        senses::Sense::BlindSight => s.senses.extra.blind_sight = true,
-                        senses::Sense::DarkVision => s.senses.extra.dark_vision = true,
-                        senses::Sense::TremorSense => s.senses.extra.tremor_sense = true,
-                        senses::Sense::TrueSight => s.senses.extra.true_sight = true,
-                    },
-                    feature::FeatureEffect::AddProficiency(skill) => {
-                        s.skills.proficiencies.set(*skill, true);
-                    }
-                    feature::FeatureEffect::InitiativeBonus(b) => s.initiative.0 += b,
-                    feature::FeatureEffect::Nothing => (),
-                }
-            }
-        }
-
-        // do last
-        s.health = s.health.fixed(&s.ability_scores, &s.class);
-        s
-    }
-
     pub fn save_dc(&self) -> i32 {
         let a = self.ability_scores.get(&self.ability_modifier);
         8 + self.skills.proficiency_bonus as i32 + a.modifier()
@@ -216,6 +149,17 @@ impl AbilityScores {
             Score::Int => &self.int,
             Score::Wis => &self.wis,
             Score::Cha => &self.cha,
+        }
+    }
+
+    pub fn get_mut(&mut self, score: &Score) -> &mut AbilityScore {
+        match score {
+            Score::Str => &mut self.str,
+            Score::Dex => &mut self.dex,
+            Score::Con => &mut self.con,
+            Score::Int => &mut self.int,
+            Score::Wis => &mut self.wis,
+            Score::Cha => &mut self.cha,
         }
     }
 
@@ -306,7 +250,7 @@ impl Display for ArmorClass {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(default)]
 /// Initiative score.
-pub struct Initiative(u32);
+pub struct Initiative(i32);
 
 impl Display for Initiative {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -324,7 +268,7 @@ impl Initiative {
     /// 10 + dex
     fn new(scores: &AbilityScores) -> Self {
         // safety: negative modifier can never be above 10.
-        Self((10 + scores.dex.modifier()) as u32)
+        Self((10 + scores.dex.modifier()).max(0))
     }
 }
 

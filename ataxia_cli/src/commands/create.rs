@@ -1,4 +1,4 @@
-use ataxia_types::{Item, database::spell::Spell, feature::Feature};
+use ataxia_types::{Item, database::spell::Spell, feature::Effect};
 use itertools::Itertools;
 
 use crate::{
@@ -42,7 +42,7 @@ pub fn create(cmd: &str, app: &mut App) -> command::Result<()> {
                         }
 
                         "feature" => {
-                            let j = serde_json::from_str::<Feature>(&s);
+                            let j = serde_json::from_str::<Effect>(&s);
                             match j {
                                 Ok(feature) => {
                                     app.sheet

@@ -3,6 +3,8 @@ use std::collections::HashMap;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
+use crate::sheet::source::{HasSource, Source};
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default, JsonSchema)]
 pub struct Meters {
     pub meters: HashMap<String, Meter>,
@@ -16,6 +18,7 @@ pub struct Meter {
     pub spent: u32,
 
     pub restore: RestoreTime,
+    pub source: Option<Source>,
 }
 
 impl Meter {
@@ -24,6 +27,7 @@ impl Meter {
             restore,
             slot_number,
             spent: 0,
+            source: None,
         }
     }
 
@@ -54,6 +58,16 @@ impl Meter {
     }
 }
 
+impl HasSource for Meter {
+    fn source(&self) -> Option<&Source> {
+        self.source.as_ref()
+    }
+
+    fn add_source(&mut self, source: Source) {
+        self.source = Some(source)
+    }
+}
+
 #[derive(
     Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Hash, Serialize, Deserialize, JsonSchema,
 )]
@@ -69,7 +83,7 @@ pub struct RestoreTime {
 impl Default for RestoreTime {
     fn default() -> Self {
         Self {
-            short_rest: Default::default(),
+            short_rest: false,
             long_rest: true,
         }
     }

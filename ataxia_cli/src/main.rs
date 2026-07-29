@@ -81,7 +81,7 @@ fn main() -> color_eyre::Result<()> {
                     let string = match kind {
                         GenerateKind::Spell => generate::<ataxia_types::database::spell::Spell>(),
                         GenerateKind::Item => generate::<ataxia_types::Item>(),
-                        GenerateKind::Feature => generate::<ataxia_types::feature::Feature>(),
+                        GenerateKind::Feature => generate::<ataxia_types::feature::Effect>(),
                     };
                     let string = string.unwrap();
                     println!("{}", string);
@@ -93,9 +93,7 @@ fn main() -> color_eyre::Result<()> {
                             generate_schema::<ataxia_types::database::spell::Spell>()
                         }
                         GenerateKind::Item => generate_schema::<ataxia_types::Item>(),
-                        GenerateKind::Feature => {
-                            generate_schema::<ataxia_types::feature::Feature>()
-                        }
+                        GenerateKind::Feature => generate_schema::<ataxia_types::feature::Effect>(),
                     };
                     let string = string.unwrap();
                     println!("{}", string);

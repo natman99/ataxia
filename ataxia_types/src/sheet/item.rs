@@ -2,8 +2,12 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::{
+    feature::{Feature, HasFeature},
     roll::{Die, Rollable},
-    sheet::roll::Roll,
+    sheet::{
+        roll::Roll,
+        source::{HasSource, Source},
+    },
 };
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
@@ -18,6 +22,8 @@ pub struct Item {
     pub quantity: i32,
     /// The roll if the item deals damage or has an effect.
     pub roll: Option<Roll>,
+    pub source: Option<Source>,
+    pub feature: Option<Feature>,
 }
 
 impl Default for Item {
@@ -27,6 +33,8 @@ impl Default for Item {
             description: "Example description".to_string(),
             roll: None,
             quantity: 1,
+            source: None,
+            feature: None,
         }
     }
 }
@@ -71,5 +79,36 @@ impl Rollable for Item {
         } else {
             None
         }
+    }
+}
+
+impl HasSource for Item {
+    fn source(&self) -> Option<&Source> {
+        self.source.as_ref()
+    }
+
+    fn add_source(&mut self, source: Source) {
+        self.source = Some(source)
+    }
+}
+
+impl HasFeature for Item {
+    fn apply(&self, sheet: &mut super::Character) {
+        if let Some(ref f) = self.feature {
+            for effect in &f.effects {
+                effect.apply(sheet);
+            }
+        }
+    }
+
+    fn add(&mut self, feature: super::feature::Effect) {
+        if self.feature.is_none() {
+            self.feature = Some(Feature {
+                source: self.source().map(|f| f.clone()),
+                effects: vec![],
+            });
+        }
+
+        self.feature.as_mut().unwrap().effects.push(feature);
     }
 }
