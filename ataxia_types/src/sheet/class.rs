@@ -7,7 +7,6 @@ use std::{
 use rand::RngExt;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use strum::EnumString;
 
 use crate::{AbilityScores, HitPoints, roll::Die};
 
@@ -92,6 +91,7 @@ impl IndexMut<usize> for Classes {
 #[serde(default)]
 pub struct Class {
     pub class: ClassType,
+    pub subclass: String,
     pub level: Level,
     pub hit_dice: Die,
     pub health_bonus_per_level: i32,
@@ -108,6 +108,7 @@ impl Default for Class {
             hit_dice,
             health_bonus_per_level: 0,
             healing_die_remaining: 1,
+            subclass: String::new(),
         }
     }
 }
