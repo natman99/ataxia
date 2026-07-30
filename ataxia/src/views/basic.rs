@@ -6,8 +6,8 @@ use iced::{
     Alignment, Element, Length,
     alignment::{Horizontal::Left, Vertical},
     widget::{
-        self, Column, Container, Row, Rule, Text, button, checkbox, column, container, row, rule,
-        scrollable, table::table, text, text_input, toggler,
+        self, Column, Container, Grid, Row, Rule, Text, button, checkbox, column, container, row,
+        rule, scrollable, table::table, text, text_input, toggler,
     },
 };
 
@@ -34,7 +34,8 @@ pub fn basic<'a>(sheet: &'a Character, state: &'a BasicState) -> Element<'a, Mes
         .style(container::bordered_box)
         .padding(12);
 
-    let row = row![c1, skills(sheet)].spacing(20);
+    let c2 = skills(sheet);
+    let row = row![c1, c2].spacing(20);
 
     container(row).center(Length::Shrink).into()
 }
@@ -112,7 +113,7 @@ pub fn health<'a>(sheet: &'a Character, state: &'a BasicState) -> Container<'a, 
 pub fn skills<'a>(sheet: &'a Character) -> Container<'a, Message> {
     let skill_names = Skill::ALL_STR_PRETTY;
 
-    let prof = Skill::ALL
+    let prof: Vec<Element<Message>> = Skill::ALL
         .iter()
         .map(|f| {
             let checked = sheet.skills.proficiencies.contains(*f);
@@ -126,20 +127,29 @@ pub fn skills<'a>(sheet: &'a Character) -> Container<'a, Message> {
                 checkbox(false).style(checkbox::primary)
             }
         })
-        .map(|f| container(f).align_bottom(Length::Fill).into())
+        .map(|f| container(f).into())
         .collect();
     let skills = Skill::ALL
         .iter()
         .map(|f| sheet.skills.check(f, &sheet.ability_scores))
-        .map(|f| text!("{f}").into())
-        .collect::<Vec<Element<Message>>>();
+        .map(|f| text!("{f}").align_x(Alignment::End))
+        .collect::<Vec<Text>>();
 
-    let skill_names = skill_names.iter().map(|f| text!("{f}").into()).collect();
+    let skill_names: Vec<Text> = skill_names.iter().map(|f| text!("{f}")).collect();
 
-    let c1 = Column::from_vec(prof).spacing(5);
-    let c2 = Column::from_vec(skill_names);
-    let c3 = Column::from_vec(skills).align_x(Alignment::End);
-    let r = row![c1, c2, c3].spacing(8);
+    // let c1 = Column::from_vec(prof).spacing(5);
+    // let c2 = Column::from_vec(skill_names);
+    // let c3 = Column::from_vec(skills).align_x(Alignment::End);
+    // let r = row![c1, c2, c3].spacing(8);
+
+    let rows = prof
+        .into_iter()
+        .zip(skill_names)
+        .zip(skills)
+        .map(|((a, b), c)| row![a, b.width(120), c.width(12)].spacing(12).into())
+        .collect();
+
+    let r = Column::from_vec(rows);
 
     container(r).into()
 }

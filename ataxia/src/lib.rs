@@ -61,6 +61,9 @@ impl<'a> App {
 
         sheet.ability_scores.str = AbilityScore::new(16, 0);
 
+        sheet.ability_scores.dex = AbilityScore::new(16, 0);
+        sheet.skills.proficiency_bonus = 3;
+
         (
             Self {
                 windows: BTreeMap::new(),
