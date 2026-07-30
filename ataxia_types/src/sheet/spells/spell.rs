@@ -146,7 +146,7 @@ impl HasSource for Spell {
 }
 
 impl Spell {
-    fn try_from_database(value: DatabaseSpell, sheet: &Character) -> anyhow::Result<Self> {
+    pub fn try_from_database(value: DatabaseSpell, sheet: &Character) -> anyhow::Result<Self> {
         let mut components = vec![];
         for i in value.components {
             let a = Component::from_str(&i).context("Missing component")?;
