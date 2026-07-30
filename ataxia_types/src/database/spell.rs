@@ -4,7 +4,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
-pub(crate) struct DatabaseSpell {
+pub struct DatabaseSpell {
     /// Internal identifier for spell.
     pub index: String,
     /// Name to display.
