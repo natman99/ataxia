@@ -13,6 +13,7 @@ pub mod spells;
 
 pub mod condition;
 pub mod damage;
+pub mod feat;
 pub mod feature;
 pub mod language;
 pub mod lore;
@@ -77,15 +78,15 @@ impl Character {
                     health_bonus_per_level: 0,
                     class,
                     healing_die_remaining: level,
+                    subclass: String::new(),
                 }],
             },
             skills: Skills::default(),
             inventory: Default::default(),
-            ability_scores,
             spells: Default::default(),
             senses: Default::default(),
             initiative: Default::default(),
-            armor_class: Default::default(),
+            armor_class: ArmorClass::new(&ability_scores),
             ability_modifier: Score::Str,
             meters: Default::default(),
             features: Default::default(),
@@ -94,6 +95,7 @@ impl Character {
             walking_speed: Default::default(),
             languages: Default::default(),
             conditions: Default::default(),
+            ability_scores,
         }
     }
 
@@ -113,6 +115,10 @@ impl Character {
     pub fn save_dc(&self) -> i32 {
         let a = self.ability_scores.get(&self.ability_modifier);
         8 + self.skills.proficiency_bonus as i32 + a.modifier()
+    }
+
+    pub fn initiative(&self) -> i32 {
+        self.initiative.get(&self.ability_scores)
     }
 }
 
@@ -163,7 +169,7 @@ impl AbilityScores {
         }
     }
 
-    pub fn set_bonus(&mut self, score: &Score, num: u32) {
+    pub fn set_bonus(&mut self, score: &Score, num: i32) {
         match score {
             Score::Str => self.str.set_bonus(num),
             Score::Dex => self.dex.set_bonus(num),
@@ -250,25 +256,19 @@ impl Display for ArmorClass {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(default)]
 /// Initiative score.
-pub struct Initiative(i32);
-
-impl Display for Initiative {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
-    }
+pub struct Initiative {
+    pub bonus: i32,
 }
 
 impl Default for Initiative {
     fn default() -> Self {
-        Self(10)
+        Self { bonus: 0 }
     }
 }
 
 impl Initiative {
-    /// 10 + dex
-    fn new(scores: &AbilityScores) -> Self {
-        // safety: negative modifier can never be above 10.
-        Self((10 + scores.dex.modifier()).max(0))
+    pub fn get(&self, scores: &AbilityScores) -> i32 {
+        scores.get(&Score::Dex).modifier() + self.bonus
     }
 }
 

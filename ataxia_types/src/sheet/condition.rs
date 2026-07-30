@@ -3,6 +3,8 @@ use std::fmt::Display;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
+use crate::database;
+
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq, Hash, Default)]
 /// Conditions affecting the character.
 pub struct Conditions {
@@ -13,6 +15,7 @@ pub struct Conditions {
 /// A condition including a name and duration.
 pub struct Condition {
     pub name: String,
+    pub desc: String,
     pub duration: i32,
 }
 
@@ -20,6 +23,7 @@ impl Default for Condition {
     fn default() -> Self {
         Self {
             name: "Stunned".to_string(),
+            desc: "".to_string(),
             duration: -1,
         }
     }
@@ -38,7 +42,11 @@ impl Display for Condition {
 
 impl Condition {
     pub fn new(name: String, duration: i32) -> Self {
-        Self { name, duration }
+        Self {
+            name,
+            duration,
+            desc: "".to_string(),
+        }
     }
 
     pub fn tick(&mut self) {
@@ -50,5 +58,15 @@ impl Condition {
 
     pub fn expired(&self) -> bool {
         self.duration == 0
+    }
+}
+
+impl From<database::condition::Condition> for Condition {
+    fn from(value: database::condition::Condition) -> Self {
+        Self {
+            name: value.name,
+            desc: value.desc.join("\n"),
+            duration: -1,
+        }
     }
 }
