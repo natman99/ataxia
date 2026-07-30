@@ -9,30 +9,37 @@ use crate::{AbilityScores, Score};
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(default)]
 pub struct Senses {
-    pub perception: i32,
-    pub investigation: i32,
-    pub insight: i32,
+    pub perception_bonus: i32,
+    pub investigation_bonus: i32,
+    pub insight_bonus: i32,
     pub extra: ExtraSenses,
 }
 
 impl Senses {
-    pub fn new(scores: &AbilityScores) -> Self {
-        Self {
-            perception: scores.get(&Score::Wis).modifier(),
-            investigation: scores.get(&Score::Int).modifier(),
-            insight: scores.get(&Score::Wis).modifier(),
-            extra: Default::default(),
-        }
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn get_perception(&self, scores: &AbilityScores) -> i32 {
+        scores.get(&Score::Wis).modifier() + self.perception_bonus
+    }
+
+    pub fn get_insight(&self, scores: &AbilityScores) -> i32 {
+        scores.get(&Score::Wis).modifier() + self.insight_bonus
+    }
+
+    pub fn get_investigation(&self, scores: &AbilityScores) -> i32 {
+        scores.get(&Score::Int).modifier() + self.investigation_bonus
     }
 }
 
 impl Default for Senses {
     fn default() -> Self {
         Self {
-            perception: 10,
-            investigation: 10,
-            insight: 10,
             extra: Default::default(),
+            perception_bonus: 0,
+            investigation_bonus: 0,
+            insight_bonus: 0,
         }
     }
 }
