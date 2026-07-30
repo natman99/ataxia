@@ -74,7 +74,7 @@ impl Skill {
         "Survival",
     ];
 
-    pub const ALL_ITER: [Skill; 18] = [
+    pub const ALL: [Skill; 18] = [
         Skill::Acrobatics,
         Skill::AnimalHandling,
         Skill::Arcana,
