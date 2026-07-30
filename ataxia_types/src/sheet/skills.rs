@@ -175,7 +175,7 @@ struct SkillsJson {
     expertise: Vec<Skill>,
 }
 
-#[derive(Debug, Clone, PartialEq, Default, JsonSchema, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, JsonSchema, Serialize, Deserialize)]
 #[serde(default)]
 #[serde(from = "SkillsJson")]
 #[serde(into = "SkillsJson")]
@@ -184,6 +184,16 @@ pub struct Skills {
     pub proficiency_bonus: u32,
     pub proficiencies: BitFlags<Skill>,
     pub expertise: BitFlags<Skill>,
+}
+
+impl Default for Skills {
+    fn default() -> Self {
+        Self {
+            proficiency_bonus: 1,
+            proficiencies: Default::default(),
+            expertise: Default::default(),
+        }
+    }
 }
 
 impl From<SkillsJson> for Skills {
