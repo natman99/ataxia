@@ -124,6 +124,21 @@ impl Character {
     pub fn initiative(&self) -> i32 {
         self.initiative.get(&self.ability_scores)
     }
+
+    pub fn passive_senses(&self) -> PassiveSenses {
+        PassiveSenses {
+            insight: self.senses.get_insight(&self.ability_scores),
+            perception: self.senses.get_perception(&self.ability_scores),
+            investigation: self.senses.get_perception(&self.ability_scores),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct PassiveSenses {
+    pub insight: i32,
+    pub perception: i32,
+    pub investigation: i32,
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
