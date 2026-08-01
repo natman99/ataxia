@@ -6,13 +6,6 @@ use schemars::JsonSchema;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-#[cfg_attr(feature = "serde", serde(from = "SkillsJson"))]
-#[cfg_attr(feature = "serde", serde(into = "SkillsJson"))]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "schema", derive(JsonSchema))]
-#[cfg_attr(feature = "serde", serde(default))]
-struct Temp {}
-
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]

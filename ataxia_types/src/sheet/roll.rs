@@ -37,10 +37,16 @@ pub struct Roll {
     pub bonus: i32,
 }
 
+impl Default for Roll {
+    fn default() -> Self {
+        Self {
+            dice: vec![Die::D20],
+            bonus: Default::default(),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "schema", derive(JsonSchema))]
-#[cfg_attr(feature = "serde", serde(default))]
 pub struct RollResult {
     /// The total dice results added up.
     pub total: i32,
@@ -177,7 +183,6 @@ impl Display for Roll {
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
-#[cfg_attr(feature = "serde", serde(default))]
 /// An individual die.
 pub enum Die {
     D4,

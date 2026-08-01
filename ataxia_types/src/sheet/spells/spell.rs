@@ -21,7 +21,6 @@ use crate::database::spell::DatabaseSpell;
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
-#[cfg_attr(feature = "serde", serde(default))]
 pub struct Spell {
     pub name: String,
     pub desc: Vec<String>,
@@ -39,7 +38,7 @@ pub struct Spell {
     source: Option<Source>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[cfg_attr(feature = "serde", serde(default))]
@@ -51,7 +50,6 @@ pub struct Area {
 #[derive(Debug, Clone, PartialEq, Display)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
-#[cfg_attr(feature = "serde", serde(default))]
 pub enum Effect {
     Damage(Damage),
     Heal(Heal),
@@ -61,7 +59,6 @@ pub enum Effect {
 #[derive(Debug, Clone, PartialEq, Display)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
-#[cfg_attr(feature = "serde", serde(default))]
 pub enum Heal {
     Static(String),
     Roll(Roll),

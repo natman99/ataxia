@@ -62,7 +62,6 @@ pub struct ExtraSenses {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Display)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
-#[cfg_attr(feature = "serde", serde(default))]
 /// Extra sense types.
 pub enum Sense {
     BlindSight,
