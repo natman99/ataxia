@@ -1,9 +1,21 @@
 use std::fmt::Display;
 
+#[cfg(feature = "schema")]
 use schemars::JsonSchema;
+
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[cfg_attr(feature = "serde", serde(from = "SkillsJson"))]
+#[cfg_attr(feature = "serde", serde(into = "SkillsJson"))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[cfg_attr(feature = "serde", serde(default))]
+struct Temp {}
+
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct Condition {
     /// Machine index
     pub index: String,

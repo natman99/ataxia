@@ -1,4 +1,6 @@
+#[cfg(feature= "serde")]
 use serde::Deserialize;
+#[cfg(feature= "serde")]
 use serde::Serialize;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]

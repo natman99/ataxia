@@ -1,5 +1,6 @@
 use parking_lot::Mutex;
 use ratatui::crossterm::event::KeyEventKind;
+#[cfg(feature = "schema")]
 use schemars::JsonSchema;
 use std::{cell::LazyCell, fs, io, path::PathBuf};
 
@@ -15,6 +16,7 @@ use ratatui::{
     style::Color,
     widgets::{Block, Paragraph, ScrollbarState},
 };
+#[cfg(feature= "serde")]
 use serde::Serialize;
 use tui_input::{Input, backend::crossterm::EventHandler};
 

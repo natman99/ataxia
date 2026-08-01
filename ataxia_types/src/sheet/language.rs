@@ -1,10 +1,14 @@
 use std::{fmt::Display, str::FromStr};
 
+#[cfg(feature = "schema")]
 use schemars::JsonSchema;
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq)]
-#[serde(default)]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[cfg_attr(feature = "serde", serde(default))]
 pub struct Languages {
     languages: Vec<Language>,
 }
@@ -30,10 +34,10 @@ impl Default for Languages {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq, Hash)]
-// #[serde(untagged)]
-// #[serde(from = "String")]
-// #[serde(into = "String")]
+#[derive(Debug, Clone, PartialEq, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[cfg_attr(feature = "serde", serde(default))]
 pub enum Language {
     Common,
     Dwarvish,
@@ -52,7 +56,7 @@ pub enum Language {
     Sylvan,
     Undercommon,
     ThievesCant,
-    #[serde(untagged)]
+    #[cfg_attr(feature = "serde", serde(untagged))]
     Other(String),
 }
 

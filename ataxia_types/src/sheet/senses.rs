@@ -1,13 +1,17 @@
 use std::fmt::Display;
 
+#[cfg(feature = "schema")]
 use schemars::JsonSchema;
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 use strum::Display;
 
 use crate::{AbilityScores, Score};
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
-#[serde(default)]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[cfg_attr(feature = "serde", serde(default))]
 pub struct Senses {
     pub perception_bonus: i32,
     pub investigation_bonus: i32,
@@ -44,8 +48,10 @@ impl Default for Senses {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Default, Serialize, Deserialize, JsonSchema)]
-#[serde(default)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[cfg_attr(feature = "serde", serde(default))]
 pub struct ExtraSenses {
     pub blind_sight: bool,
     pub dark_vision: bool,
@@ -53,7 +59,10 @@ pub struct ExtraSenses {
     pub true_sight: bool,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema, Display)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Display)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[cfg_attr(feature = "serde", serde(default))]
 /// Extra sense types.
 pub enum Sense {
     BlindSight,

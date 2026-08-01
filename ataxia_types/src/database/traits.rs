@@ -1,6 +1,8 @@
 use std::fmt::Display;
 
+#[cfg(feature = "serde")]
 use serde::Deserialize;
+#[cfg(feature = "serde")]
 use serde::Serialize;
 
 pub type Traits = Vec<Trait>;

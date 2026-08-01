@@ -1,6 +1,8 @@
 use std::{collections::BTreeMap, fmt::Display};
 
+#[cfg(feature = "schema")]
 use schemars::JsonSchema;
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 pub use feature::HasFeature;
@@ -17,7 +19,9 @@ use crate::{
     spells::Spell,
 };
 
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, JsonSchema)]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct Feature {
     pub source: Option<Source>,
     pub effects: Vec<Effect>,
@@ -33,7 +37,9 @@ impl HasSource for Feature {
     }
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, JsonSchema)]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 /// The effect the feature has
 pub enum Effect {
     /// Flat armor class (ac) bonus.
@@ -96,13 +102,16 @@ impl Effect {
     }
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize, Default, PartialEq, JsonSchema)]
-#[serde(default)]
+#[derive(Debug, Clone, Default, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct Features {
     pub inner: Vec<Feature>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, JsonSchema)]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct MeterAdd {
     pub name: String,
     pub meter: Meter,
@@ -110,7 +119,9 @@ pub struct MeterAdd {
     pub slot_number: usize,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, JsonSchema, Copy, Default)]
+#[derive(Debug, Clone, PartialEq, Copy, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct AbilityScoreBonus {
     /// The abilty score to boost.
     pub score: Score,

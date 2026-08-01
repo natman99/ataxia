@@ -3,7 +3,9 @@ use std::{collections::HashMap, fmt::Display, str::FromStr, sync::LazyLock};
 
 use rand::{Rng, RngExt};
 use regex::Regex;
+#[cfg(feature = "schema")]
 use schemars::JsonSchema;
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 /// Trait for dice rolls.
@@ -23,7 +25,10 @@ pub enum RollParseError {
     ParseFailed,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[cfg_attr(feature = "serde", serde(default))]
 /// A dice roll. Can contain multiple dice.
 pub struct Roll {
     /// Array of dice to roll.
@@ -32,7 +37,10 @@ pub struct Roll {
     pub bonus: i32,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[cfg_attr(feature = "serde", serde(default))]
 pub struct RollResult {
     /// The total dice results added up.
     pub total: i32,
@@ -166,7 +174,10 @@ impl Display for Roll {
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema, Default)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[cfg_attr(feature = "serde", serde(default))]
 /// An individual die.
 pub enum Die {
     D4,

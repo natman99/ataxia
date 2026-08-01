@@ -1,17 +1,23 @@
 use std::fmt::Display;
 
+#[cfg(feature = "schema")]
 use schemars::JsonSchema;
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 use crate::database;
 
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq, Hash, Default)]
+#[derive(Debug, Clone, PartialEq, Hash, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 /// Conditions affecting the character.
 pub struct Conditions {
     pub conditions: Vec<Condition>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq, Hash)]
+#[derive(Debug, Clone, PartialEq, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 /// A condition including a name and duration.
 pub struct Condition {
     pub name: String,

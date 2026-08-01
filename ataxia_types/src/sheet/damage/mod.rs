@@ -1,22 +1,14 @@
 use std::str::FromStr;
 
+#[cfg(feature = "schema")]
 use schemars::JsonSchema;
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 use strum::EnumString;
 
-#[derive(
-    Debug,
-    Clone,
-    Copy,
-    PartialEq,
-    PartialOrd,
-    Ord,
-    Eq,
-    Serialize,
-    Deserialize,
-    EnumString,
-    JsonSchema,
-)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Ord, Eq, EnumString)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[strum(ascii_case_insensitive)]
 pub enum DamageType {
     Acid,

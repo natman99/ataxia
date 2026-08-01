@@ -5,13 +5,17 @@ use std::{
 };
 
 use rand::RngExt;
+#[cfg(feature = "schema")]
 use schemars::JsonSchema;
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 use crate::{AbilityScores, HitPoints, roll::Die};
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
-#[serde(default)]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[cfg_attr(feature = "serde", serde(default))]
 pub struct Classes {
     pub classes: Vec<Class>,
 }
@@ -87,8 +91,10 @@ impl IndexMut<usize> for Classes {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
-#[serde(default)]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[cfg_attr(feature = "serde", serde(default))]
 pub struct Class {
     pub class: ClassType,
     pub subclass: String,
@@ -128,8 +134,10 @@ impl Class {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema, Default)]
-#[serde(from = "String")]
+#[derive(Debug, Clone, PartialEq, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[cfg_attr(feature = "serde", serde(from = "String"))]
 /// The class of a character. `from_str` is infailable on this type.
 /// Implements `From<&str>` and `From<String>`
 pub enum ClassType {
@@ -147,7 +155,7 @@ pub enum ClassType {
     Bard,
     Druid,
     Artificer,
-    #[serde(untagged)]
+    #[cfg_attr(feature = "serde", serde(untagged))]
     Other(String),
 }
 
@@ -229,7 +237,9 @@ impl Display for ClassType {
     }
 }
 
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct Level(pub u32);
 
 impl Default for Level {

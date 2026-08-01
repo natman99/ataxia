@@ -1,7 +1,9 @@
 use std::str::FromStr;
 
 use anyhow::{Context, anyhow};
+#[cfg(feature = "schema")]
 use schemars::JsonSchema;
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 use strum::{Display, EnumString};
 
@@ -9,12 +11,17 @@ use crate::{
     Character, Score,
     class::Level,
     damage::DamageType,
-    database::spell::DatabaseSpell,
     roll::{Roll, Rollable},
     sheet::source::{HasSource, Source},
 };
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, JsonSchema)]
+#[cfg(feature = "serde")]
+use crate::database::spell::DatabaseSpell;
+
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[cfg_attr(feature = "serde", serde(default))]
 pub struct Spell {
     pub name: String,
     pub desc: Vec<String>,
@@ -32,39 +39,37 @@ pub struct Spell {
     source: Option<Source>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, JsonSchema)]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[cfg_attr(feature = "serde", serde(default))]
 pub struct Area {
     shape: String,
     size: i32,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, JsonSchema, Display)]
+#[derive(Debug, Clone, PartialEq, Display)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[cfg_attr(feature = "serde", serde(default))]
 pub enum Effect {
     Damage(Damage),
     Heal(Heal),
     Other,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, JsonSchema, Display)]
+#[derive(Debug, Clone, PartialEq, Display)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[cfg_attr(feature = "serde", serde(default))]
 pub enum Heal {
     Static(String),
     Roll(Roll),
 }
 
-#[derive(
-    EnumString,
-    Display,
-    Debug,
-    Clone,
-    Copy,
-    PartialEq,
-    Eq,
-    PartialOrd,
-    Ord,
-    JsonSchema,
-    Serialize,
-    Deserialize,
-)]
+#[derive(EnumString, Display, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub enum Component {
     #[strum(serialize = "V")]
     Verbal,
@@ -74,13 +79,17 @@ pub enum Component {
     Material,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, JsonSchema)]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct Damage {
     pub damage_type: DamageType,
     pub damage: Roll,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, JsonSchema, EnumString)]
+#[derive(Debug, Clone, PartialEq, EnumString)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub enum SpellType {
     /// Saving throw
     Saving { dc_type: Score, success: Success },
@@ -93,9 +102,9 @@ pub enum SpellType {
 }
 
 /// Effect on DC success
-#[derive(
-    Debug, Clone, Serialize, Deserialize, PartialEq, JsonSchema, EnumString, Display, Default,
-)]
+#[derive(Debug, Clone, PartialEq, EnumString, Display, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[strum(ascii_case_insensitive)]
 pub enum Success {
     #[default]
@@ -104,7 +113,9 @@ pub enum Success {
     Other,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, JsonSchema, EnumString, Display)]
+#[derive(Debug, Clone, PartialEq, EnumString, Display)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[strum(ascii_case_insensitive)]
 pub enum School {
     Conjuration,
@@ -146,6 +157,7 @@ impl HasSource for Spell {
 }
 
 impl Spell {
+    #[cfg(feature = "serde")]
     pub fn try_from_database(value: DatabaseSpell, sheet: &Character) -> anyhow::Result<Self> {
         let mut components = vec![];
         for i in value.components {
@@ -277,7 +289,9 @@ impl Spell {
 
 #[cfg(test)]
 mod tests {
-    use std::{fs, str::FromStr};
+    #[cfg(feature = "serde")]
+    use std::fs;
+    use std::str::FromStr;
 
     use super::*;
 
@@ -287,6 +301,7 @@ mod tests {
         let s = School::from_str("conjuration").unwrap();
         assert_eq!(s.to_string(), "Conjuration");
     }
+    #[cfg(feature = "serde")]
     #[test]
     fn test_spell_from() {
         let path = "../5e-database/src/2014/en/5e-SRD-Spells.json";

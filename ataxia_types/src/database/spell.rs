@@ -1,6 +1,8 @@
 use std::fmt::{Display, write};
 
+#[cfg(feature = "schema")]
 use schemars::JsonSchema;
+#[cfg(feature= "serde")]
 use serde::{Deserialize, Serialize};
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]

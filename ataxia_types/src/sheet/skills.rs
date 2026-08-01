@@ -1,14 +1,18 @@
 use std::fmt::Display;
 
 use enumflags2::{BitFlag, BitFlags, bitflags};
+#[cfg(feature = "schema")]
 use schemars::JsonSchema;
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 use crate::sheet::AbilityScores;
 
 #[bitflags]
 #[repr(u32)]
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone, Copy, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 /// Skills enum.
 pub enum Skill {
     Acrobatics,
@@ -150,8 +154,10 @@ impl TryFrom<&str> for Skill {
         }
     }
 }
-#[derive(Serialize, Deserialize, Debug, Clone, Default, JsonSchema)]
-#[serde(default)]
+#[derive(Debug, Clone, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[cfg_attr(feature = "serde", serde(default))]
 struct SkillsJson {
     athletics: bool,
     acrobatics: bool,
@@ -175,10 +181,12 @@ struct SkillsJson {
     expertise: Vec<Skill>,
 }
 
-#[derive(Debug, Clone, PartialEq, JsonSchema, Serialize, Deserialize)]
-#[serde(default)]
-#[serde(from = "SkillsJson")]
-#[serde(into = "SkillsJson")]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[cfg_attr(feature = "serde", serde(default))]
+#[cfg_attr(feature = "serde", serde(from = "SkillsJson"))]
+#[cfg_attr(feature = "serde", serde(into = "SkillsJson"))]
 /// The characters proficiency skills.
 pub struct Skills {
     pub proficiency_bonus: u32,

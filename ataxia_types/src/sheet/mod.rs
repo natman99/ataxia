@@ -1,4 +1,6 @@
+#[cfg(feature = "schema")]
 use schemars::JsonSchema;
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, fmt::Display};
 use strum::EnumString;
@@ -37,8 +39,10 @@ use crate::{
     sheet::{class::ClassType, skills::Skills, spells::Spells},
 };
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default, JsonSchema)]
-#[serde(default)]
+#[derive(Debug, Clone, PartialEq, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[cfg_attr(feature = "serde", serde(default))]
 pub struct Character {
     pub name: String,
     pub race: String,
@@ -122,13 +126,17 @@ impl Character {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default, JsonSchema)]
-#[serde(default)]
+#[derive(Debug, Clone, PartialEq, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[cfg_attr(feature = "serde", serde(default))]
 /// An inventory containing a hash map of `Item`s
 pub struct Inventory(pub HashMap<String, Item>);
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default, JsonSchema)]
-#[serde(default)]
+#[derive(Debug, Clone, PartialEq, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[cfg_attr(feature = "serde", serde(default))]
 /// Ability scores. Defaults to ten.
 pub struct AbilityScores {
     pub str: AbilityScore,
@@ -191,9 +199,9 @@ impl AbilityScores {
     }
 }
 
-#[derive(
-    Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Default, JsonSchema, EnumString,
-)]
+#[derive(Debug, Clone, Copy, PartialEq, Default, EnumString)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[strum(ascii_case_insensitive)]
 /// Scores enum.
 pub enum Score {
@@ -220,8 +228,10 @@ impl Display for Score {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
-#[serde(default)]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[cfg_attr(feature = "serde", serde(default))]
 /// The armor class of a character.
 pub struct ArmorClass(u32);
 
@@ -253,8 +263,10 @@ impl Display for ArmorClass {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
-#[serde(default)]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[cfg_attr(feature = "serde", serde(default))]
 /// Initiative score.
 pub struct Initiative {
     pub bonus: i32,
@@ -272,8 +284,10 @@ impl Initiative {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Hash, JsonSchema)]
-#[serde(default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[cfg_attr(feature = "serde", serde(default))]
 /// Walking speed in feet.
 pub struct WalkingSpeed(u32);
 

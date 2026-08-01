@@ -1,17 +1,23 @@
 use std::collections::HashMap;
 
+#[cfg(feature = "schema")]
 use schemars::JsonSchema;
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 use crate::sheet::source::{HasSource, Source};
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default, JsonSchema)]
+#[derive(Debug, Clone, PartialEq, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct Meters {
     pub meters: HashMap<String, Meter>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default, JsonSchema)]
-#[serde(default)]
+#[derive(Debug, Clone, PartialEq, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[cfg_attr(feature = "serde", serde(default))]
 /// A meter item. These are for counting any consumable resources including spell slots.
 pub struct Meter {
     pub slot_number: u32,
@@ -68,10 +74,10 @@ impl HasSource for Meter {
     }
 }
 
-#[derive(
-    Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Hash, Serialize, Deserialize, JsonSchema,
-)]
-#[serde(default)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[cfg_attr(feature = "serde", serde(default))]
 /// When the slot is restored. These can both be false.
 pub struct RestoreTime {
     /// Restore on short rest.
