@@ -1,9 +1,9 @@
 use ataxia_types::{
-    AbilityScores, Character, Score,
+    AbilityScores, Character, PassiveSenses, Score, sheet,
     skills::{Skill, Skills},
 };
 use iced::{
-    Alignment, Element, Length,
+    Alignment, Element, Length, Task,
     alignment::{Horizontal::Left, Vertical},
     widget::{
         self, Column, Container, Grid, Row, Rule, Text, button, checkbox, column, container, row,
@@ -16,28 +16,77 @@ use crate::Message;
 #[derive(Debug, Default, Clone)]
 pub struct BasicState {
     pub hp_input: String,
+    pub reaction: bool,
 }
+
+impl<'a> BasicState {
+    pub fn view(&'a self, sheet: &'a Character) -> Element<'a, Message> {
+        let x = row![scores(sheet), health(sheet, self)].spacing(20);
+
+        let z = column![x, reaction(self)];
+
+        let c1 = container(z)
+            // .center(320)
+            .center_x(300)
+            .center_y(200)
+            .style(container::bordered_box)
+            .padding(12);
+
+        let s = passive_senses(sheet);
+
+        let s = row![
+            s.height(Length::Fill),
+            ac_init_prof_speed(sheet).height(Length::Fill)
+        ]
+        .height(120);
+
+        let c1 = column![c1, s];
+
+        let c2 = skills(sheet);
+        let row = row![c1, c2].spacing(8);
+
+        container(row).center(Length::Fill).into()
+    }
+
+    pub fn update(&mut self, message: BasicMessage, sheet: &mut Character) -> Task<Message> {
+        match message {
+            BasicMessage::InputChanged(s) => {
+                if s.parse::<i32>().is_ok() || s.is_empty() || s == "-" {
+                    self.hp_input = s;
+                }
+                Task::none()
+            }
+            BasicMessage::Heal => {
+                if let Ok(n) = self.hp_input.parse() {
+                    sheet.health.heal(n);
+                }
+                Task::done(Message::Basic(BasicMessage::ResetInput))
+            }
+            BasicMessage::Damage => {
+                if let Ok(n) = self.hp_input.parse() {
+                    sheet.health.heal(n);
+                }
+                Task::done(Message::Basic(BasicMessage::ResetInput))
+            }
+            BasicMessage::ResetInput => {
+                self.hp_input.clear();
+                Task::none()
+            }
+            BasicMessage::Reaction(b) => {
+                self.reaction = b;
+                Task::none()
+            }
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub enum BasicMessage {
     InputChanged(String),
     Heal,
     Damage,
     ResetInput,
-}
-
-pub fn basic<'a>(sheet: &'a Character, state: &'a BasicState) -> Element<'a, Message> {
-    let x = row![scores(sheet), health(sheet, state)].spacing(20);
-    let c1 = container(x)
-        .max_width(320)
-        .max_height(200)
-        .center(Length::Fill)
-        .style(container::bordered_box)
-        .padding(12);
-
-    let c2 = skills(sheet);
-    let row = row![c1, c2].spacing(20);
-
-    container(row).center(Length::Shrink).into()
+    Reaction(bool),
 }
 
 pub fn scores<'a>(sheet: &'a Character) -> Container<'a, Message> {
@@ -137,11 +186,6 @@ pub fn skills<'a>(sheet: &'a Character) -> Container<'a, Message> {
 
     let skill_names: Vec<Text> = skill_names.iter().map(|f| text!("{f}")).collect();
 
-    // let c1 = Column::from_vec(prof).spacing(5);
-    // let c2 = Column::from_vec(skill_names);
-    // let c3 = Column::from_vec(skills).align_x(Alignment::End);
-    // let r = row![c1, c2, c3].spacing(8);
-
     let rows = prof
         .into_iter()
         .zip(skill_names)
@@ -151,5 +195,42 @@ pub fn skills<'a>(sheet: &'a Character) -> Container<'a, Message> {
 
     let r = Column::from_vec(rows);
 
-    container(r).into()
+    container(r).style(container::secondary).padding(12).into()
+}
+
+fn reaction(basic: &BasicState) -> Container<'_, Message> {
+    let x = checkbox(basic.reaction)
+        .label("Reaction")
+        .on_toggle(|f| Message::Basic(BasicMessage::Reaction(f)));
+    container(x)
+}
+
+fn passive_senses<'a>(sheet: &'a Character) -> Container<'a, Message> {
+    let x = text("Passive Senses")
+        .style(text::secondary)
+        // .size(14)
+        .center();
+
+    let senses = sheet.passive_senses();
+    let z = column![
+        text!("Perception {}", senses.perception),
+        text!("Investigation {}", senses.investigation),
+        text!("Insight {}", senses.insight),
+        x,
+    ];
+
+    // let c = column![x, z];
+
+    container(z).style(container::bordered_box).padding(12)
+}
+
+fn ac_init_prof_speed<'a>(sheet: &'a Character) -> Container<'a, Message> {
+    let c = column![
+        text!("Proficiency bonus {}", sheet.skills.proficiency_bonus),
+        text!("AC {}", sheet.armor_class),
+        text!("Initiative {}", sheet.initiative()),
+        text!("Walking speed {}", sheet.walking_speed)
+    ];
+
+    container(c).style(container::bordered_box).padding(12)
 }

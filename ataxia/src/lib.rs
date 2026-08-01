@@ -9,7 +9,7 @@ use iced::{
 
 use crate::{
     global::Global,
-    views::{BasicMessage, BasicState, basic},
+    views::{BasicMessage, BasicState},
 };
 
 mod global;
@@ -91,34 +91,13 @@ impl<'a> App {
                     Task::none()
                 }
             },
-            Message::Basic(basic_message) => match basic_message {
-                BasicMessage::InputChanged(s) => {
-                    if s.parse::<i32>().is_ok() || s.is_empty() || s == "-" {
-                        self.basic_state.hp_input = s;
-                    }
+            Message::Basic(basic_message) => {
+                if let Some(sheet) = &mut self.sheet {
+                    self.basic_state.update(basic_message, sheet)
+                } else {
                     Task::none()
                 }
-                BasicMessage::Heal => {
-                    if let Some(s) = &mut self.sheet {
-                        if let Ok(n) = self.basic_state.hp_input.parse() {
-                            s.health.heal(n);
-                        }
-                    }
-                    Task::done(Message::Basic(BasicMessage::ResetInput))
-                }
-                BasicMessage::Damage => {
-                    if let Some(s) = &mut self.sheet {
-                        if let Ok(n) = self.basic_state.hp_input.parse() {
-                            s.health.heal(n);
-                        }
-                    }
-                    Task::done(Message::Basic(BasicMessage::ResetInput))
-                }
-                BasicMessage::ResetInput => {
-                    self.basic_state.hp_input.clear();
-                    Task::none()
-                }
-            },
+            }
         }
     }
 
@@ -132,7 +111,7 @@ impl<'a> App {
         };
 
         let c = match state.view {
-            View::Basic => basic(sheet, &self.basic_state),
+            View::Basic => self.basic_state.view(sheet),
             View::Inventory => todo!(),
             View::Spells => todo!(),
         };
