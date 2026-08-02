@@ -1,9 +1,12 @@
-use std::{collections::BTreeMap, fmt::Display};
+use std::fmt::Display;
 
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
+
+#[cfg(feature = "rhai")]
+use rhai::CustomType;
 
 pub use feature::HasFeature;
 
@@ -22,6 +25,7 @@ use crate::{
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[cfg_attr(feature = "rhai", derive(CustomType))]
 pub struct Feature {
     pub source: Option<Source>,
     pub effects: Vec<Effect>,
@@ -105,6 +109,7 @@ impl Effect {
 #[derive(Debug, Clone, Default, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[cfg_attr(feature = "rhai", derive(CustomType))]
 pub struct Features {
     pub inner: Vec<Feature>,
 }

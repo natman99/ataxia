@@ -1,15 +1,15 @@
-use std::str::FromStr;
-
-use anyhow::{Context, anyhow};
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
+
+#[cfg(feature = "rhai")]
+use rhai::CustomType;
+
 use strum::{Display, EnumString};
 
 use crate::{
-    Character, Score,
-    class::Level,
+    Score,
     damage::DamageType,
     roll::{Roll, Rollable},
     sheet::source::{HasSource, Source},
@@ -18,12 +18,22 @@ use crate::{
 #[cfg(feature = "serde")]
 use crate::database::spell::DatabaseSpell;
 
+#[cfg(feature = "serde")]
+use crate::Character;
+
+#[cfg(feature = "serde")]
+use std::str::FromStr;
+
+#[cfg(feature = "serde")]
+use anyhow::Context;
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[cfg_attr(feature = "rhai", derive(CustomType))]
 pub struct Spell {
     pub name: String,
-    pub desc: Vec<String>,
+    pub desc: String,
     pub range: String,
     pub cast_time: String,
     pub concentration: bool,
@@ -177,7 +187,7 @@ impl Spell {
                     })
                 });
                 let Some(heal) = heal else {
-                    return Err(anyhow!("Healing missing"));
+                    return Err(anyhow::anyhow!("Healing missing"));
                 };
 
                 let modifier = sheet.ability_modifier;
@@ -221,14 +231,14 @@ impl Spell {
                         })
                     });
                     let Some(d) = d else {
-                        return Err(anyhow!("Damage not found"));
+                        return Err(anyhow::anyhow!("Damage not found"));
                     };
                     Some(Roll::from_str(&d).context("Failed to parse slot damage roll")?)
                 } else {
                     None
                 };
                 let Some(roll) = roll else {
-                    return Err(anyhow!("Roll not found"));
+                    return Err(anyhow::anyhow!("Roll not found"));
                 };
                 let damage = Damage {
                     damage_type,
@@ -258,7 +268,7 @@ impl Spell {
 
         let s = Self {
             name: value.name,
-            desc: value.desc,
+            desc: value.desc.join("\n"),
             range: value.range,
             cast_time: value.casting_time,
             concentration: value.concentration,

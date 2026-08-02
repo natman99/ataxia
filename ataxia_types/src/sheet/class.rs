@@ -5,6 +5,8 @@ use std::{
 };
 
 use rand::RngExt;
+#[cfg(feature = "rhai")]
+use rhai::CustomType;
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
 #[cfg(feature = "serde")]
@@ -16,6 +18,7 @@ use crate::{AbilityScores, HitPoints, roll::Die};
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[cfg_attr(feature = "serde", serde(default))]
+#[cfg_attr(feature = "rhai", derive(CustomType))]
 pub struct Classes {
     pub classes: Vec<Class>,
 }
@@ -95,9 +98,11 @@ impl IndexMut<usize> for Classes {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[cfg_attr(feature = "serde", serde(default))]
+#[cfg_attr(feature = "rhai", derive(CustomType))]
 pub struct Class {
     pub class: ClassType,
     pub subclass: String,
+    #[cfg_attr(feature = "rhai", rhai_type(get = Self::get_level), rhai_type(set = Self::set_level))]
     pub level: Level,
     pub hit_dice: Die,
     pub health_bonus_per_level: i32,
@@ -131,6 +136,14 @@ impl Class {
             health.heal(healing_amount);
         }
         self.healing_die_remaining = self.healing_die_remaining.saturating_sub(1);
+    }
+
+    pub fn get_level(&self) -> u32 {
+        self.level.0
+    }
+
+    pub fn set_level(&mut self, level: u32) -> () {
+        self.level.0 = level
     }
 }
 

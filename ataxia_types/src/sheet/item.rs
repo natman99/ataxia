@@ -1,7 +1,12 @@
+use std::str::FromStr;
+
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
+
+#[cfg(feature = "rhai")]
+use rhai::CustomType;
 
 use crate::{
     feature::{Feature, HasFeature},
@@ -16,6 +21,7 @@ use crate::{
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[cfg_attr(feature = "serde", serde(default))]
+#[cfg_attr(feature = "rhai", derive(CustomType))]
 /// An item.
 pub struct Item {
     /// The name of the item

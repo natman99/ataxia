@@ -5,12 +5,16 @@ use schemars::JsonSchema;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+#[cfg(feature = "rhai")]
+use rhai::CustomType;
+
 use crate::{AbilityScores, class::Classes};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[cfg_attr(feature = "serde", serde(default))]
+#[cfg_attr(feature = "rhai", derive(CustomType))]
 /// The hit points of the character. Default display displays the current health.
 pub struct HitPoints {
     /// Current health. Must never be higher than the max.

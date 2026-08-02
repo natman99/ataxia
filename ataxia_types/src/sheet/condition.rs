@@ -5,11 +5,15 @@ use schemars::JsonSchema;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+#[cfg(feature = "rhai")]
+use rhai::CustomType;
+
 use crate::database;
 
 #[derive(Debug, Clone, PartialEq, Hash, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[cfg_attr(feature = "rhai", derive(CustomType))]
 /// Conditions affecting the character.
 pub struct Conditions {
     pub conditions: Vec<Condition>,
@@ -18,6 +22,7 @@ pub struct Conditions {
 #[derive(Debug, Clone, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[cfg_attr(feature = "rhai", derive(CustomType))]
 /// A condition including a name and duration.
 pub struct Condition {
     pub name: String,

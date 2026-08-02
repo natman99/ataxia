@@ -5,11 +5,15 @@ use schemars::JsonSchema;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+#[cfg(feature = "rhai")]
+use rhai::CustomType;
+
 use crate::sheet::source::{HasSource, Source};
 
 #[derive(Debug, Clone, PartialEq, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[cfg_attr(feature = "rhai", derive(CustomType))]
 pub struct Meters {
     pub meters: HashMap<String, Meter>,
 }
@@ -18,7 +22,8 @@ pub struct Meters {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[cfg_attr(feature = "serde", serde(default))]
-/// A meter item. These are for counting any consumable resources including spell slots.
+#[cfg_attr(feature = "rhai", derive(CustomType))]
+/// A meter item. These are for counting any restorable consumable resources including spell slots.
 pub struct Meter {
     pub slot_number: u32,
     pub spent: u32,

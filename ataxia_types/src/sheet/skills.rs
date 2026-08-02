@@ -6,6 +6,9 @@ use schemars::JsonSchema;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+#[cfg(feature = "rhai")]
+use rhai::CustomType;
+
 use crate::sheet::AbilityScores;
 
 #[bitflags]
@@ -187,6 +190,7 @@ struct SkillsJson {
 #[cfg_attr(feature = "serde", serde(default))]
 #[cfg_attr(feature = "serde", serde(from = "SkillsJson"))]
 #[cfg_attr(feature = "serde", serde(into = "SkillsJson"))]
+#[cfg_attr(feature = "rhai", derive(CustomType))]
 /// The characters proficiency skills.
 pub struct Skills {
     pub proficiency_bonus: u32,

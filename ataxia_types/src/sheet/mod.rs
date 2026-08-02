@@ -1,7 +1,10 @@
+#[cfg(feature = "rhai")]
+use rhai::CustomType;
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
+
 use std::{collections::HashMap, fmt::Display};
 use strum::EnumString;
 
@@ -43,6 +46,8 @@ use crate::{
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[cfg_attr(feature = "serde", serde(default))]
+#[cfg_attr(feature = "rhai", derive(CustomType))]
+
 pub struct Character {
     pub name: String,
     pub race: String,
@@ -145,6 +150,7 @@ pub struct PassiveSenses {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[cfg_attr(feature = "serde", serde(default))]
+#[cfg_attr(feature = "rhai", derive(CustomType))]
 /// An inventory containing a hash map of `Item`s
 pub struct Inventory(pub HashMap<String, Item>);
 
@@ -152,6 +158,7 @@ pub struct Inventory(pub HashMap<String, Item>);
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[cfg_attr(feature = "serde", serde(default))]
+#[cfg_attr(feature = "rhai", derive(CustomType))]
 /// Ability scores. Defaults to ten.
 pub struct AbilityScores {
     pub str: AbilityScore,
@@ -247,8 +254,9 @@ impl Display for Score {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[cfg_attr(feature = "serde", serde(default))]
+#[cfg_attr(feature = "rhai", derive(CustomType))]
 /// The armor class of a character.
-pub struct ArmorClass(u32);
+pub struct ArmorClass(#[cfg_attr(feature = "rhai", rhai_type(set = Self::set))] u32);
 
 impl ArmorClass {
     /// 10 + dex
@@ -282,6 +290,7 @@ impl Display for ArmorClass {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[cfg_attr(feature = "serde", serde(default))]
+#[cfg_attr(feature = "rhai", derive(CustomType))]
 /// Initiative score.
 pub struct Initiative {
     pub bonus: i32,
@@ -303,6 +312,7 @@ impl Initiative {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[cfg_attr(feature = "serde", serde(default))]
+#[cfg_attr(feature = "rhai", derive(CustomType))]
 /// Walking speed in feet.
 pub struct WalkingSpeed(u32);
 

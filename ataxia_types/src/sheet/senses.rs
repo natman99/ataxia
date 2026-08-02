@@ -4,14 +4,19 @@ use std::fmt::Display;
 use schemars::JsonSchema;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
+
+#[cfg(feature = "rhai")]
+use rhai::CustomType;
+
 use strum::Display;
 
 use crate::{AbilityScores, Score};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[cfg_attr(feature = "serde", serde(default))]
+#[cfg_attr(feature = "rhai", derive(CustomType))]
 pub struct Senses {
     pub perception_bonus: i32,
     pub investigation_bonus: i32,
@@ -52,6 +57,7 @@ impl Default for Senses {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[cfg_attr(feature = "serde", serde(default))]
+#[cfg_attr(feature = "rhai", derive(CustomType))]
 pub struct ExtraSenses {
     pub blind_sight: bool,
     pub dark_vision: bool,

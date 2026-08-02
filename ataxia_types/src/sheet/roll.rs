@@ -8,6 +8,9 @@ use schemars::JsonSchema;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+#[cfg(feature = "rhai")]
+use rhai::CustomType;
+
 /// Trait for dice rolls.
 pub trait Rollable {
     /// Returns the roll result if the type has a valid roll on it.
@@ -29,6 +32,7 @@ pub enum RollParseError {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[cfg_attr(feature = "serde", serde(default))]
+#[cfg_attr(feature = "rhai", derive(CustomType))]
 /// A dice roll. Can contain multiple dice.
 pub struct Roll {
     /// Array of dice to roll.
