@@ -1,0 +1,11 @@
+[package]
+name = "ataxia_scripting"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+serde = "1.0.229"
+serde_json = "1.0.151"
+ataxia_types = {path = "../ataxia_types", features = ["schema", "serde", "rhai"]}
+anyhow = "1.0.104"
+rhai = "1.25.1"
