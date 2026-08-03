@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "rhai")]
 use rhai::CustomType;
+use strum::EnumString;
 
 /// Trait for dice rolls.
 pub trait Rollable {
@@ -184,9 +185,10 @@ impl Display for Roll {
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, EnumString)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[strum(ascii_case_insensitive)]
 /// An individual die.
 pub enum Die {
     D4,
@@ -196,6 +198,7 @@ pub enum Die {
     D12,
     #[default]
     D20,
+    #[strum(serialize = "D100")]
     Percentile,
 }
 
