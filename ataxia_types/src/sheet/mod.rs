@@ -88,6 +88,7 @@ impl Character {
                     class,
                     healing_die_remaining: level,
                     subclass: String::new(),
+                    max_healing_die: level,
                 }],
             },
             skills: Skills::default(),
