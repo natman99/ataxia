@@ -3,6 +3,11 @@ use crate::{
     sheet::source::{HasSource, Source},
 };
 
+#[cfg(feature = "rhai")]
+use rhai::CustomType;
+
+#[cfg_attr(feature = "rhai", derive(CustomType))]
+#[derive(Debug, Clone)]
 pub struct Feat {
     pub name: String,
     pub desc: String,
