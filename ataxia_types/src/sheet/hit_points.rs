@@ -56,12 +56,12 @@ impl HitPoints {
         let con_mod = scores.con.modifier();
 
         let mut total: i32 =
-            base as i32 + con_mod + self.level_bonus + base_class.health_bonus_per_level;
+            base as i32 + con_mod + self.level_bonus + base_class.health_bonus_per_level as i32;
 
         let fixed_per_level = (die_max / 2 + 1) as i32
             + scores.con.modifier()
             + self.level_bonus
-            + base_class.health_bonus_per_level;
+            + base_class.health_bonus_per_level as i32;
 
         if base_class.level.0 >= 2 {
             total += fixed_per_level * (base_class.level.0 as i32 - 1);
@@ -73,7 +73,7 @@ impl HitPoints {
             let fixed_per_level = (die_max / 2 + 1) as i32
                 + scores.con.modifier()
                 + self.level_bonus
-                + i.health_bonus_per_level;
+                + i.health_bonus_per_level as i32;
 
             for _ in 0..i.level.0 {
                 total += fixed_per_level

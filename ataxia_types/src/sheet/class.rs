@@ -115,9 +115,9 @@ pub struct Class {
     #[cfg_attr(feature = "rhai", rhai_type(get = Self::get_level), rhai_type(set = Self::set_level))]
     pub level: Level,
     pub hit_dice: Die,
-    pub health_bonus_per_level: i32,
-    pub healing_die_remaining: u32,
-    pub max_healing_die: u32,
+    pub health_bonus_per_level: i64,
+    pub healing_die_remaining: i64,
+    pub max_healing_die: i64,
 }
 
 impl Default for Class {
@@ -150,12 +150,12 @@ impl Class {
         self.healing_die_remaining = self.healing_die_remaining.saturating_sub(1);
     }
 
-    pub fn get_level(&self) -> u32 {
+    pub fn get_level(&self) -> i64 {
         self.level.0
     }
 
-    pub fn set_level(&mut self, level: u32) -> () {
-        self.level.0 = level as u32;
+    pub fn set_level(&mut self, level: i64) -> () {
+        self.level.0 = level;
         self.max_healing_die = level;
     }
 
@@ -175,9 +175,9 @@ impl Class {
             level,
             hit_dice: class.get_hit_dice(),
             health_bonus_per_level: 0,
-            healing_die_remaining: level.0,
+            healing_die_remaining: level.0 as i64,
             class,
-            max_healing_die: level.0,
+            max_healing_die: level.0 as i64,
         }
     }
 }
@@ -288,7 +288,7 @@ impl Display for ClassType {
 #[derive(Debug, Clone, Copy, Hash, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
-pub struct Level(pub u32);
+pub struct Level(pub i64);
 
 impl Default for Level {
     fn default() -> Self {

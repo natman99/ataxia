@@ -72,7 +72,7 @@ pub struct Character {
 impl Character {
     pub fn new(
         name: String,
-        level: u32,
+        level: i64,
         health: HitPoints,
         class: ClassType,
         ability_scores: AbilityScores,
