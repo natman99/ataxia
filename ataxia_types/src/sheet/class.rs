@@ -51,6 +51,16 @@ impl Classes {
             None
         }
     }
+
+    #[cfg(feature = "rhai")]
+    pub fn get(&mut self, index: i64) -> Class {
+        self.classes[index as usize].clone()
+    }
+
+    #[cfg(feature = "rhai")]
+    pub fn set(&mut self, index: i64, value: Class) {
+        self.classes[index as usize] = value;
+    }
 }
 
 impl Default for Classes {
@@ -107,6 +117,7 @@ pub struct Class {
     pub hit_dice: Die,
     pub health_bonus_per_level: i32,
     pub healing_die_remaining: u32,
+    pub max_healing_die: u32,
 }
 
 impl Default for Class {
@@ -120,6 +131,7 @@ impl Default for Class {
             health_bonus_per_level: 0,
             healing_die_remaining: 1,
             subclass: String::new(),
+            max_healing_die: 1,
         }
     }
 }
@@ -143,7 +155,8 @@ impl Class {
     }
 
     pub fn set_level(&mut self, level: u32) -> () {
-        self.level.0 = level
+        self.level.0 = level as u32;
+        self.max_healing_die = level;
     }
 
     pub fn set_class(&mut self, class: &str) -> () {
@@ -152,6 +165,7 @@ impl Class {
             return;
         };
         self.class = class;
+        self.hit_dice = self.class.get_hit_dice();
     }
 
     pub fn new(level: Level, class: &str) -> Self {
@@ -163,6 +177,7 @@ impl Class {
             health_bonus_per_level: 0,
             healing_die_remaining: level.0,
             class,
+            max_healing_die: level.0,
         }
     }
 }
