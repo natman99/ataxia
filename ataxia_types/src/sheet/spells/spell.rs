@@ -46,7 +46,7 @@ pub struct Spell {
     pub school: School,
     pub area: Option<Area>,
     pub components: Vec<Component>,
-    source: Option<Source>,
+    pub source: Option<Source>,
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -54,8 +54,8 @@ pub struct Spell {
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[cfg_attr(feature = "serde", serde(default))]
 pub struct Area {
-    shape: String,
-    size: i32,
+    pub shape: String,
+    pub size: i32,
 }
 
 #[derive(Debug, Clone, PartialEq, Display)]
