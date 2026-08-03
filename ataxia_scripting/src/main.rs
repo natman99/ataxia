@@ -1,17 +1,12 @@
-use std::sync::mpsc::channel;
-
-use rhai::Engine;
+use std::fs;
 
 fn main() {
     // rhai::CustomType;
-    let (sender, recv) = channel();
-    let mut x = Engine::new();
-    x.on_print(move |f| {
-        let _ = sender.send(f.to_string());
-    });
+    let mut e = ataxia_scripting::Interface::new();
 
-    let r = x.run("print(40 + 2)");
-    while let Ok(s) = recv.recv() {
-        println!("{s}");
-    }
+    let s = fs::read_to_string("test.rhai").unwrap();
+
+    let c = e.execute(&s, None).unwrap();
+
+    dbg!(c);
 }
