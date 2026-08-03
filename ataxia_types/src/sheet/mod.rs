@@ -24,7 +24,7 @@ pub mod language;
 pub mod lore;
 pub mod meter;
 pub mod senses;
-mod source;
+pub mod source;
 
 pub use hit_points::HitPoints;
 pub use item::Item;
