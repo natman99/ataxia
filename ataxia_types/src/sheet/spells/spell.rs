@@ -21,13 +21,14 @@ use crate::database::spell::DatabaseSpell;
 #[cfg(feature = "serde")]
 use crate::Character;
 
+use std::default;
 #[cfg(feature = "serde")]
 use std::str::FromStr;
 
 #[cfg(feature = "serde")]
 use anyhow::Context;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[cfg_attr(feature = "rhai", derive(CustomType))]
@@ -66,6 +67,16 @@ pub enum Effect {
     Other,
 }
 
+impl Default for Effect {
+    fn default() -> Self {
+        use std::str::FromStr;
+        Self::Damage(Damage {
+            damage_type: DamageType::Force,
+            damage: Roll::from_str("1d4").expect("Should never fail"),
+        })
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Display)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
@@ -94,13 +105,14 @@ pub struct Damage {
     pub damage: Roll,
 }
 
-#[derive(Debug, Clone, PartialEq, EnumString)]
+#[derive(Debug, Clone, PartialEq, EnumString, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub enum SpellType {
     /// Saving throw
     Saving { dc_type: Score, success: Success },
     /// Ranged attack roll
+    #[default]
     Ranged,
     /// Melee attack roll
     Melee,
@@ -120,13 +132,14 @@ pub enum Success {
     Other,
 }
 
-#[derive(Debug, Clone, PartialEq, EnumString, Display)]
+#[derive(Debug, Clone, PartialEq, EnumString, Display, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[strum(ascii_case_insensitive)]
 pub enum School {
     Conjuration,
     Necromancy,
+    #[default]
     Evocation,
     Abjuration,
     Transmutation,
