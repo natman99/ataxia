@@ -195,16 +195,17 @@ fn register_engine_functions(engine: &mut Engine) -> () {
 
     register_spell_functions(engine);
     register_item_functions(engine);
+    register_class_functions(engine);
 
-    engine.register_fn("source", |f: &mut Feature, source: &ImmutableString| {
+    engine.register_fn("source", |f: &mut Feature, source: ImmutableString| {
         f.add_source(Source::Single(source.to_string()));
     });
 
-    engine.register_fn("source", |f: &mut Feat, source: &ImmutableString| {
+    engine.register_fn("source", |f: &mut Feat, source: ImmutableString| {
         f.add_source(Source::Single(source.to_string()));
     });
 
-    engine.register_fn("source", |f: &mut Meter, source: &ImmutableString| {
+    engine.register_fn("source", |f: &mut Meter, source: ImmutableString| {
         f.add_source(Source::Single(source.to_string()));
     });
 
@@ -222,7 +223,11 @@ fn register_engine_functions(engine: &mut Engine) -> () {
 }
 
 fn register_spell_functions(engine: &mut Engine) {
-    engine.register_fn("spell", |name: &ImmutableString| -> Spell {
+    engine.register_fn("add", |spells: &mut Spells, s: Spell| {
+        spells.spells.insert(s.name.clone(), s);
+    });
+
+    engine.register_fn("spell", |name: ImmutableString| -> Spell {
         Spell {
             name: name.to_string(),
             ..Default::default()
@@ -231,7 +236,7 @@ fn register_spell_functions(engine: &mut Engine) {
 
     engine.register_fn(
         "spell",
-        |name: &ImmutableString, description: &ImmutableString| -> Spell {
+        |name: ImmutableString, description: ImmutableString| -> Spell {
             Spell {
                 name: name.to_string(),
                 desc: description.to_string(),
@@ -240,11 +245,11 @@ fn register_spell_functions(engine: &mut Engine) {
         },
     );
 
-    engine.register_fn("source", |f: &mut Spell, source: &ImmutableString| {
+    engine.register_fn("source", |f: &mut Spell, source: ImmutableString| {
         f.add_source(Source::Single(source.to_string()));
     });
 
-    engine.register_fn("component", |spell: &mut Spell, f: &ImmutableString| {
+    engine.register_fn("component", |spell: &mut Spell, f: ImmutableString| {
         let Ok(c) = Component::from_str(f.as_str()) else {
             return;
         };
@@ -253,7 +258,7 @@ fn register_spell_functions(engine: &mut Engine) {
 
     engine.register_fn(
         "area",
-        |spell: &mut Spell, shape: &ImmutableString, size: i64| {
+        |spell: &mut Spell, shape: ImmutableString, size: i64| {
             spell.area = Some(Area {
                 shape: shape.to_string(),
                 size: size as i32,
@@ -261,27 +266,27 @@ fn register_spell_functions(engine: &mut Engine) {
         },
     );
 
-    engine.register_fn("desc", |spell: &mut Spell, desc: &ImmutableString| {
+    engine.register_fn("desc", |spell: &mut Spell, desc: ImmutableString| {
+        spell.desc = desc.to_string();
+    });
+
+    engine.register_fn("description", |spell: &mut Spell, desc: ImmutableString| {
         spell.desc = desc.to_string();
     });
 
     engine.register_fn(
-        "description",
-        |spell: &mut Spell, desc: &ImmutableString| {
-            spell.desc = desc.to_string();
-        },
-    );
-
-    engine.register_fn(
         "cast_time",
-        |spell: &mut Spell, cast_time: &ImmutableString| {
+        |spell: &mut Spell, cast_time: ImmutableString| {
             spell.cast_time = cast_time.to_string();
         },
     );
 
+    engine.register_fn("range", |spell: &mut Spell, range: ImmutableString| {
+        spell.range = range.to_string();
+    });
     engine.register_fn(
         "duration",
-        |spell: &mut Spell, duration: &ImmutableString| {
+        |spell: &mut Spell, duration: ImmutableString| {
             spell.duration = duration.to_string();
         },
     );
@@ -295,7 +300,7 @@ fn register_spell_functions(engine: &mut Engine) {
     });
 
     engine.register_fn("level", |spell: &mut Spell, level: i64| {
-        spell.level = level as i32;
+        spell.level = level;
     });
 
     engine.register_fn("automatic", |spell: &mut Spell| {
@@ -310,7 +315,7 @@ fn register_spell_functions(engine: &mut Engine) {
         spell.spell_type = SpellType::Ranged;
     });
 
-    engine.register_fn("saving", |spell: &mut Spell, dc_type: &ImmutableString| {
+    engine.register_fn("saving", |spell: &mut Spell, dc_type: ImmutableString| {
         let Ok(s) = Score::from_str(dc_type.as_str()) else {
             return;
         };
@@ -322,7 +327,7 @@ fn register_spell_functions(engine: &mut Engine) {
 
     engine.register_fn(
         "saving",
-        |spell: &mut Spell, dc_type: &ImmutableString, success: &ImmutableString| {
+        |spell: &mut Spell, dc_type: ImmutableString, success: ImmutableString| {
             let Ok(s) = Score::from_str(dc_type.as_str()) else {
                 return;
             };
@@ -336,7 +341,7 @@ fn register_spell_functions(engine: &mut Engine) {
         },
     );
 
-    engine.register_fn("damage", |spell: &mut Spell, damage: &ImmutableString| {
+    engine.register_fn("damage", |spell: &mut Spell, damage: ImmutableString| {
         let Ok(r) = Roll::from_str(damage.as_str()) else {
             return;
         };
@@ -348,7 +353,7 @@ fn register_spell_functions(engine: &mut Engine) {
 
     engine.register_fn(
         "damage",
-        |spell: &mut Spell, damage: &ImmutableString, element: &ImmutableString| {
+        |spell: &mut Spell, damage: ImmutableString, element: ImmutableString| {
             let Ok(r) = Roll::from_str(damage.as_str()) else {
                 return;
             };
@@ -363,7 +368,7 @@ fn register_spell_functions(engine: &mut Engine) {
         },
     );
 
-    engine.register_fn("element", |spell: &mut Spell, element: &ImmutableString| {
+    engine.register_fn("element", |spell: &mut Spell, element: ImmutableString| {
         if let spells::Effect::Damage(d) = &mut spell.effect {
             let Ok(element) = DamageType::from_str(element.as_str()) else {
                 return;
@@ -372,7 +377,7 @@ fn register_spell_functions(engine: &mut Engine) {
         }
     });
 
-    engine.register_fn("heal", |spell: &mut Spell, healing: &ImmutableString| {
+    engine.register_fn("heal", |spell: &mut Spell, healing: ImmutableString| {
         let heal = match Roll::from_str(healing.as_str()) {
             Ok(r) => Heal::Roll(r),
             Err(_) => Heal::Static(healing.to_string()),
@@ -380,7 +385,7 @@ fn register_spell_functions(engine: &mut Engine) {
         spell.effect = spells::Effect::Heal(heal);
     });
 
-    engine.register_fn("school", |spell: &mut Spell, school: &ImmutableString| {
+    engine.register_fn("school", |spell: &mut Spell, school: ImmutableString| {
         let Ok(s) = School::from_str(school.as_str()) else {
             return;
         };
@@ -391,7 +396,7 @@ fn register_spell_functions(engine: &mut Engine) {
 fn register_item_functions(engine: &mut Engine) {
     engine.register_fn(
         "item",
-        |name: &ImmutableString, description: &ImmutableString| -> Item {
+        |name: ImmutableString, description: ImmutableString| -> Item {
             Item {
                 name: name.to_string(),
                 description: description.to_string(),
@@ -400,7 +405,7 @@ fn register_item_functions(engine: &mut Engine) {
         },
     );
 
-    engine.register_fn("item", |name: &ImmutableString, roll: &Roll| Item {
+    engine.register_fn("item", |name: ImmutableString, roll: &Roll| Item {
         name: name.to_string(),
         roll: Some(roll.clone()),
         ..Default::default()
@@ -408,7 +413,7 @@ fn register_item_functions(engine: &mut Engine) {
 
     engine.register_fn(
         "item",
-        |name: &ImmutableString, description: &ImmutableString, roll: &Roll| -> Item {
+        |name: ImmutableString, description: ImmutableString, roll: &Roll| -> Item {
             Item {
                 name: name.to_string(),
                 description: description.to_string(),
@@ -418,11 +423,11 @@ fn register_item_functions(engine: &mut Engine) {
         },
     );
 
-    engine.register_fn("desc", |f: &mut Item, desc: &ImmutableString| {
+    engine.register_fn("desc", |f: &mut Item, desc: ImmutableString| {
         f.description = desc.to_string()
     });
 
-    engine.register_fn("description", |f: &mut Item, desc: &ImmutableString| {
+    engine.register_fn("description", |f: &mut Item, desc: ImmutableString| {
         f.description = desc.to_string()
     });
 
@@ -438,24 +443,24 @@ fn register_item_functions(engine: &mut Engine) {
         f.add(feature);
     });
 
-    engine.register_fn("source", |f: &mut Item, source: &ImmutableString| {
+    engine.register_fn("source", |f: &mut Item, source: ImmutableString| {
         f.add_source(Source::Single(source.to_string()));
     });
 }
 
 fn register_class_functions(engine: &mut Engine) {
-    engine.register_fn("set_class", |class: &mut Class, s: &ImmutableString| {
+    engine.register_fn("set_class", |class: &mut Class, s: ImmutableString| {
         class.set_class(s.as_str());
     });
 
     engine.register_fn("set_level", |class: &mut Class, level: i64| {
-        let Ok(level) = u32::try_from(level) else {
-            return;
-        };
-        class.level = Level(level);
+        class.set_level(level);
     });
 
-    engine.register_fn("set_hit_die", |class: &mut Class, die: &ImmutableString| {
-        class.hit_dice = Die
+    engine.register_fn("set_hit_die", |class: &mut Class, die: ImmutableString| {
+        let Ok(d) = Die::from_str(die.as_str()) else {
+            return;
+        };
+        class.hit_dice = d;
     });
 }
