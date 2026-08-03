@@ -5,6 +5,7 @@ use schemars::JsonSchema;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+/// The item has a source for identifying which book or feature it came from.
 pub trait HasSource {
     fn source(&self) -> Option<&Source>;
     fn add_source(&mut self, source: Source);
