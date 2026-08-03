@@ -145,6 +145,26 @@ impl Class {
     pub fn set_level(&mut self, level: u32) -> () {
         self.level.0 = level
     }
+
+    pub fn set_class(&mut self, class: &str) -> () {
+        // Cannot fail
+        let Ok(class) = ClassType::from_str(class) else {
+            return;
+        };
+        self.class = class;
+    }
+
+    pub fn new(level: Level, class: &str) -> Self {
+        let class = ClassType::from_str(class).expect("Cannot fail");
+        Self {
+            subclass: "".to_string(),
+            level,
+            hit_dice: class.get_hit_dice(),
+            health_bonus_per_level: 0,
+            healing_die_remaining: level.0,
+            class,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
