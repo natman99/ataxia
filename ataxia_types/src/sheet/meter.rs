@@ -25,6 +25,7 @@ pub struct Meters {
 #[cfg_attr(feature = "rhai", derive(CustomType))]
 /// A meter item. These are for counting any restorable consumable resources including spell slots.
 pub struct Meter {
+    pub name: String,
     pub slot_number: u32,
     pub spent: u32,
 
@@ -33,8 +34,9 @@ pub struct Meter {
 }
 
 impl Meter {
-    pub fn new(slot_number: u32, restore: RestoreTime) -> Self {
+    pub fn new(name: String, slot_number: u32, restore: RestoreTime) -> Self {
         Self {
+            name,
             restore,
             slot_number,
             spent: 0,
