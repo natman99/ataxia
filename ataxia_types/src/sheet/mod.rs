@@ -376,7 +376,7 @@ impl Initiative {
 #[cfg_attr(feature = "serde", serde(default))]
 #[cfg_attr(feature = "rhai", derive(CustomType))]
 /// Walking speed in feet.
-pub struct WalkingSpeed(u32);
+pub struct WalkingSpeed(pub u32);
 
 impl Default for WalkingSpeed {
     fn default() -> Self {
