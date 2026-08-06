@@ -109,25 +109,25 @@ impl Character {
         }
     }
 
-    pub fn ability_modifier(&self) -> i32 {
+    pub fn ability_modifier(&self) -> i64 {
         self.ability_scores.get(&self.ability_modifier).modifier()
     }
     /// Attack bonus.
     /// Ability modifier + proficiency bonus.
     pub fn attack_bonus(&self) -> i32 {
         let f = self.ability_scores.get(&self.ability_modifier).modifier();
-        self.skills.proficiency_bonus as i32 + f
+        self.skills.proficiency_bonus as i32 + f as i32
     }
     /// Spell attack bonus. Alias for `self.attack_bonus()`
     pub fn spell_bonus(&self) -> i32 {
         self.attack_bonus()
     }
-    pub fn save_dc(&self) -> i32 {
+    pub fn save_dc(&self) -> i64 {
         let a = self.ability_scores.get(&self.ability_modifier);
-        8 + self.skills.proficiency_bonus as i32 + a.modifier()
+        8 + self.skills.proficiency_bonus as i64 + a.modifier()
     }
 
-    pub fn initiative(&self) -> i32 {
+    pub fn initiative(&self) -> i64 {
         self.initiative.get(&self.ability_scores)
     }
 
@@ -142,9 +142,9 @@ impl Character {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct PassiveSenses {
-    pub insight: i32,
-    pub perception: i32,
-    pub investigation: i32,
+    pub insight: i64,
+    pub perception: i64,
+    pub investigation: i64,
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -162,11 +162,22 @@ pub struct Inventory(pub HashMap<String, Item>);
 #[cfg_attr(feature = "rhai", derive(CustomType))]
 /// Ability scores. Defaults to ten.
 pub struct AbilityScores {
+    #[cfg_attr(feature = "rhai", rhai_type(get = Self::get_str, set = Self::set_str))]
     pub str: AbilityScore,
+
+    #[cfg_attr(feature = "rhai", rhai_type(get = Self::get_dex, set = Self::set_dex))]
     pub dex: AbilityScore,
+
+    #[cfg_attr(feature = "rhai", rhai_type(get = Self::get_con, set = Self::set_con))]
     pub con: AbilityScore,
+
+    #[cfg_attr(feature = "rhai", rhai_type(get = Self::get_int, set = Self::set_int))]
     pub int: AbilityScore,
+
+    #[cfg_attr(feature = "rhai", rhai_type(get = Self::get_wis, set = Self::set_wis))]
     pub wis: AbilityScore,
+
+    #[cfg_attr(feature = "rhai", rhai_type(get = Self::get_cha, set = Self::set_cha))]
     pub cha: AbilityScore,
 }
 
@@ -200,7 +211,7 @@ impl AbilityScores {
         }
     }
 
-    pub fn set_bonus(&mut self, score: &Score, num: i32) {
+    pub fn set_bonus(&mut self, score: &Score, num: i64) {
         match score {
             Score::Str => self.str.set_bonus(num),
             Score::Dex => self.dex.set_bonus(num),
@@ -219,6 +230,54 @@ impl AbilityScores {
         self.int.reset();
         self.cha.reset();
         self.wis.reset();
+    }
+
+    pub fn get_str(&self) -> i64 {
+        self.str.base
+    }
+
+    pub fn set_str(&mut self, new: i64) {
+        self.str.base = new;
+    }
+
+    pub fn get_dex(&self) -> i64 {
+        self.dex.base
+    }
+
+    pub fn set_dex(&mut self, new: i64) {
+        self.dex.base = new;
+    }
+
+    pub fn get_con(&self) -> i64 {
+        self.con.base
+    }
+
+    pub fn set_con(&mut self, new: i64) {
+        self.con.base = new;
+    }
+
+    pub fn get_int(&self) -> i64 {
+        self.int.base
+    }
+
+    pub fn set_int(&mut self, new: i64) {
+        self.int.base = new;
+    }
+
+    pub fn get_wis(&self) -> i64 {
+        self.wis.base
+    }
+
+    pub fn set_wis(&mut self, new: i64) {
+        self.wis.base = new;
+    }
+
+    pub fn get_cha(&self) -> i64 {
+        self.cha.base
+    }
+
+    pub fn set_cha(&mut self, new: i64) {
+        self.cha.base = new;
     }
 }
 
@@ -257,20 +316,22 @@ impl Display for Score {
 #[cfg_attr(feature = "serde", serde(default))]
 #[cfg_attr(feature = "rhai", derive(CustomType))]
 /// The armor class of a character.
-pub struct ArmorClass(#[cfg_attr(feature = "rhai", rhai_type(set = Self::set))] u32);
+pub struct ArmorClass(
+    #[cfg_attr(feature = "rhai", rhai_type(set = Self::set, get = Self::get))] i64,
+);
 
 impl ArmorClass {
     /// 10 + dex
     fn new(scores: &AbilityScores) -> Self {
         // safety: negative modifier can never be above 10.
-        Self((10 + scores.dex.modifier()) as u32)
+        Self((10 + scores.dex.modifier()) as i64)
     }
 
-    pub fn get(&self) -> u32 {
+    pub fn get(&self) -> i64 {
         self.0
     }
 
-    pub fn set(&mut self, s: u32) {
+    pub fn set(&mut self, s: i64) {
         self.0 = s;
     }
 }
@@ -294,7 +355,7 @@ impl Display for ArmorClass {
 #[cfg_attr(feature = "rhai", derive(CustomType))]
 /// Initiative score.
 pub struct Initiative {
-    pub bonus: i32,
+    pub bonus: i64,
 }
 
 impl Default for Initiative {
@@ -304,7 +365,7 @@ impl Default for Initiative {
 }
 
 impl Initiative {
-    pub fn get(&self, scores: &AbilityScores) -> i32 {
+    pub fn get(&self, scores: &AbilityScores) -> i64 {
         scores.get(&Score::Dex).modifier() + self.bonus
     }
 }
