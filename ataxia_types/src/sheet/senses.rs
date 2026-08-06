@@ -18,9 +18,9 @@ use crate::{AbilityScores, Score};
 #[cfg_attr(feature = "serde", serde(default))]
 #[cfg_attr(feature = "rhai", derive(CustomType))]
 pub struct Senses {
-    pub perception_bonus: i32,
-    pub investigation_bonus: i32,
-    pub insight_bonus: i32,
+    pub perception_bonus: i64,
+    pub investigation_bonus: i64,
+    pub insight_bonus: i64,
     pub extra: ExtraSenses,
 }
 
@@ -29,15 +29,15 @@ impl Senses {
         Self::default()
     }
 
-    pub fn get_perception(&self, scores: &AbilityScores) -> i32 {
+    pub fn get_perception(&self, scores: &AbilityScores) -> i64 {
         scores.get(&Score::Wis).modifier() + self.perception_bonus
     }
 
-    pub fn get_insight(&self, scores: &AbilityScores) -> i32 {
+    pub fn get_insight(&self, scores: &AbilityScores) -> i64 {
         scores.get(&Score::Wis).modifier() + self.insight_bonus
     }
 
-    pub fn get_investigation(&self, scores: &AbilityScores) -> i32 {
+    pub fn get_investigation(&self, scores: &AbilityScores) -> i64 {
         scores.get(&Score::Int).modifier() + self.investigation_bonus
     }
 }

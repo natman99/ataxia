@@ -284,7 +284,7 @@ impl From<Skills> for SkillsJson {
 }
 impl Skills {
     /// Get the skill bonus.
-    pub fn check(&self, skill: &Skill, ability_scores: &AbilityScores) -> i32 {
+    pub fn check(&self, skill: &Skill, ability_scores: &AbilityScores) -> i64 {
         let base_modifier = match skill {
             //str scaling
             Skill::Athletics => ability_scores.str.modifier(),
@@ -322,7 +322,7 @@ impl Skills {
             bonus
         };
 
-        let total = base_modifier + bonus as i32;
+        let total = base_modifier + bonus as i64;
         total
     }
 }
