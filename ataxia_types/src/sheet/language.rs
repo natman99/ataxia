@@ -14,7 +14,7 @@ use rhai::CustomType;
 #[cfg_attr(feature = "serde", serde(default))]
 #[cfg_attr(feature = "rhai", derive(CustomType))]
 pub struct Languages {
-    languages: Vec<Language>,
+    pub languages: Vec<Language>,
 }
 
 impl Display for Languages {
@@ -90,28 +90,9 @@ impl Display for Language {
     }
 }
 
-impl From<&str> for Language {
-    fn from(value: &str) -> Self {
-        match value.to_lowercase().as_str() {
-            "common" => Language::Common,
-            "dwarvish" => Language::Dwarvish,
-            "elvish" => Language::Elvish,
-            "giant" => Language::Giant,
-            "gnomish" => Language::Gnomish,
-            "goblin" => Language::Goblin,
-            "halfling" => Language::Halfling,
-            "orc" => Language::Orc,
-            "abyssal" => Language::Abyssal,
-            "celestial" => Language::Celestial,
-            "draconic" => Language::Draconic,
-            "deep speech" => Language::DeepSpeech,
-            "infernal" => Language::Infernal,
-            "primordial" => Language::Primordial,
-            "sylvan" => Language::Sylvan,
-            "undercommon" => Language::Undercommon,
-            "thieves' cant" => Language::ThievesCant,
-            e => Language::Other(e.to_string()),
-        }
+impl From<String> for Language {
+    fn from(value: String) -> Self {
+        Self::from_str(&value).expect("Cannot fail")
     }
 }
 
@@ -119,13 +100,7 @@ impl FromStr for Language {
     type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Self::from(s))
-    }
-}
-
-impl From<String> for Language {
-    fn from(value: String) -> Self {
-        match value.to_lowercase().as_str() {
+        Ok(match s.to_lowercase().as_str() {
             "common" => Language::Common,
             "dwarvish" => Language::Dwarvish,
             "elvish" => Language::Elvish,
@@ -142,8 +117,8 @@ impl From<String> for Language {
             "primordial" => Language::Primordial,
             "sylvan" => Language::Sylvan,
             "undercommon" => Language::Undercommon,
-            "thieves' cant" => Language::ThievesCant,
+            "thieves' cant" | "thieves" | "thieves cant" => Language::ThievesCant,
             e => Language::Other(e.to_string()),
-        }
+        })
     }
 }
