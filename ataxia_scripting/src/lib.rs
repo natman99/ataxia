@@ -14,7 +14,7 @@ use ataxia_types::{
     feature::{Effect, Feature, Features, HasFeature},
     language::Languages,
     lore::Lore,
-    meter::{Meter, Meters},
+    meter::{Meter, Meters, RestoreTime},
     roll::{Die, Roll},
     senses::Senses,
     skills::{Skill, Skills},
@@ -103,6 +103,9 @@ impl Interface {
         scope.push("walking_speed", walking_speed);
         scope.push("languages", languages);
         scope.push("conditions", conditions);
+
+        // We should run automated additions including adding meters, abilities, calculating health, and applying item stats.
+        scope.push("calculate", true);
 
         let _: () = self.engine.eval_with_scope(&mut scope, script)?;
 
@@ -193,6 +196,7 @@ fn register_engine_types(engine: &mut Engine) {
 fn register_engine_functions(engine: &mut Engine) -> () {
     engine.register_fn("class", Class::new);
 
+    register_meter_functions(engine);
     register_spell_functions(engine);
     register_item_functions(engine);
     register_class_functions(engine);
@@ -219,6 +223,14 @@ fn register_engine_functions(engine: &mut Engine) -> () {
             .map(|f| Dynamic::from_int(*f))
             .collect::<Vec<Dynamic>>()
             .into()
+    });
+
+    engine.register_fn("roll", |f: ImmutableString| -> Dynamic {
+        if let Ok(r) = Roll::from_str(f.as_str()) {
+            Dynamic::from(r)
+        } else {
+            Dynamic::UNIT
+        }
     });
 }
 
@@ -405,19 +417,19 @@ fn register_item_functions(engine: &mut Engine) {
         },
     );
 
-    engine.register_fn("item", |name: ImmutableString, roll: &Roll| Item {
+    engine.register_fn("item", |name: ImmutableString, roll: Roll| Item {
         name: name.to_string(),
-        roll: Some(roll.clone()),
+        roll: Some(roll),
         ..Default::default()
     });
 
     engine.register_fn(
         "item",
-        |name: ImmutableString, description: ImmutableString, roll: &Roll| -> Item {
+        |name: ImmutableString, description: ImmutableString, roll: Roll| -> Item {
             Item {
                 name: name.to_string(),
                 description: description.to_string(),
-                roll: Some(roll.clone()),
+                roll: Some(roll),
                 ..Default::default()
             }
         },
@@ -445,6 +457,24 @@ fn register_item_functions(engine: &mut Engine) {
 
     engine.register_fn("source", |f: &mut Item, source: ImmutableString| {
         f.add_source(Source::Single(source.to_string()));
+    });
+}
+
+fn register_meter_functions(engine: &mut Engine) {
+    engine.register_fn("meter", |name: ImmutableString, slots: i64| -> Meter {
+        Meter::new(name.to_string(), slots as u32, RestoreTime::default())
+    });
+
+    engine.register_fn("short_rest", |m: &mut Meter| {
+        m.restore.short_rest = true;
+    });
+
+    engine.register_fn("long_rest", |m: &mut Meter| {
+        m.restore.long_rest = true;
+    });
+
+    engine.register_fn("add", |meters: &mut Meters, m: Meter| {
+        meters.meters.insert(m.name.to_string(), m);
     });
 }
 
