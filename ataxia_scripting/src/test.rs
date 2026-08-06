@@ -112,7 +112,7 @@ fn health() {
         health.level_bonus = 2;
         health.set_max(13);
         health.set_current(11);
-        health.set_level_bonus(1):
+        health.set_level_bonus(1);
         "#;
     let c = i.execute(script, None).unwrap();
     assert_eq!(c.health.max, 13);
@@ -157,9 +157,10 @@ fn inventory() {
     let mut i = Interface::new();
     let script = r#"
         let i = item("cool item", roll("2d4"));
-        item.desc("a really cool item");
-        item.count(2);
-        item.source("book of cool items");
+        i.desc("a really cool item");
+        i.count(2);
+        i.source("book of cool items");
+        inventory.add(i);
 
         "#;
     let c = i.execute(script, None).unwrap();
@@ -194,7 +195,7 @@ fn meter() {
             spent: 0,
             restore: RestoreTime {
                 short_rest: true,
-                long_rest: false
+                long_rest: true
             },
             source: Some(Source::Single("cake power".to_string()))
         }

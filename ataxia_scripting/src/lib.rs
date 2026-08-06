@@ -406,6 +406,10 @@ fn register_spell_functions(engine: &mut Engine) {
 }
 
 fn register_item_functions(engine: &mut Engine) {
+    engine.register_fn("add", |inventory: &mut Inventory, item: Item| {
+        inventory.0.insert(item.name.to_string(), item);
+    });
+
     engine.register_fn(
         "item",
         |name: ImmutableString, description: ImmutableString| -> Item {
