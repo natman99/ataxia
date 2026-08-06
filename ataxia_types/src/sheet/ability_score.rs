@@ -3,16 +3,21 @@ use schemars::JsonSchema;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+#[cfg(feature = "rhai")]
+use rhai::CustomType;
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[cfg_attr(feature = "serde", serde(default))]
+#[cfg_attr(feature = "rhai", derive(CustomType))]
 /// An ability score. Values default to ten.
 pub struct AbilityScore {
     /// Base score.
-    base: i32,
+    pub(crate) base: i64,
     /// Bonus (from class or otherwise).
-    bonus: i32,
+    #[cfg_attr(feature = "rhai", rhai_type(skip))]
+    bonus: i64,
 }
 
 impl Default for AbilityScore {
@@ -22,26 +27,26 @@ impl Default for AbilityScore {
 }
 
 impl AbilityScore {
-    pub fn new(base: i32, bonus: i32) -> Self {
+    pub fn new(base: i64, bonus: i64) -> Self {
         Self {
             base: base.max(1),
             bonus,
         }
     }
     /// Get the total score.
-    pub fn get(&self) -> i32 {
+    pub fn get(&self) -> i64 {
         self.base + self.bonus
     }
 
-    pub fn get_bonus(&self) -> i32 {
+    pub fn get_bonus(&self) -> i64 {
         self.bonus
     }
 
-    pub fn set_bonus(&mut self, num: i32) {
+    pub fn set_bonus(&mut self, num: i64) {
         self.bonus = num;
     }
 
-    pub fn add_bonus(&mut self, num: i32) {
+    pub fn add_bonus(&mut self, num: i64) {
         self.bonus += num;
     }
 
@@ -50,7 +55,7 @@ impl AbilityScore {
         self.bonus = 0;
     }
 
-    pub fn modifier(&self) -> i32 {
+    pub fn modifier(&self) -> i64 {
         match self.base + self.bonus {
             1 => -5,
             2..=3 => -4,
