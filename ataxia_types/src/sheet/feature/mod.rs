@@ -47,13 +47,13 @@ impl HasSource for Feature {
 /// The effect the feature has
 pub enum Effect {
     /// Flat armor class (ac) bonus.
-    AcBonus(i32),
+    AcBonus(i64),
     /// Add a spell.
     Spell(Spell),
     /// Add a meter. e.g. spell slots or other limited resources.
     Meter(MeterAdd),
     /// Bonus max health that is applied per level.
-    HealthBonusPerLevel(i32),
+    HealthBonusPerLevel(i64),
     /// Ability score bonus (raw stat bonus).
     AbilityScoreBonus(AbilityScoreBonus),
     /// An extra sense type.
@@ -61,7 +61,7 @@ pub enum Effect {
     /// Proficiency in a skill.
     AddProficiency(Skill),
     /// Bonus to initiative.
-    InitiativeBonus(i32),
+    InitiativeBonus(i64),
     /// An effect for the effects page
     Effect(Condition),
     Expertise(Skill),
@@ -73,11 +73,11 @@ impl Effect {
             Effect::AbilityScoreBonus(bonus) => s
                 .ability_scores
                 .get_mut(&bonus.score)
-                .add_bonus(bonus.bonus),
+                .add_bonus(bonus.bonus.into()),
             Effect::AcBonus(b) => {
-                let i = s.armor_class.0 as i32 + b;
+                let i = s.armor_class.0 + b;
                 // Negative bonus should never be bigger than 10
-                s.armor_class.0 = i as u32;
+                s.armor_class.0 = i;
             }
             Effect::Spell(spell) => {
                 s.spells.spells.insert(spell.name.clone(), spell.clone());

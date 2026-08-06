@@ -18,13 +18,13 @@ use crate::{AbilityScores, class::Classes};
 /// The hit points of the character. Default display displays the current health.
 pub struct HitPoints {
     /// Current health. Must never be higher than the max.
-    pub current: i32,
+    pub current: i64,
     /// Max health.
     pub max: u32,
     /// Bonus health gained per level.
-    pub level_bonus: i32,
+    pub level_bonus: i64,
     /// Temporary bonus health.
-    pub bonus: i32,
+    pub bonus: i64,
 }
 
 impl Default for HitPoints {
@@ -41,7 +41,7 @@ impl Default for HitPoints {
 impl HitPoints {
     pub fn new(max: u32) -> Self {
         Self {
-            current: max as i32,
+            current: max as i64,
             max: max,
             level_bonus: 0,
             bonus: 0,
@@ -55,25 +55,25 @@ impl HitPoints {
         let die_max = base;
         let con_mod = scores.con.modifier();
 
-        let mut total: i32 =
-            base as i32 + con_mod + self.level_bonus + base_class.health_bonus_per_level as i32;
+        let mut total: i64 =
+            base as i64 + con_mod + self.level_bonus + base_class.health_bonus_per_level as i64;
 
-        let fixed_per_level = (die_max / 2 + 1) as i32
-            + scores.con.modifier()
+        let fixed_per_level = (die_max / 2 + 1) as i64
+            + scores.con.modifier() as i64
             + self.level_bonus
-            + base_class.health_bonus_per_level as i32;
+            + base_class.health_bonus_per_level as i64;
 
         if base_class.level.0 >= 2 {
-            total += fixed_per_level * (base_class.level.0 as i32 - 1);
+            total += fixed_per_level * (base_class.level.0 as i64 - 1);
         }
 
         for i in &classes.classes[1..] {
             let die_max = i.hit_dice.max();
 
-            let fixed_per_level = (die_max / 2 + 1) as i32
+            let fixed_per_level = (die_max / 2 + 1) as i64
                 + scores.con.modifier()
                 + self.level_bonus
-                + i.health_bonus_per_level as i32;
+                + i.health_bonus_per_level;
 
             for _ in 0..i.level.0 {
                 total += fixed_per_level
@@ -87,7 +87,7 @@ impl HitPoints {
         s
     }
     /// Apply damage. Damage is subtracted.
-    pub fn hit(&mut self, dmg: i32) {
+    pub fn hit(&mut self, dmg: i64) {
         if self.bonus > 0 {
             self.bonus = self.bonus - dmg;
             if self.bonus < 0 {
@@ -99,9 +99,9 @@ impl HitPoints {
         }
         self.current = self.current.max(0);
     }
-    pub fn heal(&mut self, healing: i32) {
+    pub fn heal(&mut self, healing: i64) {
         self.current += healing;
-        self.current = self.current.min(self.max as i32);
+        self.current = self.current.min(self.max as i64);
     }
 }
 

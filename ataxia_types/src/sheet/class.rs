@@ -144,7 +144,7 @@ impl Class {
         if roll {
             let mut rng = rand::rng();
             let healing_amount =
-                rng.random_range(1..=self.hit_dice.max()) as i32 + ability_scores.con.modifier();
+                rng.random_range(1..=self.hit_dice.max() as i64) + ability_scores.con.modifier();
             health.heal(healing_amount);
         }
         self.healing_die_remaining = self.healing_die_remaining.saturating_sub(1);
