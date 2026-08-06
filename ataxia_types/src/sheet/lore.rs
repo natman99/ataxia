@@ -14,12 +14,12 @@ use rhai::CustomType;
 #[cfg_attr(feature = "serde", serde(default))]
 #[cfg_attr(feature = "rhai", derive(CustomType))]
 pub struct Lore {
-    backstory: String,
-    personality_traits: String,
-    allies: String,
-    enemies: String,
-    physical_traits: String,
-    alignment: Alignment,
+    pub backstory: String,
+    pub personality_traits: String,
+    pub allies: String,
+    pub enemies: String,
+    pub physical_traits: String,
+    pub alignment: Alignment,
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -27,8 +27,8 @@ pub struct Lore {
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[cfg_attr(feature = "rhai", derive(CustomType))]
 pub struct Alignment {
-    morality: Morality,
-    order: Order,
+    pub morality: Morality,
+    pub order: Order,
 }
 
 impl Display for Alignment {
@@ -37,7 +37,7 @@ impl Display for Alignment {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Default, strum::EnumString)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub enum Morality {
@@ -60,7 +60,7 @@ impl Display for Morality {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Default, strum::EnumString)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub enum Order {
