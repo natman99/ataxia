@@ -180,7 +180,7 @@ struct SkillsJson {
     intimidation: bool,
     performance: bool,
     persuasion: bool,
-    proficiency_bonus: u32,
+    proficiency_bonus: i64,
     expertise: Vec<Skill>,
 }
 
@@ -193,7 +193,7 @@ struct SkillsJson {
 #[cfg_attr(feature = "rhai", derive(CustomType))]
 /// The characters proficiency skills.
 pub struct Skills {
-    pub proficiency_bonus: u32,
+    pub proficiency_bonus: i64,
     pub proficiencies: BitFlags<Skill>,
     pub expertise: BitFlags<Skill>,
 }
