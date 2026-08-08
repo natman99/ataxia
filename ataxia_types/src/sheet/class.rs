@@ -130,7 +130,7 @@ impl Default for Class {
             hit_dice,
             health_bonus_per_level: 0,
             healing_die_remaining: 1,
-            subclass: String::new(),
+            subclass: "Battlemaster".to_string(),
             max_healing_die: 1,
         }
     }

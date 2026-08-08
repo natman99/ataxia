@@ -21,12 +21,12 @@ fn class() {
         classes[0].subclass = "pie subclass";
         "#;
     let c = i.execute(script, None).unwrap();
-    assert_eq!(c.class[0].level, Level(2));
+    assert_eq!(c.classes[0].level, Level(2));
 
-    assert_eq!(c.class[0].class, ClassType::Wizard);
-    assert_eq!(c.class[0].hit_dice, ClassType::Wizard.get_hit_dice());
-    assert_eq!(c.class[0].max_healing_die, 2);
-    assert_eq!(c.class[0].subclass, "pie subclass");
+    assert_eq!(c.classes[0].class, ClassType::Wizard);
+    assert_eq!(c.classes[0].hit_dice, ClassType::Wizard.get_hit_dice());
+    assert_eq!(c.classes[0].max_healing_die, 2);
+    assert_eq!(c.classes[0].subclass, "pie subclass");
 
     let script = r#"
         classes[0].level = 19;
@@ -34,8 +34,8 @@ fn class() {
         classes[0].max_healing_die = 4;
         "#;
     let c = i.execute(script, None).unwrap();
-    assert_eq!(c.class[0].max_healing_die, 4);
-    assert_eq!(c.class[0].level.0, 19);
+    assert_eq!(c.classes[0].max_healing_die, 4);
+    assert_eq!(c.classes[0].level.0, 19);
 }
 
 #[test]
@@ -124,7 +124,6 @@ fn health() {
 fn race() {
     let mut i = Interface::new();
     let script = r#"
-        race.set_race("human");
         race = "elf";
         "#;
     let c = i.execute(script, None).unwrap();

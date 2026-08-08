@@ -222,7 +222,7 @@ impl Spell {
                 };
 
                 let roll = if let Some(a) = damage.damage_at_character_level {
-                    let d = match sheet.class[0].level.0 {
+                    let d = match sheet.classes[0].level.0 {
                         1..5 => a.n1,
                         5..11 => a.n5,
                         11..14 => a.n11,

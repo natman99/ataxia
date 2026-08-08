@@ -23,6 +23,7 @@ pub mod feature;
 pub mod language;
 pub mod lore;
 pub mod meter;
+pub mod saving_throws;
 pub mod senses;
 pub mod source;
 
@@ -38,11 +39,12 @@ use crate::{
     language::Languages,
     lore::Lore,
     meter::Meters,
+    saving_throws::SavingThrows,
     senses::Senses,
     sheet::{class::ClassType, skills::Skills, spells::Spells},
 };
 
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[cfg_attr(feature = "serde", serde(default))]
@@ -51,13 +53,14 @@ use crate::{
 pub struct Character {
     pub name: String,
     pub race: String,
-    pub class: Classes,
+    pub classes: Classes,
     pub initiative: Initiative,
     pub armor_class: ArmorClass,
     pub health: HitPoints,
     pub inventory: Inventory,
     pub ability_scores: AbilityScores,
     pub skills: Skills,
+    pub saving_throws: SavingThrows,
     pub spells: Spells,
     pub senses: Senses,
     pub features: Features,
@@ -80,7 +83,7 @@ impl Character {
         Self {
             name,
             health,
-            class: Classes {
+            classes: Classes {
                 classes: vec![Class {
                     level: Level(level),
                     hit_dice: class.get_hit_dice(),
@@ -100,12 +103,13 @@ impl Character {
             ability_modifier: Score::Str,
             meters: Default::default(),
             features: Default::default(),
-            race: Default::default(),
+            race: "Elf".to_string(),
             lore: Default::default(),
             walking_speed: Default::default(),
             languages: Default::default(),
             conditions: Default::default(),
             ability_scores,
+            saving_throws: Default::default(),
         }
     }
 
@@ -136,6 +140,32 @@ impl Character {
             insight: self.senses.get_insight(&self.ability_scores),
             perception: self.senses.get_perception(&self.ability_scores),
             investigation: self.senses.get_perception(&self.ability_scores),
+        }
+    }
+}
+
+impl Default for Character {
+    fn default() -> Self {
+        Self {
+            name: "name".to_string(),
+            race: "Elf".to_string(),
+            classes: Default::default(),
+            initiative: Default::default(),
+            armor_class: Default::default(),
+            health: Default::default(),
+            inventory: Default::default(),
+            ability_scores: Default::default(),
+            skills: Default::default(),
+            saving_throws: Default::default(),
+            spells: Default::default(),
+            senses: Default::default(),
+            features: Default::default(),
+            ability_modifier: Default::default(),
+            meters: Default::default(),
+            lore: Default::default(),
+            walking_speed: Default::default(),
+            languages: Default::default(),
+            conditions: Default::default(),
         }
     }
 }
@@ -296,6 +326,19 @@ pub enum Score {
     Cha,
 }
 
+impl Score {
+    pub const ALL: [Self; 6] = [
+        Self::Str,
+        Self::Dex,
+        Self::Con,
+        Self::Int,
+        Self::Wis,
+        Self::Cha,
+    ];
+
+    pub const ALL_STR: [&str; 6] = ["str", "dex", "con", "int", "wis", "cha"];
+}
+
 impl Display for Score {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let s = match self {
@@ -317,7 +360,7 @@ impl Display for Score {
 #[cfg_attr(feature = "rhai", derive(CustomType))]
 /// The armor class of a character.
 pub struct ArmorClass(
-    #[cfg_attr(feature = "rhai", rhai_type(set = Self::set, get = Self::get))] i64,
+    #[cfg_attr(feature = "rhai", rhai_type(set = Self::set, get = Self::get))] pub i64,
 );
 
 impl ArmorClass {

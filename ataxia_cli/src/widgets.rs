@@ -112,7 +112,7 @@ fn render_main_left(sheet: &Character, frame: &mut Frame, area: Rect) {
     ];
 
     let values = [
-        format!("{}", sheet.class),
+        format!("{}", sheet.classes),
         format!(
             "{}/{} ({})",
             sheet.health, sheet.health.max, sheet.health.bonus
@@ -349,7 +349,7 @@ fn render_spells_list<'a>(frame: &mut Frame, area: Rect, sheet: &'a Character) {
             if let Some(ref d) = s.damage {
                 if let Some(ref s) = d.damage_at_character_level {
                     // s.n1, s.n5, s.n11, s.n17,
-                    let out = match sheet.class[0].level.0 {
+                    let out = match sheet.classes[0].level.0 {
                         0..5 => &s.n1,
                         5..11 => &s.n5,
                         11..17 => &s.n11,
