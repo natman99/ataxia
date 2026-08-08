@@ -8,7 +8,9 @@ pub mod library {
         meter::{Meter, Meters, RestoreTime},
         roll::{Die, Roll},
         saving_throws::SavingThrows,
+        senses::Senses,
         sheet::HitPoints,
+        skills::Skills,
         source::{HasSource, Source},
     };
     use rhai::{Array, Dynamic, ImmutableString};
@@ -348,6 +350,52 @@ pub mod library {
             } else {
                 Dynamic::UNIT
             }
+        }
+    }
+
+    // -- senses submodule --
+
+    pub mod senses {
+        use super::*;
+
+        #[rhai_fn(get = "darkvision")]
+        pub fn darkvision_get(s: &mut Senses) -> bool {
+            s.extra.dark_vision
+        }
+
+        #[rhai_fn(set = "darkvision")]
+        pub fn darkvision_set(s: &mut Senses, v: bool) {
+            s.extra.dark_vision = v;
+        }
+
+        #[rhai_fn(get = "tremor_sense")]
+        pub fn tremor_sense_get(s: &mut Senses) -> bool {
+            s.extra.tremor_sense
+        }
+
+        #[rhai_fn(set = "tremor_sense")]
+        pub fn tremor_sense_set(s: &mut Senses, v: bool) {
+            s.extra.tremor_sense = v;
+        }
+
+        #[rhai_fn(get = "blindsight")]
+        pub fn blindsight_get(s: &mut Senses) -> bool {
+            s.extra.blind_sight
+        }
+
+        #[rhai_fn(set = "blindsight")]
+        pub fn blindsight_set(s: &mut Senses, v: bool) {
+            s.extra.blind_sight = v;
+        }
+
+        #[rhai_fn(get = "truesight")]
+        pub fn truesight_get(s: &mut Senses) -> bool {
+            s.extra.true_sight
+        }
+
+        #[rhai_fn(set = "truesight")]
+        pub fn truesight_set(s: &mut Senses, v: bool) {
+            s.extra.true_sight = v;
         }
     }
 
