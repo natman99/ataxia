@@ -1,30 +1,24 @@
-use std::{
-    str::FromStr,
-    sync::{Arc, Mutex, RwLock},
-};
+use std::sync::{Arc, Mutex};
 
 use ataxia_types::{
-    AbilityScores, ArmorClass, Character, HitPoints, Initiative, Inventory, Item, Score,
-    WalkingSpeed,
-    class::{Class, Classes, Level},
+    AbilityScores, ArmorClass, Character, HitPoints, Initiative, Inventory, WalkingSpeed,
+    class::{Class, Classes},
     condition::Conditions,
-    damage::DamageType,
-    database::spell,
     feat::Feat,
-    feature::{Effect, Feature, Features, HasFeature},
+    feature::Features,
     language::Languages,
     lore::Lore,
-    meter::{Meter, Meters, RestoreTime},
-    roll::{Die, Roll},
+    meter::Meters,
     senses::Senses,
-    skills::{Skill, Skills},
-    source::{HasSource, Source},
-    spells::{self, Area, Component, Damage, Heal, School, Spell, SpellType, Spells, Success},
+    skills::Skills,
+    spells::{Spell, Spells},
 };
-use rhai::{Array, Dynamic, Engine, ImmutableString, Scope};
+use rhai::{Engine, Module, Scope, combine_with_exported_module};
 
 #[cfg(test)]
 mod test;
+
+mod library;
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
 pub enum Command {
@@ -65,24 +59,29 @@ impl Interface {
         script: &str,
         character: Option<Character>,
     ) -> anyhow::Result<Character> {
-        let name = String::new();
-        let race = String::new();
-        let classes: Classes = Classes::default();
-        let initiative = Initiative::default();
-        let armor_class = ArmorClass::default();
-        let health = HitPoints::default();
-        let inventory = Inventory::default();
-        let ability_scores = AbilityScores::default();
-        let skills = Skills::default();
-        let spells = Spells::default();
-        let senses = Senses::default();
-        let features = Features::default();
-        let ability_modifier = Score::default();
-        let meters = Meters::default();
-        let lore = Lore::default();
-        let walking_speed = WalkingSpeed::default();
-        let languages = Languages::default();
-        let conditions = Conditions::default();
+        let Character {
+            name,
+            race,
+            classes,
+            initiative,
+            armor_class,
+            health,
+            inventory,
+            ability_scores,
+            skills,
+            saving_throws,
+            spells,
+            senses,
+            features,
+            ability_modifier,
+            meters,
+            lore,
+            walking_speed,
+            languages,
+            conditions,
+        } = Character::default();
+
+        let armor_class = armor_class.0;
 
         let mut scope = Scope::new();
         scope.push("name", name);
@@ -103,15 +102,14 @@ impl Interface {
         scope.push("walking_speed", walking_speed);
         scope.push("languages", languages);
         scope.push("conditions", conditions);
+        scope.push("saving_throws", saving_throws);
 
         // We should run automated additions including adding meters, abilities, calculating health, and applying item stats.
         scope.push("calculate", true);
 
         let _: () = self.engine.eval_with_scope(&mut scope, script)?;
 
-        let mut c = self
-            .extract_scope(&mut scope)
-            .ok_or(anyhow::anyhow!("Failed to extract scope."))?;
+        let mut c = self.extract_scope(&mut scope)?;
 
         if let Some(char) = character {
             c.health.current = char.health.current;
@@ -125,31 +123,45 @@ impl Interface {
         Ok(c)
     }
 
-    fn extract_scope(&self, scope: &mut Scope) -> Option<Character> {
-        let name = scope.get_mut("name")?.take().try_cast()?;
-        let race = scope.get_mut("race")?.take().try_cast()?;
-        let class = scope.get_mut("classes")?.take().try_cast()?;
-        let initiative = scope.get_mut("initiative")?.take().try_cast()?;
-        let armor_class = scope.get_mut("armor_class")?.take().try_cast()?;
+    fn extract_scope(&self, scope: &mut Scope) -> anyhow::Result<Character> {
+        macro_rules! extract {
+            ($key:expr, $label:expr) => {{
+                let var = scope
+                    .get_mut($key)
+                    .ok_or_else(|| anyhow::anyhow!("missing variable: {}", $label))?;
+                var.take()
+                    .try_cast()
+                    .ok_or_else(|| anyhow::anyhow!("failed to cast variable: {}", $label))
+            }};
+        }
 
-        let health = scope.get_mut("health")?.take().try_cast()?;
-        let inventory = scope.get_mut("inventory")?.take().try_cast()?;
-        let ability_scores = scope.get_mut("ability_scores")?.take().try_cast()?;
-        let skills = scope.get_mut("skills")?.take().try_cast()?;
-        let spells = scope.get_mut("spells")?.take().try_cast()?;
-        let senses = scope.get_mut("senses")?.take().try_cast()?;
-        let features = scope.get_mut("features")?.take().try_cast()?;
-        let ability_modifier = scope.get_mut("ability_modifier")?.take().try_cast()?;
-        let meters = scope.get_mut("meters")?.take().try_cast()?;
-        let lore = scope.get_mut("lore")?.take().try_cast()?;
-        let walking_speed = scope.get_mut("walking_speed")?.take().try_cast()?;
-        let languages = scope.get_mut("languages")?.take().try_cast()?;
-        let conditions = scope.get_mut("conditions")?.take().try_cast()?;
+        let name = extract!("name", "name")?;
+        let race = extract!("race", "race")?;
+        let classes = extract!("classes", "classes")?;
+        let initiative = extract!("initiative", "initiative")?;
+        let armor_class_raw: i64 = extract!("armor_class", "armor_class")?;
+        let mut armor_class = ArmorClass(armor_class_raw);
+        armor_class.set(armor_class_raw);
 
-        Some(Character {
+        let health = extract!("health", "health")?;
+        let inventory = extract!("inventory", "inventory")?;
+        let ability_scores = extract!("ability_scores", "ability_scores")?;
+        let skills = extract!("skills", "skills")?;
+        let spells = extract!("spells", "spells")?;
+        let senses = extract!("senses", "senses")?;
+        let features = extract!("features", "features")?;
+        let ability_modifier = extract!("ability_modifier", "ability_modifier")?;
+        let meters = extract!("meters", "meters")?;
+        let lore = extract!("lore", "lore")?;
+        let walking_speed = extract!("walking_speed", "walking_speed")?;
+        let languages = extract!("languages", "languages")?;
+        let conditions = extract!("conditions", "conditions")?;
+        let saving_throws = extract!("saving_throws", "saving_throws")?;
+
+        Ok(Character {
             name,
             race,
-            class,
+            classes,
             initiative,
             armor_class,
             health,
@@ -165,11 +177,13 @@ impl Interface {
             walking_speed,
             languages,
             conditions,
+            saving_throws,
         })
     }
 }
 
 fn register_engine_types(engine: &mut Engine) {
+    engine.register_type::<u32>();
     engine.build_type::<Character>();
     engine.build_type::<AbilityScores>();
     engine.build_type::<ArmorClass>();
@@ -193,308 +207,8 @@ fn register_engine_types(engine: &mut Engine) {
     engine.register_indexer_get_set(Classes::get, Classes::set);
 }
 
-fn register_engine_functions(engine: &mut Engine) -> () {
-    engine.register_fn("class", Class::new);
-
-    register_meter_functions(engine);
-    register_spell_functions(engine);
-    register_item_functions(engine);
-    register_class_functions(engine);
-
-    engine.register_fn("source", |f: &mut Feature, source: ImmutableString| {
-        f.add_source(Source::Single(source.to_string()));
-    });
-
-    engine.register_fn("source", |f: &mut Feat, source: ImmutableString| {
-        f.add_source(Source::Single(source.to_string()));
-    });
-
-    engine.register_fn("source", |f: &mut Meter, source: ImmutableString| {
-        f.add_source(Source::Single(source.to_string()));
-    });
-
-    engine.register_fn("feature", |f: &mut Feat, feature: Effect| {
-        f.add(feature);
-    });
-
-    engine.register_fn("standard_array", || -> Array {
-        [8, 10, 12, 13, 14, 15]
-            .iter()
-            .map(|f| Dynamic::from_int(*f))
-            .collect::<Vec<Dynamic>>()
-            .into()
-    });
-
-    engine.register_fn("roll", |f: ImmutableString| -> Dynamic {
-        if let Ok(r) = Roll::from_str(f.as_str()) {
-            Dynamic::from(r)
-        } else {
-            Dynamic::UNIT
-        }
-    });
-}
-
-fn register_spell_functions(engine: &mut Engine) {
-    engine.register_fn("add", |spells: &mut Spells, s: Spell| {
-        spells.spells.insert(s.name.clone(), s);
-    });
-
-    engine.register_fn("spell", |name: ImmutableString| -> Spell {
-        Spell {
-            name: name.to_string(),
-            ..Default::default()
-        }
-    });
-
-    engine.register_fn(
-        "spell",
-        |name: ImmutableString, description: ImmutableString| -> Spell {
-            Spell {
-                name: name.to_string(),
-                desc: description.to_string(),
-                ..Default::default()
-            }
-        },
-    );
-
-    engine.register_fn("source", |f: &mut Spell, source: ImmutableString| {
-        f.add_source(Source::Single(source.to_string()));
-    });
-
-    engine.register_fn("component", |spell: &mut Spell, f: ImmutableString| {
-        let Ok(c) = Component::from_str(f.as_str()) else {
-            return;
-        };
-        spell.components.push(c);
-    });
-
-    engine.register_fn(
-        "area",
-        |spell: &mut Spell, shape: ImmutableString, size: i64| {
-            spell.area = Some(Area {
-                shape: shape.to_string(),
-                size: size as i32,
-            });
-        },
-    );
-
-    engine.register_fn("desc", |spell: &mut Spell, desc: ImmutableString| {
-        spell.desc = desc.to_string();
-    });
-
-    engine.register_fn("description", |spell: &mut Spell, desc: ImmutableString| {
-        spell.desc = desc.to_string();
-    });
-
-    engine.register_fn(
-        "cast_time",
-        |spell: &mut Spell, cast_time: ImmutableString| {
-            spell.cast_time = cast_time.to_string();
-        },
-    );
-
-    engine.register_fn("range", |spell: &mut Spell, range: ImmutableString| {
-        spell.range = range.to_string();
-    });
-    engine.register_fn(
-        "duration",
-        |spell: &mut Spell, duration: ImmutableString| {
-            spell.duration = duration.to_string();
-        },
-    );
-
-    engine.register_fn("concentration", |spell: &mut Spell, concentration: bool| {
-        spell.concentration = concentration;
-    });
-
-    engine.register_fn("ritual", |spell: &mut Spell, ritual: bool| {
-        spell.ritual = ritual;
-    });
-
-    engine.register_fn("level", |spell: &mut Spell, level: i64| {
-        spell.level = level;
-    });
-
-    engine.register_fn("automatic", |spell: &mut Spell| {
-        spell.spell_type = SpellType::Automatic;
-    });
-
-    engine.register_fn("melee", |spell: &mut Spell| {
-        spell.spell_type = SpellType::Melee;
-    });
-
-    engine.register_fn("ranged", |spell: &mut Spell| {
-        spell.spell_type = SpellType::Ranged;
-    });
-
-    engine.register_fn("saving", |spell: &mut Spell, dc_type: ImmutableString| {
-        let Ok(s) = Score::from_str(dc_type.as_str()) else {
-            return;
-        };
-        spell.spell_type = SpellType::Saving {
-            dc_type: s,
-            success: ataxia_types::spells::Success::Half,
-        };
-    });
-
-    engine.register_fn(
-        "saving",
-        |spell: &mut Spell, dc_type: ImmutableString, success: ImmutableString| {
-            let Ok(s) = Score::from_str(dc_type.as_str()) else {
-                return;
-            };
-            let Ok(success) = Success::from_str(success.as_str()) else {
-                return;
-            };
-            spell.spell_type = SpellType::Saving {
-                dc_type: s,
-                success,
-            };
-        },
-    );
-
-    engine.register_fn("damage", |spell: &mut Spell, damage: ImmutableString| {
-        let Ok(r) = Roll::from_str(damage.as_str()) else {
-            return;
-        };
-        spell.effect = ataxia_types::spells::Effect::Damage(Damage {
-            damage: r,
-            damage_type: DamageType::Force,
-        });
-    });
-
-    engine.register_fn(
-        "damage",
-        |spell: &mut Spell, damage: ImmutableString, element: ImmutableString| {
-            let Ok(r) = Roll::from_str(damage.as_str()) else {
-                return;
-            };
-
-            let Ok(element) = DamageType::from_str(element.as_str()) else {
-                return;
-            };
-            spell.effect = ataxia_types::spells::Effect::Damage(Damage {
-                damage: r,
-                damage_type: element,
-            });
-        },
-    );
-
-    engine.register_fn("element", |spell: &mut Spell, element: ImmutableString| {
-        if let spells::Effect::Damage(d) = &mut spell.effect {
-            let Ok(element) = DamageType::from_str(element.as_str()) else {
-                return;
-            };
-            d.damage_type = element
-        }
-    });
-
-    engine.register_fn("heal", |spell: &mut Spell, healing: ImmutableString| {
-        let heal = match Roll::from_str(healing.as_str()) {
-            Ok(r) => Heal::Roll(r),
-            Err(_) => Heal::Static(healing.to_string()),
-        };
-        spell.effect = spells::Effect::Heal(heal);
-    });
-
-    engine.register_fn("school", |spell: &mut Spell, school: ImmutableString| {
-        let Ok(s) = School::from_str(school.as_str()) else {
-            return;
-        };
-        spell.school = s;
-    });
-}
-
-fn register_item_functions(engine: &mut Engine) {
-    engine.register_fn("add", |inventory: &mut Inventory, item: Item| {
-        inventory.0.insert(item.name.to_string(), item);
-    });
-
-    engine.register_fn(
-        "item",
-        |name: ImmutableString, description: ImmutableString| -> Item {
-            Item {
-                name: name.to_string(),
-                description: description.to_string(),
-                ..Default::default()
-            }
-        },
-    );
-
-    engine.register_fn("item", |name: ImmutableString, roll: Roll| Item {
-        name: name.to_string(),
-        roll: Some(roll),
-        ..Default::default()
-    });
-
-    engine.register_fn(
-        "item",
-        |name: ImmutableString, description: ImmutableString, roll: Roll| -> Item {
-            Item {
-                name: name.to_string(),
-                description: description.to_string(),
-                roll: Some(roll),
-                ..Default::default()
-            }
-        },
-    );
-
-    engine.register_fn("desc", |f: &mut Item, desc: ImmutableString| {
-        f.description = desc.to_string()
-    });
-
-    engine.register_fn("description", |f: &mut Item, desc: ImmutableString| {
-        f.description = desc.to_string()
-    });
-
-    engine.register_fn("count", |f: &mut Item, count: i64| {
-        f.quantity = count as i32;
-    });
-
-    engine.register_fn("quantity", |f: &mut Item, count: i64| {
-        f.quantity = count as i32;
-    });
-
-    engine.register_fn("feature", |f: &mut Item, feature: Effect| {
-        f.add(feature);
-    });
-
-    engine.register_fn("source", |f: &mut Item, source: ImmutableString| {
-        f.add_source(Source::Single(source.to_string()));
-    });
-}
-
-fn register_meter_functions(engine: &mut Engine) {
-    engine.register_fn("meter", |name: ImmutableString, slots: i64| -> Meter {
-        Meter::new(name.to_string(), slots as u32, RestoreTime::default())
-    });
-
-    engine.register_fn("short_rest", |m: &mut Meter| {
-        m.restore.short_rest = true;
-    });
-
-    engine.register_fn("long_rest", |m: &mut Meter| {
-        m.restore.long_rest = true;
-    });
-
-    engine.register_fn("add", |meters: &mut Meters, m: Meter| {
-        meters.meters.insert(m.name.to_string(), m);
-    });
-}
-
-fn register_class_functions(engine: &mut Engine) {
-    engine.register_fn("set_class", |class: &mut Class, s: ImmutableString| {
-        class.set_class(s.as_str());
-    });
-
-    engine.register_fn("set_level", |class: &mut Class, level: i64| {
-        class.set_level(level);
-    });
-
-    engine.register_fn("set_hit_die", |class: &mut Class, die: ImmutableString| {
-        let Ok(d) = Die::from_str(die.as_str()) else {
-            return;
-        };
-        class.hit_dice = d;
-    });
+fn register_engine_functions(engine: &mut Engine) {
+    let mut module = Module::new();
+    combine_with_exported_module!(&mut module, "ataxia", library::library);
+    engine.register_global_module(module.into());
 }
