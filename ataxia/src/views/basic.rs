@@ -1,13 +1,8 @@
-use ataxia_types::{
-    AbilityScores, Character, PassiveSenses, Score, sheet,
-    skills::{Skill, Skills},
-};
+use ataxia_types::{Character, Score, skills::Skill};
 use iced::{
     Alignment, Element, Length, Task,
-    alignment::{Horizontal::Left, Vertical},
     widget::{
-        self, Column, Container, Grid, Row, Rule, Text, button, checkbox, column, container, row,
-        rule, scrollable, table::table, text, text_input, toggler,
+        Column, Container, Row, Text, button, checkbox, column, container, row, text, text_input,
     },
 };
 
@@ -35,15 +30,20 @@ impl<'a> BasicState {
         let s = passive_senses(sheet);
 
         let s = row![
-            s.height(Length::Fill),
-            ac_init_prof_speed(sheet).height(Length::Fill)
+            s.center(Length::Fill),
+            ac_init_prof_speed(sheet).center(Length::Fill)
         ]
-        .height(120);
+        .height(160)
+        .width(300);
 
         let c1 = column![c1, s];
 
         let c2 = skills(sheet);
-        let row = row![c1, c2].spacing(8);
+
+        let saving = saving_throws(sheet).width(Length::Fill);
+        let details = character_details(sheet).width(Length::Fill);
+        let left_col = column![details, saving].width(200);
+        let row = row![left_col, c1, c2].spacing(8);
 
         container(row).center(Length::Fill).into()
     }
@@ -64,7 +64,7 @@ impl<'a> BasicState {
             }
             BasicMessage::Damage => {
                 if let Ok(n) = self.hp_input.parse() {
-                    sheet.health.heal(n);
+                    sheet.health.hit(n);
                 }
                 Task::done(Message::Basic(BasicMessage::ResetInput))
             }
@@ -228,9 +228,69 @@ fn ac_init_prof_speed<'a>(sheet: &'a Character) -> Container<'a, Message> {
     let c = column![
         text!("Proficiency bonus {}", sheet.skills.proficiency_bonus),
         text!("AC {}", sheet.armor_class),
-        text!("Initiative {}", sheet.initiative()),
-        text!("Walking speed {}", sheet.walking_speed)
+        text!("Initiative {:+}", sheet.initiative()),
+        text!("Walking speed {}", sheet.walking_speed),
+        text!("More info").style(text::secondary).center(),
     ];
 
     container(c).style(container::bordered_box).padding(12)
+}
+
+pub fn saving_throws<'a>(sheet: &'a Character) -> Container<'a, Message> {
+    let prof: Vec<Element<Message>> = Score::ALL
+        .iter()
+        .map(|f| {
+            let checked = sheet.saving_throws.proficient(f);
+            checkbox(checked).style(checkbox::primary)
+        })
+        .map(|f| container(f).into())
+        .collect();
+    let skills = Score::ALL
+        .iter()
+        .map(|f| {
+            sheet
+                .saving_throws
+                .check(f, &sheet.ability_scores, &sheet.skills)
+        })
+        .map(|f| text!("{f}").align_x(Alignment::End))
+        .collect::<Vec<Text>>();
+
+    let score_names: Vec<Text> = Score::ALL_STR.iter().map(|f| text!("{f}")).collect();
+
+    let rows = prof
+        .into_iter()
+        .zip(score_names)
+        .zip(skills)
+        .map(|((a, b), c)| row![a, b.width(120), c.width(12)].spacing(12).into())
+        .collect();
+
+    let r = Column::from_vec(rows);
+
+    container(r).style(container::secondary).padding(12).into()
+}
+
+fn character_details<'a>(sheet: &'a Character) -> Container<'a, Message> {
+    let subclasses = sheet
+        .classes
+        .iter()
+        .map(|f| format!("{} ", f.subclass))
+        .collect::<String>();
+    let a = [
+        sheet.name.to_string(),
+        sheet.race.to_string(),
+        format!("{}", sheet.classes),
+        subclasses,
+    ]
+    .into_iter()
+    .map(|f| text(f).into())
+    .collect::<Vec<Element<Message>>>();
+    let c = Column::from_vec(a);
+
+    container(c).style(container::bordered_box).padding(12)
+}
+
+fn badge<'a>(top: &'a str, bottom: &'a str) -> Container<'a, Message> {
+    let c = column![text(top), text(bottom).style(text::secondary)];
+
+    container(c)
 }
