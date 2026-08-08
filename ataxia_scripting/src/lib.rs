@@ -82,6 +82,7 @@ impl Interface {
         } = Character::default();
 
         let armor_class = armor_class.0;
+        let walking_speed = walking_speed.0;
 
         let mut scope = Scope::new();
         scope.push("name", name);
@@ -153,7 +154,8 @@ impl Interface {
         let ability_modifier = extract!("ability_modifier", "ability_modifier")?;
         let meters = extract!("meters", "meters")?;
         let lore = extract!("lore", "lore")?;
-        let walking_speed = extract!("walking_speed", "walking_speed")?;
+        let walking_speed_raw: i64 = extract!("walking_speed", "walking_speed")?;
+        let walking_speed = WalkingSpeed(walking_speed_raw);
         let languages = extract!("languages", "languages")?;
         let conditions = extract!("conditions", "conditions")?;
         let saving_throws = extract!("saving_throws", "saving_throws")?;
