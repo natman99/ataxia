@@ -1,6 +1,16 @@
-use ataxia_types::class::{ClassType, Level};
+use std::str::FromStr;
 
-use super::*;
+use ataxia_types::{
+    Item,
+    class::{ClassType, Level},
+    damage::DamageType,
+    meter::{Meter, RestoreTime},
+    roll::Roll,
+    source::Source,
+    spells::{self, Area, Component, Damage, School, Spell, SpellType},
+};
+
+use super::Interface;
 #[test]
 fn name() {
     let mut i = Interface::new();
@@ -199,4 +209,13 @@ fn meter() {
             source: Some(Source::Single("cake power".to_string()))
         }
     );
+}
+#[test]
+fn saving_throws() {
+    let mut i = Interface::new();
+    let script = r#"
+        saving_throws.str = true;
+        "#;
+    let c = i.execute(script, None).unwrap();
+    assert_eq!(c.saving_throws.str, true);
 }
