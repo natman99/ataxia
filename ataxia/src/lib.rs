@@ -1,11 +1,26 @@
-use std::{collections::BTreeMap, sync::Arc};
+use std::{
+    collections::BTreeMap,
+    env,
+    ops::Deref,
+    path::{self, PathBuf},
+    sync::Arc,
+};
 
+use ataxia_scripting::Interface;
 use ataxia_types::{Character, ability_score::AbilityScore, skills::Skill};
 use iced::{
     Element, Length, Subscription, Task, Theme,
-    widget::{button, container, text},
+    futures::{FutureExt, SinkExt, Stream},
+    stream,
+    widget::{Column, button, column, container, text},
     window::{self, Id},
 };
+use notify::{
+    EventKind, RecommendedWatcher, Watcher,
+    event::{AccessKind, AccessMode, DataChange},
+};
+use rfd::FileHandle;
+use tokio::{fs, io, task};
 
 use crate::{
     global::Global,
@@ -19,6 +34,11 @@ mod views;
 pub enum Message {
     Window(WindowMessage),
     Basic(BasicMessage),
+    OpenFilePicker,
+    FilePicked(Option<FileHandle>),
+    FileLoaded(Arc<io::Result<String>>),
+    FileModified,
+    WatcherCreated(tokio::sync::mpsc::Sender<PathBuf>),
 }
 
 #[derive(Clone, Debug)]
@@ -39,6 +59,12 @@ pub enum View {
     Inventory,
     Spells,
 }
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
+pub enum Mode {
+    #[default]
+    Rhai,
+    Json,
+}
 
 #[derive(Debug)]
 pub struct App {
@@ -46,30 +72,23 @@ pub struct App {
     global: Option<Arc<Global>>,
     sheet: Option<Character>,
     basic_state: BasicState,
+    sheet_path: Option<PathBuf>,
+    sheet_mode: Mode,
+    rhai_interface: Interface,
 }
 
 impl<'a> App {
     pub fn new() -> (Self, Task<Message>) {
         let (_, open) = window::open(window::Settings::default());
-        let mut sheet = Character::default();
-        sheet.skills.proficiencies.insert(Skill::Athletics);
-
-        sheet.skills.proficiencies.insert(Skill::Acrobatics);
-        sheet.skills.expertise.insert(Skill::Athletics);
-
-        sheet.ability_scores.cha = AbilityScore::new(8, 0);
-
-        sheet.ability_scores.str = AbilityScore::new(16, 0);
-
-        sheet.ability_scores.dex = AbilityScore::new(16, 0);
-        sheet.skills.proficiency_bonus = 3;
-
         (
             Self {
                 windows: BTreeMap::new(),
                 global: None,
-                sheet: Some(sheet),
+                sheet: None,
                 basic_state: Default::default(),
+                sheet_path: None,
+                sheet_mode: Default::default(),
+                rhai_interface: Interface::new(),
             },
             open.map(WindowMessage::OpenWindow).map(Message::Window),
         )
@@ -98,6 +117,94 @@ impl<'a> App {
                     Task::none()
                 }
             }
+            Message::OpenFilePicker => {
+                let current_dir = env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+                let t = rfd::AsyncFileDialog::new()
+                    .add_filter("rhai", &["rhai"])
+                    .add_filter("json", &["json"])
+                    .set_title("Select Character")
+                    .set_directory(current_dir)
+                    .pick_file();
+                println!("Opening file picker");
+                Task::perform(t, Message::FilePicked)
+            }
+            Message::FilePicked(f) => {
+                println!("File picked");
+                if let Some(f) = f {
+                    match f.path().extension().and_then(|f| f.to_str()) {
+                        Some("json") => {
+                            self.sheet_mode = Mode::Json;
+                            let f = f.path().to_owned();
+                            self.sheet_path = Some(f.to_owned());
+
+                            let t = fs::read_to_string(f);
+                            Task::perform(t, |f| Message::FileLoaded(Arc::new(f)))
+                        }
+                        Some(_) => {
+                            let f = f.path().to_owned();
+                            self.sheet_path = Some(f.to_owned());
+
+                            let t = fs::read_to_string(f);
+                            Task::perform(t, |f| Message::FileLoaded(Arc::new(f)))
+                        }
+                        None => {
+                            println!("Invalid file");
+                            return Task::none();
+                        }
+                    }
+                } else {
+                    println!("No file chosen");
+                    Task::none()
+                }
+            }
+            Message::FileLoaded(file) => {
+                println!("File loaded");
+                match file.deref() {
+                    Ok(f) => match self.sheet_mode {
+                        Mode::Rhai => {
+                            match self.rhai_interface.execute(&f, self.sheet.clone()) {
+                                Ok(sheet) => self.sheet = Some(sheet),
+                                Err(e) => println!("Rhai failed: {e:?}"),
+                            };
+                            Task::none()
+                        }
+                        Mode::Json => {
+                            match serde_json::from_str::<Character>(&f) {
+                                Ok(c) => self.sheet = Some(c),
+                                Err(e) => println!("Json failed: {e:?}"),
+                            }
+                            Task::none()
+                        }
+                    },
+                    Err(e) => {
+                        println!("{e:?}");
+                        Task::none()
+                    }
+                }
+            }
+            Message::FileModified => {
+                println!("Reloading file");
+
+                if let Some(e) = &self.sheet_path {
+                    let e = e.to_owned();
+                    let t = fs::read_to_string(e);
+                    Task::perform(t, |f| Message::FileLoaded(Arc::new(f)))
+                } else {
+                    Task::none()
+                }
+            }
+            Message::WatcherCreated(sender) => {
+                if let Some(f) = &self.sheet_path {
+                    let f = f.to_owned();
+                    Task::future(async move {
+                        let _ = sender.send(f).await;
+                    })
+                    .discard()
+                } else {
+                    println!("No path to send to watcher!");
+                    Task::none()
+                }
+            }
         }
     }
 
@@ -107,7 +214,10 @@ impl<'a> App {
         };
 
         let Some(sheet) = &self.sheet else {
-            return text!("No sheet loaded").into();
+            let b = button("Select file").on_press(Message::OpenFilePicker);
+            let c = column![text("No sheet loaded"), b];
+            let c = container(c).center(Length::Fill);
+            return c.into();
         };
 
         let c = match state.view {
@@ -124,8 +234,79 @@ impl<'a> App {
     }
 
     pub fn subscription(&self) -> Subscription<Message> {
-        window::close_events()
+        let w = window::close_events()
             .map(WindowMessage::WindowClosed)
-            .map(Message::Window)
+            .map(Message::Window);
+        let watcher = if self.sheet_path.is_some() {
+            Subscription::run(create_file_watcher)
+        } else {
+            Subscription::none()
+        };
+        Subscription::batch([w, watcher])
     }
+}
+
+fn create_file_watcher() -> impl Stream<Item = Message> {
+    println!("Creating watcher");
+    stream::channel(100, async move |mut output| {
+        let path = {
+            let (tx, mut rx) = tokio::sync::mpsc::channel(1);
+            output
+                .send(Message::WatcherCreated(tx))
+                .await
+                .expect("Got file");
+            rx.recv().await
+        };
+
+        println!("Watcher got file");
+
+        let Some(path) = path else {
+            println!("Watcher init failed");
+            return;
+        };
+
+        // Spawn a task that owns the watcher and bridges its blocking std::sync channel
+        // into an async tokio channel. This avoids blocking the main async task,
+        // which would prevent output.send() from being polled.
+        let (bridge_tx, mut bridge_rx) = tokio::sync::mpsc::channel(16);
+        task::spawn_blocking(move || {
+            let (event_tx, event_rx) = std::sync::mpsc::channel();
+
+            let Ok(mut watcher) = RecommendedWatcher::new(
+                move |res| {
+                    if let Ok(event) = res {
+                        let _ = event_tx.send(event);
+                    }
+                },
+                notify::Config::default(),
+            ) else {
+                return;
+            };
+            if let Err(e) = watcher.watch(&path, notify::RecursiveMode::NonRecursive) {
+                println!("Watcher failed: {e:?}");
+                return;
+            }
+
+            while let Ok(event) = event_rx.recv() {
+                if bridge_tx.blocking_send(event).is_err() {
+                    break;
+                }
+            }
+        });
+
+        while let Some(event) = bridge_rx.recv().await {
+            let send = match event.kind {
+                EventKind::Access(AccessKind::Close(AccessMode::Write)) => true,
+                EventKind::Modify(notify::event::ModifyKind::Data(DataChange::Content)) => true,
+                _ => false,
+            };
+            if send {
+                println!("{:?}", event);
+                if let Some(_) = event.paths.first() {
+                    println!("File changed");
+                    let _ = output.send(Message::FileModified).await;
+                }
+            }
+        }
+    })
 }
