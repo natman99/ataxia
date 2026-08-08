@@ -6,6 +6,7 @@ use ataxia_types::{
     damage::DamageType,
     meter::{Meter, RestoreTime},
     roll::Roll,
+    skills::Skill,
     source::Source,
     spells::{self, Area, Component, Damage, School, Spell, SpellType},
 };
@@ -218,4 +219,47 @@ fn saving_throws() {
         "#;
     let c = i.execute(script, None).unwrap();
     assert_eq!(c.saving_throws.str, true);
+}
+
+#[test]
+fn walking_speed() {
+    let mut i = Interface::new();
+    let script = r#"
+        walking_speed = 40;
+        "#;
+    let c = i.execute(script, None).unwrap();
+    assert_eq!(c.walking_speed.0, 40);
+}
+
+#[test]
+fn skills() {
+    let mut i = Interface::new();
+    let script = r#"
+        skills.add("deception");
+        skills.add("persuasion");
+
+        skills.expertise("acrobatics");
+        skills.proficiency_bonus = 4;
+        "#;
+    let c = i.execute(script, None).unwrap();
+    assert!(c.skills.proficiencies.contains(Skill::Deception));
+
+    assert!(c.skills.proficiencies.contains(Skill::Persuasion));
+
+    assert!(c.skills.proficiencies.contains(Skill::Acrobatics));
+    assert!(c.skills.expertise.contains(Skill::Acrobatics));
+
+    assert_eq!(c.skills.proficiency_bonus, 4);
+}
+
+#[test]
+fn senses() {
+    let mut i = Interface::new();
+    let script = r#"
+        senses.darkvision = true;
+        senses.tremor_sense = true;
+        "#;
+    let c = i.execute(script, None).unwrap();
+    assert_eq!(c.senses.extra.dark_vision, true);
+    assert_eq!(c.senses.extra.tremor_sense, true);
 }
