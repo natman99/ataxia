@@ -34,6 +34,7 @@ mod views;
 pub enum Message {
     Window(WindowMessage),
     Basic(BasicMessage),
+    Meter(MeterMessage),
     OpenFilePicker,
     FilePicked(Option<FileHandle>),
     FileLoaded(Arc<io::Result<String>>),
@@ -45,6 +46,12 @@ pub enum Message {
 pub enum WindowMessage {
     WindowClosed(Id),
     OpenWindow(Id),
+}
+
+#[derive(Clone, Debug)]
+pub enum MeterMessage {
+    Spend(String),
+    Restore(String),
 }
 
 #[derive(Default, Debug)]
@@ -204,6 +211,27 @@ impl<'a> App {
                     println!("No path to send to watcher!");
                     Task::none()
                 }
+            }
+            Message::Meter(meter_message) => {
+                let Some(sheet) = &mut self.sheet else {
+                    return Task::none();
+                };
+
+                let meters = &mut sheet.meters;
+                match meter_message {
+                    MeterMessage::Spend(s) => {
+                        if let Some(m) = meters.meters.get_mut(&s) {
+                            m.spend();
+                        }
+                    }
+                    MeterMessage::Restore(s) => {
+                        if let Some(m) = meters.meters.get_mut(&s) {
+                            m.restore();
+                        }
+                    }
+                }
+
+                Task::none()
             }
         }
     }
