@@ -416,4 +416,26 @@ pub mod library {
             st.cha = v;
         }
     }
+
+    // -- skills submodule --
+
+    pub mod skills {
+        use super::*;
+        use ataxia_types::skills::Skill;
+
+        pub fn add(skills: &mut ataxia_types::skills::Skills, name: ImmutableString) {
+            let Ok(skill) = Skill::try_from(name.as_str()) else {
+                return;
+            };
+            skills.proficiencies.set(skill, true);
+        }
+
+        pub fn expertise(skills: &mut ataxia_types::skills::Skills, name: ImmutableString) {
+            let Ok(skill) = Skill::try_from(name.as_str()) else {
+                return;
+            };
+            skills.proficiencies.set(skill, true);
+            skills.expertise.set(skill, true);
+        }
+    }
 }
