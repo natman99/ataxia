@@ -7,6 +7,7 @@ pub mod library {
         feature::{Effect, Feature, HasFeature},
         meter::{Meter, Meters, RestoreTime},
         roll::{Die, Roll},
+        saving_throws::SavingThrows,
         sheet::HitPoints,
         source::{HasSource, Source},
     };
@@ -347,6 +348,72 @@ pub mod library {
             } else {
                 Dynamic::UNIT
             }
+        }
+    }
+
+    // -- saving_throws submodule --
+
+    pub mod saving_throws {
+        use super::*;
+
+        #[rhai_fn(get = "str")]
+        pub fn str_get(st: &mut SavingThrows) -> bool {
+            st.str
+        }
+
+        #[rhai_fn(set = "str")]
+        pub fn str_set(st: &mut SavingThrows, v: bool) {
+            st.str = v;
+        }
+
+        #[rhai_fn(get = "dex")]
+        pub fn dex_get(st: &mut SavingThrows) -> bool {
+            st.dex
+        }
+
+        #[rhai_fn(set = "dex")]
+        pub fn dex_set(st: &mut SavingThrows, v: bool) {
+            st.dex = v;
+        }
+
+        #[rhai_fn(get = "con")]
+        pub fn con_get(st: &mut SavingThrows) -> bool {
+            st.con
+        }
+
+        #[rhai_fn(set = "con")]
+        pub fn con_set(st: &mut SavingThrows, v: bool) {
+            st.con = v;
+        }
+
+        #[rhai_fn(get = "int")]
+        pub fn int_get(st: &mut SavingThrows) -> bool {
+            st.int
+        }
+
+        #[rhai_fn(set = "int")]
+        pub fn int_set(st: &mut SavingThrows, v: bool) {
+            st.int = v;
+        }
+
+        #[rhai_fn(get = "wis")]
+        pub fn wis_get(st: &mut SavingThrows) -> bool {
+            st.wis
+        }
+
+        #[rhai_fn(set = "wis")]
+        pub fn wis_set(st: &mut SavingThrows, v: bool) {
+            st.wis = v;
+        }
+
+        #[rhai_fn(get = "cha")]
+        pub fn cha_get(st: &mut SavingThrows) -> bool {
+            st.cha
+        }
+
+        #[rhai_fn(set = "cha")]
+        pub fn cha_set(st: &mut SavingThrows, v: bool) {
+            st.cha = v;
         }
     }
 }
