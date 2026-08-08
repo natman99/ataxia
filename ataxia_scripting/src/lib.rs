@@ -183,7 +183,6 @@ impl Interface {
 }
 
 fn register_engine_types(engine: &mut Engine) {
-    engine.register_type::<u32>();
     engine.build_type::<Character>();
     engine.build_type::<AbilityScores>();
     engine.build_type::<ArmorClass>();
