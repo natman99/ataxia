@@ -20,7 +20,7 @@ pub struct HitPoints {
     /// Current health. Must never be higher than the max.
     pub current: i64,
     /// Max health.
-    pub max: u32,
+    pub max: i64,
     /// Bonus health gained per level.
     pub level_bonus: i64,
     /// Temporary bonus health.
@@ -42,7 +42,7 @@ impl HitPoints {
     pub fn new(max: u32) -> Self {
         Self {
             current: max as i64,
-            max: max,
+            max: max as i64,
             level_bonus: 0,
             bonus: 0,
         }
@@ -82,7 +82,7 @@ impl HitPoints {
 
         let mut s = self;
 
-        s.max = total.max(1) as u32;
+        s.max = total.max(1);
 
         s
     }
@@ -101,7 +101,7 @@ impl HitPoints {
     }
     pub fn heal(&mut self, healing: i64) {
         self.current += healing;
-        self.current = self.current.min(self.max as i64);
+        self.current = self.current.min(self.max);
     }
 }
 
