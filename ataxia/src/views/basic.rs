@@ -6,7 +6,7 @@ use iced::{
     },
 };
 
-use crate::Message;
+use crate::{Message, MeterMessage};
 
 #[derive(Debug, Default, Clone)]
 pub struct BasicState {
@@ -42,7 +42,8 @@ impl<'a> BasicState {
 
         let saving = saving_throws(sheet).width(Length::Fill);
         let details = character_details(sheet).width(Length::Fill);
-        let left_col = column![details, saving].width(200);
+        let meters_temp = meters(sheet).width(Length::Fill);
+        let left_col = column![details, saving, meters_temp].width(200);
         let row = row![left_col, c1, c2].spacing(8);
 
         container(row).center(Length::Fill).into()
@@ -293,4 +294,41 @@ fn badge<'a>(top: &'a str, bottom: &'a str) -> Container<'a, Message> {
     let c = column![text(top), text(bottom).style(text::secondary)];
 
     container(c)
+}
+
+fn meters<'a>(sheet: &'a Character) -> Container<'a, Message> {
+    let mut rows = vec![];
+    const BOX: char = '■';
+    for m in sheet.meters.meters.values() {
+        let max = m.slot_number;
+        let remaining = max - m.spent;
+
+        let mut r = row![text!("{} ", m.name.to_string())];
+
+        for _ in 0..m.spent {
+            r = r.push(
+                checkbox(true)
+                    .size(22)
+                    .on_toggle(|_| Message::Meter(MeterMessage::Restore(m.name.to_string()))),
+            );
+        }
+
+        for _ in 0..remaining {
+            r = r.push(
+                checkbox(false)
+                    .size(22)
+                    .on_toggle(|_| Message::Meter(MeterMessage::Spend(m.name.to_string()))),
+            );
+        }
+
+        rows.push(r.padding(6));
+    }
+
+    let mut cols: Column<'_, Message> = Column::new();
+
+    for i in rows {
+        cols = cols.push(i);
+    }
+
+    container(cols).style(container::bordered_box).padding(12)
 }
