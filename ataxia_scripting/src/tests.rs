@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use ataxia_types::{
-    Item,
+    Character, Item,
     class::{ClassType, Level},
     damage::DamageType,
     meter::{Meter, RestoreTime},
@@ -262,4 +262,23 @@ fn senses() {
     let c = i.execute(script, None).unwrap();
     assert_eq!(c.senses.extra.dark_vision, true);
     assert_eq!(c.senses.extra.tremor_sense, true);
+}
+
+#[test]
+fn interactive() {
+    let i = Interface::new();
+    let mut character = Character::default();
+    character.ability_scores.con.base = 14;
+    let s = i.interactive("2 + con.mod()", character).unwrap();
+
+    assert_eq!(s.to_string(), "4");
+}
+
+#[test]
+fn interactive_roll() {
+    let i = Interface::new();
+    let mut character = Character::default();
+    character.ability_scores.con.base = 14;
+    let s = i.interactive("2 + 2d4 + str.mod()", character).unwrap();
+    assert!(s.is_int())
 }
