@@ -342,6 +342,8 @@ pub mod library {
     pub mod roll {
         use std::str::FromStr;
 
+        use ataxia_types::roll::Roll;
+
         use super::*;
 
         pub fn roll(s: ImmutableString) -> Dynamic {
@@ -350,6 +352,12 @@ pub mod library {
             } else {
                 Dynamic::UNIT
             }
+        }
+
+        #[rhai_fn(name = "roll")]
+        pub fn roll_roll(r: &mut Roll) -> i64 {
+            let mut rng = rand::rng();
+            r.roll(&mut rng, None).total
         }
     }
 
@@ -484,6 +492,20 @@ pub mod library {
             };
             skills.proficiencies.set(skill, true);
             skills.expertise.set(skill, true);
+        }
+    }
+
+    // -- scores submodule --
+    pub mod scores {
+        use ataxia_types::ability_score::AbilityScore;
+
+        pub fn get(score: &mut AbilityScore) -> i64 {
+            score.get()
+        }
+
+        #[rhai_fn(name = "mod", name = "modifier")]
+        pub fn modifier(score: &mut AbilityScore) -> i64 {
+            score.modifier()
         }
     }
 }

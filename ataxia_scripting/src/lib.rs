@@ -1,7 +1,11 @@
-use std::sync::{Arc, Mutex};
+use std::{
+    fmt::Debug,
+    sync::{Arc, LazyLock, Mutex},
+};
 
 use ataxia_types::{
     AbilityScores, ArmorClass, Character, HitPoints, Initiative, Inventory, WalkingSpeed,
+    ability_score::AbilityScore,
     class::{Class, Classes},
     condition::Conditions,
     feat::Feat,
@@ -13,10 +17,11 @@ use ataxia_types::{
     skills::Skills,
     spells::{Spell, Spells},
 };
-use rhai::{Engine, Module, Scope, combine_with_exported_module};
+use regex::Regex;
+use rhai::{Dynamic, Engine, Module, Scope, combine_with_exported_module, plugin::RhaiResult};
 
 #[cfg(test)]
-mod test;
+mod tests;
 
 mod library;
 
@@ -59,6 +64,30 @@ impl Interface {
         script: &str,
         character: Option<Character>,
     ) -> anyhow::Result<Character> {
+        let mut scope = Scope::new();
+
+        self.inject_scope(&mut scope);
+
+        let _: () = self.engine.eval_with_scope(&mut scope, script)?;
+
+        let mut c = self.extract_scope(&mut scope)?;
+
+        if let Some(char) = character {
+            c.health.current = char.health.current;
+            for (k, i) in char.meters.meters.iter() {
+                if let Some(meter) = c.meters.meters.get_mut(k) {
+                    meter.spent = i.spent;
+                }
+            }
+            for i in char.conditions.conditions {
+                c.conditions.conditions.push(i);
+            }
+        }
+
+        Ok(c)
+    }
+    /// Create default scope.
+    fn inject_scope(&self, scope: &mut Scope) {
         let Character {
             name,
             race,
@@ -84,7 +113,6 @@ impl Interface {
         let armor_class = armor_class.0;
         let walking_speed = walking_speed.0;
 
-        let mut scope = Scope::new();
         scope.push("name", name);
         scope.push("race", race);
         scope.push("classes", classes);
@@ -107,21 +135,76 @@ impl Interface {
 
         // We should run automated additions including adding meters, abilities, calculating health, and applying item stats.
         scope.push("calculate", true);
+    }
+    /// Run code against a character and return the output.
+    pub fn interactive(&self, script: &str, character: Character) -> anyhow::Result<Dynamic> {
+        const RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\s?(\d+d\d+)\s?").unwrap());
 
-        let _: () = self.engine.eval_with_scope(&mut scope, script)?;
+        let script = RE.replace_all(script, " roll(\"$1\").roll()");
 
-        let mut c = self.extract_scope(&mut scope)?;
+        println!("{}", script);
 
-        if let Some(char) = character {
-            c.health.current = char.health.current;
-            for (k, i) in char.meters.meters.iter() {
-                if let Some(meter) = c.meters.meters.get_mut(k) {
-                    meter.spent = i.spent;
-                }
-            }
-        }
+        let mut scope = Scope::new();
+        self.inject_known_scope(&mut scope, character);
 
-        Ok(c)
+        let r: Dynamic = self
+            .engine
+            .eval_expression_with_scope(&mut scope, &script)?;
+        Ok(r)
+    }
+    /// Create scope from a character.
+    fn inject_known_scope(&self, scope: &mut Scope, character: Character) {
+        let Character {
+            name,
+            race,
+            classes,
+            initiative,
+            armor_class,
+            health,
+            inventory,
+            ability_scores,
+            skills,
+            saving_throws,
+            spells,
+            senses,
+            features,
+            ability_modifier,
+            meters,
+            lore,
+            walking_speed,
+            languages,
+            conditions,
+        } = character;
+
+        let armor_class = armor_class.0;
+        let walking_speed = walking_speed.0;
+
+        scope.push("str", ability_scores.str);
+        scope.push("dex", ability_scores.dex);
+        scope.push("con", ability_scores.con);
+        scope.push("wis", ability_scores.wis);
+        scope.push("int", ability_scores.int);
+        scope.push("cha", ability_scores.cha);
+
+        scope.push("name", name);
+        scope.push("race", race);
+        scope.push("classes", classes);
+        scope.push("initiative", initiative);
+        scope.push("armor_class", armor_class);
+        scope.push("health", health);
+        scope.push("inventory", inventory);
+        scope.push("ability_scores", ability_scores);
+        scope.push("skills", skills);
+        scope.push("spells", spells);
+        scope.push("senses", senses);
+        scope.push("features", features);
+        scope.push("ability_modifier", ability_modifier);
+        scope.push("meters", meters);
+        scope.push("lore", lore);
+        scope.push("walking_speed", walking_speed);
+        scope.push("languages", languages);
+        scope.push("conditions", conditions);
+        scope.push("saving_throws", saving_throws);
     }
 
     fn extract_scope(&self, scope: &mut Scope) -> anyhow::Result<Character> {
@@ -187,6 +270,7 @@ impl Interface {
 fn register_engine_types(engine: &mut Engine) {
     engine.build_type::<Character>();
     engine.build_type::<AbilityScores>();
+    engine.build_type::<AbilityScore>();
     engine.build_type::<ArmorClass>();
     engine.build_type::<HitPoints>();
     engine.build_type::<Initiative>();
