@@ -54,7 +54,7 @@ impl Default for Roll {
 #[derive(Debug, Clone)]
 pub struct RollResult {
     /// The total dice results added up.
-    pub total: i32,
+    pub total: i64,
     /// The number of dice rolled.
     pub num_dice_rolled: i32,
     /// The list of individual results.
@@ -113,7 +113,7 @@ impl Roll {
         total += self.bonus;
 
         RollResult {
-            total,
+            total: total.into(),
             num_dice_rolled: results.len() as i32,
             results,
             failures,

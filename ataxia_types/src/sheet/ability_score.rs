@@ -14,7 +14,7 @@ use rhai::CustomType;
 /// An ability score. Values default to ten.
 pub struct AbilityScore {
     /// Base score.
-    pub(crate) base: i64,
+    pub base: i64,
     /// Bonus (from class or otherwise).
     #[cfg_attr(feature = "rhai", rhai_type(skip))]
     bonus: i64,
