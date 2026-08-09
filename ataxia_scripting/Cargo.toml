@@ -9,3 +9,5 @@ serde_json = { workspace = true }
 ataxia_types = { workspace = true, features = ["schema", "serde", "rhai"] }
 anyhow = { workspace = true }
 rhai = { workspace = true, features = ["sync"] }
+rand.workspace = true
+regex = "1.13.1"

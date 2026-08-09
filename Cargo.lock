@@ -504,6 +504,8 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "ataxia_types",
+ "rand 0.10.2",
+ "regex",
  "rhai",
  "serde",
  "serde_json",
