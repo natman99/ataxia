@@ -10,7 +10,6 @@ pub mod library {
         saving_throws::SavingThrows,
         senses::Senses,
         sheet::HitPoints,
-        skills::Skills,
         source::{HasSource, Source},
     };
     use rhai::{Array, Dynamic, ImmutableString};
@@ -295,7 +294,7 @@ pub mod library {
         }
 
         pub fn desc(f: &mut Item, desc: ImmutableString) {
-            f.description = desc.to_string()
+            f.description = desc.to_string();
         }
 
         pub fn description(f: &mut Item, desc: ImmutableString) {
@@ -476,8 +475,11 @@ pub mod library {
     // -- skills submodule --
 
     pub mod skills {
+        use std::str::FromStr;
+
         use super::*;
-        use ataxia_types::skills::Skill;
+        use ataxia_types::{Score, skills::Skill};
+        use rhai::{Dynamic, ImmutableString};
 
         pub fn add(skills: &mut ataxia_types::skills::Skills, name: ImmutableString) {
             let Ok(skill) = Skill::try_from(name.as_str()) else {
@@ -492,6 +494,39 @@ pub mod library {
             };
             skills.proficiencies.set(skill, true);
             skills.expertise.set(skill, true);
+        }
+
+        pub fn set(
+            overrides: &mut ataxia_types::skills::Overrides,
+            skill: ImmutableString,
+            score: ImmutableString,
+        ) {
+            let Ok(skill) = Skill::try_from(skill.as_str()) else {
+                return;
+            };
+            let Ok(score) = Score::from_str(score.as_str()) else {
+                return;
+            };
+            match skill {
+                Skill::Acrobatics => overrides.acrobatics = Some(score),
+                Skill::AnimalHandling => overrides.animal_handling = Some(score),
+                Skill::Arcana => overrides.arcana = Some(score),
+                Skill::Athletics => overrides.athletics = Some(score),
+                Skill::Deception => overrides.deception = Some(score),
+                Skill::History => overrides.history = Some(score),
+                Skill::Insight => overrides.insight = Some(score),
+                Skill::Intimidation => overrides.intimidation = Some(score),
+                Skill::Investigation => overrides.investigation = Some(score),
+                Skill::Medicine => overrides.medicine = Some(score),
+                Skill::Nature => overrides.nature = Some(score),
+                Skill::Perception => overrides.perception = Some(score),
+                Skill::Performance => overrides.performance = Some(score),
+                Skill::Persuasion => overrides.persuasion = Some(score),
+                Skill::Religion => overrides.religion = Some(score),
+                Skill::SleightOfHand => overrides.sleight_of_hand = Some(score),
+                Skill::Stealth => overrides.stealth = Some(score),
+                Skill::Survival => overrides.survival = Some(score),
+            }
         }
     }
 
