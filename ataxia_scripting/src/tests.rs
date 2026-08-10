@@ -293,7 +293,7 @@ fn interactive_roll() {
 fn ability_modifier() {
     let mut i = Interface::new();
     let script = r#"
-        ability_modifier = dex;
+        ability_modifier = "dex";
         "#;
     let c = i.execute(script, None).unwrap();
     assert_eq!(c.ability_modifier, Score::Dex);
