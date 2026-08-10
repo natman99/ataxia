@@ -1,9 +1,11 @@
 use std::str::FromStr;
 
 use ataxia_types::{
-    Character, Item,
+    Character, Item, Score,
     class::{ClassType, Level},
     damage::DamageType,
+    language::Language,
+    lore::{Morality, Order},
     meter::{Meter, RestoreTime},
     roll::Roll,
     skills::Skill,
@@ -240,6 +242,9 @@ fn skills() {
 
         skills.expertise("acrobatics");
         skills.proficiency_bonus = 4;
+
+        skills.overrides.set("acrobatics", "str");
+
         "#;
     let c = i.execute(script, None).unwrap();
     assert!(c.skills.proficiencies.contains(Skill::Deception));
@@ -250,6 +255,7 @@ fn skills() {
     assert!(c.skills.expertise.contains(Skill::Acrobatics));
 
     assert_eq!(c.skills.proficiency_bonus, 4);
+    assert_eq!(c.skills.overrides.acrobatics, Some(Score::Str));
 }
 
 #[test]
@@ -281,4 +287,59 @@ fn interactive_roll() {
     character.ability_scores.con.base = 14;
     let s = i.interactive("2 + 2d4 + str.mod()", character).unwrap();
     assert!(s.is_int())
+}
+
+#[test]
+fn ability_modifier() {
+    let mut i = Interface::new();
+    let script = r#"
+        ability_modifier = dex;
+        "#;
+    let c = i.execute(script, None).unwrap();
+    assert_eq!(c.ability_modifier, Score::Dex);
+}
+
+#[test]
+fn lore() {
+    let mut i = Interface::new();
+    let script = r#"
+        lore.backstory = "likes to do cool things";
+        lore.personality_traits = "haha loves cake!";
+        lore.allies = "bakers, cool people";
+        lore.enemies = "people without rad sunglasses";
+        lore.physical_traits = "rad sunglasses";
+        lore.alignment.order = "lawful";
+        lore.alignment.morality = "evil";
+        lore.alignment.set("neutral", "neutral");
+        "#;
+    let c = i.execute(script, None).unwrap();
+    assert_eq!(c.lore.backstory, "likes to do cool things");
+
+    assert_eq!(c.lore.backstory, "likes to do cool things");
+    assert_eq!(c.lore.personality_traits, "haha loves cake!");
+    assert_eq!(c.lore.allies, "bakers, cool people");
+    assert_eq!(c.lore.enemies, "people without rad sunglasses");
+    assert_eq!(c.lore.physical_traits, "rad sunglasses");
+    assert_eq!(c.lore.alignment.order, Order::Neutral);
+    assert_eq!(c.lore.alignment.morality, Morality::Neutral);
+}
+
+#[test]
+fn languages() {
+    let mut i = Interface::new();
+    let script = r#"
+        languages.add("elvish");
+        languages.add("spanish");
+        languages.add("orcish");
+        "#;
+    let c = i.execute(script, None).unwrap();
+    assert!(c.languages.languages.contains(&Language::Elvish));
+
+    assert!(c.languages.languages.contains(&Language::Orcish));
+
+    assert!(
+        c.languages
+            .languages
+            .contains(&Language::Other("spanish".to_string()))
+    )
 }

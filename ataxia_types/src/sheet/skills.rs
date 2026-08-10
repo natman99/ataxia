@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{fmt::Display, str::FromStr};
 
 use enumflags2::{BitFlag, BitFlags, bitflags};
 #[cfg(feature = "schema")]
@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 #[cfg(feature = "rhai")]
 use rhai::CustomType;
 
-use crate::sheet::AbilityScores;
+use crate::{Score, sheet::AbilityScores};
 
 #[bitflags]
 #[repr(u32)]
@@ -130,6 +130,14 @@ impl Display for Skill {
     }
 }
 
+impl FromStr for Skill {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Self::try_from(s)
+    }
+}
+
 impl TryFrom<&str> for Skill {
     type Error = ();
 
@@ -183,8 +191,58 @@ struct SkillsJson {
     proficiency_bonus: i64,
     expertise: Vec<Skill>,
 }
+#[derive(Debug, Clone, PartialEq, Default, Copy)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[cfg_attr(feature = "serde", serde(default))]
+#[cfg_attr(feature = "rhai", derive(CustomType))]
+pub struct Overrides {
+    pub athletics: Option<Score>,
+    pub acrobatics: Option<Score>,
+    pub sleight_of_hand: Option<Score>,
+    pub stealth: Option<Score>,
+    pub arcana: Option<Score>,
+    pub history: Option<Score>,
+    pub investigation: Option<Score>,
+    pub nature: Option<Score>,
+    pub religion: Option<Score>,
+    pub animal_handling: Option<Score>,
+    pub insight: Option<Score>,
+    pub medicine: Option<Score>,
+    pub perception: Option<Score>,
+    pub survival: Option<Score>,
+    pub deception: Option<Score>,
+    pub intimidation: Option<Score>,
+    pub performance: Option<Score>,
+    pub persuasion: Option<Score>,
+}
 
-#[derive(Debug, Clone, PartialEq)]
+impl Overrides {
+    fn get(&self, s: &Skill) -> Option<Score> {
+        match s {
+            Skill::Acrobatics => self.acrobatics,
+            Skill::AnimalHandling => self.animal_handling,
+            Skill::Arcana => self.arcana,
+            Skill::Athletics => self.athletics,
+            Skill::Deception => self.deception,
+            Skill::History => self.history,
+            Skill::Insight => self.insight,
+            Skill::Intimidation => self.intimidation,
+            Skill::Investigation => self.investigation,
+            Skill::Medicine => self.medicine,
+            Skill::Nature => self.nature,
+            Skill::Perception => self.perception,
+            Skill::Performance => self.performance,
+            Skill::Persuasion => self.persuasion,
+            Skill::Religion => self.religion,
+            Skill::SleightOfHand => self.sleight_of_hand,
+            Skill::Stealth => self.stealth,
+            Skill::Survival => self.survival,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Copy)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[cfg_attr(feature = "serde", serde(default))]
@@ -196,6 +254,7 @@ pub struct Skills {
     pub proficiency_bonus: i64,
     pub proficiencies: BitFlags<Skill>,
     pub expertise: BitFlags<Skill>,
+    pub overrides: Overrides,
 }
 
 impl Default for Skills {
@@ -204,6 +263,7 @@ impl Default for Skills {
             proficiency_bonus: 1,
             proficiencies: Default::default(),
             expertise: Default::default(),
+            overrides: Default::default(),
         }
     }
 }
@@ -285,28 +345,32 @@ impl From<Skills> for SkillsJson {
 impl Skills {
     /// Get the skill bonus.
     pub fn check(&self, skill: &Skill, ability_scores: &AbilityScores) -> i64 {
-        let base_modifier = match skill {
-            //str scaling
-            Skill::Athletics => ability_scores.str.modifier(),
-            // dex scaling
-            Skill::Acrobatics | Skill::SleightOfHand | Skill::Stealth => {
-                ability_scores.dex.modifier()
-            }
-            // int scaling
-            Skill::Arcana
-            | Skill::History
-            | Skill::Investigation
-            | Skill::Nature
-            | Skill::Religion => ability_scores.int.modifier(),
-            // wis scaling
-            Skill::AnimalHandling
-            | Skill::Insight
-            | Skill::Medicine
-            | Skill::Perception
-            | Skill::Survival => ability_scores.wis.modifier(),
-            // cha scaling
-            Skill::Deception | Skill::Intimidation | Skill::Performance | Skill::Persuasion => {
-                ability_scores.cha.modifier()
+        let base_modifier = if let Some(o) = self.overrides.get(skill) {
+            ability_scores.get(&o).modifier()
+        } else {
+            match skill {
+                //str scaling
+                Skill::Athletics => ability_scores.str.modifier(),
+                // dex scaling
+                Skill::Acrobatics | Skill::SleightOfHand | Skill::Stealth => {
+                    ability_scores.dex.modifier()
+                }
+                // int scaling
+                Skill::Arcana
+                | Skill::History
+                | Skill::Investigation
+                | Skill::Nature
+                | Skill::Religion => ability_scores.int.modifier(),
+                // wis scaling
+                Skill::AnimalHandling
+                | Skill::Insight
+                | Skill::Medicine
+                | Skill::Perception
+                | Skill::Survival => ability_scores.wis.modifier(),
+                // cha scaling
+                Skill::Deception | Skill::Intimidation | Skill::Performance | Skill::Persuasion => {
+                    ability_scores.cha.modifier()
+                }
             }
         };
 
