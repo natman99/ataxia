@@ -21,7 +21,6 @@ use crate::database::spell::DatabaseSpell;
 #[cfg(feature = "serde")]
 use crate::Character;
 
-use std::default;
 #[cfg(feature = "serde")]
 use std::str::FromStr;
 
@@ -193,7 +192,7 @@ impl Spell {
                             heal.n4.or_else(|| {
                                 heal.n5.or_else(|| {
                                     heal.n6
-                                        .or_else(|| heal.n7.or_else(|| heal.n8.or_else(|| heal.n9)))
+                                        .or_else(|| heal.n7.or_else(|| heal.n8.or(heal.n9)))
                                 })
                             })
                         })
@@ -237,7 +236,7 @@ impl Spell {
                             a.n3.or_else(|| {
                                 a.n4.or_else(|| {
                                     a.n5.or_else(|| {
-                                        a.n6.or_else(|| a.n7.or_else(|| a.n8.or_else(|| a.n9)))
+                                        a.n6.or_else(|| a.n7.or_else(|| a.n8.or(a.n9)))
                                     })
                                 })
                             })

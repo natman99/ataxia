@@ -1,4 +1,4 @@
-use std::fmt::{Display, write};
+use std::fmt::Display;
 
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
@@ -71,7 +71,7 @@ impl Display for DatabaseSpell {
                             )),
                         )))
                 };
-                inner.push_str(&min_damage);
+                inner.push_str(min_damage);
                 inner.push(' ');
 
                 if let Some(ref dmg_type) = dmg.damage_type {
@@ -81,7 +81,7 @@ impl Display for DatabaseSpell {
                 }
 
                 if let Some(ref cantrip_dmg) = dmg.damage_at_character_level {
-                    inner.push_str(&format!("{}", cantrip_dmg.n1));
+                    inner.push_str(&cantrip_dmg.n1.to_string());
                 }
 
                 inner.push('\n');

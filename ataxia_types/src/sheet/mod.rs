@@ -128,7 +128,7 @@ impl Character {
     }
     pub fn save_dc(&self) -> i64 {
         let a = self.ability_scores.get(&self.ability_modifier);
-        8 + self.skills.proficiency_bonus as i64 + a.modifier()
+        8 + self.skills.proficiency_bonus + a.modifier()
     }
 
     pub fn initiative(&self) -> i64 {
@@ -213,7 +213,7 @@ pub struct AbilityScores {
 
 impl AbilityScores {
     /// Collect all scores into an iter
-    pub fn iter<'a>(&'a self) -> [&'a AbilityScore; 6] {
+    pub fn iter(&self) -> [&AbilityScore; 6] {
         [
             &self.str, &self.dex, &self.con, &self.int, &self.wis, &self.cha,
         ]
@@ -367,7 +367,7 @@ impl ArmorClass {
     /// 10 + dex
     fn new(scores: &AbilityScores) -> Self {
         // safety: negative modifier can never be above 10.
-        Self((10 + scores.dex.modifier()) as i64)
+        Self(10 + scores.dex.modifier())
     }
 
     pub fn get(&self) -> i64 {
@@ -397,15 +397,11 @@ impl Display for ArmorClass {
 #[cfg_attr(feature = "serde", serde(default))]
 #[cfg_attr(feature = "rhai", derive(CustomType))]
 /// Initiative score.
+#[derive(Default)]
 pub struct Initiative {
     pub bonus: i64,
 }
 
-impl Default for Initiative {
-    fn default() -> Self {
-        Self { bonus: 0 }
-    }
-}
 
 impl Initiative {
     pub fn get(&self, scores: &AbilityScores) -> i64 {

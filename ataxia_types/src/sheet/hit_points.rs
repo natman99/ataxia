@@ -56,15 +56,15 @@ impl HitPoints {
         let con_mod = scores.con.modifier();
 
         let mut total: i64 =
-            base as i64 + con_mod + self.level_bonus + base_class.health_bonus_per_level as i64;
+            base as i64 + con_mod + self.level_bonus + base_class.health_bonus_per_level;
 
         let fixed_per_level = (die_max / 2 + 1) as i64
-            + scores.con.modifier() as i64
+            + scores.con.modifier()
             + self.level_bonus
-            + base_class.health_bonus_per_level as i64;
+            + base_class.health_bonus_per_level;
 
         if base_class.level.0 >= 2 {
-            total += fixed_per_level * (base_class.level.0 as i64 - 1);
+            total += fixed_per_level * (base_class.level.0 - 1);
         }
 
         for i in &classes.classes[1..] {
@@ -89,7 +89,7 @@ impl HitPoints {
     /// Apply damage. Damage is subtracted.
     pub fn hit(&mut self, dmg: i64) {
         if self.bonus > 0 {
-            self.bonus = self.bonus - dmg;
+            self.bonus -= dmg;
             if self.bonus < 0 {
                 self.current -= self.bonus.abs();
                 self.bonus = 0;

@@ -58,7 +58,7 @@ impl Meter {
         self.spent = self.spent.saturating_sub(1);
     }
     /// Restore all spell slots.
-    pub fn restore_all(&mut self) -> () {
+    pub fn restore_all(&mut self) {
         self.spent = 0;
     }
 

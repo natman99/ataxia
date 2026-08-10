@@ -2,17 +2,17 @@ use std::{
     collections::BTreeMap,
     env,
     ops::Deref,
-    path::{self, PathBuf},
+    path::PathBuf,
     sync::Arc,
 };
 
 use ataxia_scripting::Interface;
-use ataxia_types::{Character, ability_score::AbilityScore, skills::Skill};
+use ataxia_types::Character;
 use iced::{
     Element, Length, Subscription, Task, Theme,
     futures::{FutureExt, SinkExt, Stream},
     stream,
-    widget::{Column, button, column, container, text},
+    widget::{button, column, container, text},
     window::{self, Id},
 };
 use notify::{
@@ -66,7 +66,7 @@ pub enum View {
     Inventory,
     Spells,
 }
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum Mode {
     #[default]
     Rhai,
@@ -142,21 +142,21 @@ impl<'a> App {
                         Some("json") => {
                             self.sheet_mode = Mode::Json;
                             let f = f.path().to_owned();
-                            self.sheet_path = Some(f.to_owned());
+                            self.sheet_path = Some(f.clone());
 
                             let t = fs::read_to_string(f);
                             Task::perform(t, |f| Message::FileLoaded(Arc::new(f)))
                         }
                         Some(_) => {
                             let f = f.path().to_owned();
-                            self.sheet_path = Some(f.to_owned());
+                            self.sheet_path = Some(f.clone());
 
                             let t = fs::read_to_string(f);
                             Task::perform(t, |f| Message::FileLoaded(Arc::new(f)))
                         }
                         None => {
                             println!("Invalid file");
-                            return Task::none();
+                            Task::none()
                         }
                     }
                 } else {
@@ -166,17 +166,17 @@ impl<'a> App {
             }
             Message::FileLoaded(file) => {
                 println!("File loaded");
-                match file.deref() {
+                match &*file {
                     Ok(f) => match self.sheet_mode {
                         Mode::Rhai => {
-                            match self.rhai_interface.execute(&f, self.sheet.clone()) {
+                            match self.rhai_interface.execute(f, self.sheet.clone()) {
                                 Ok(sheet) => self.sheet = Some(sheet),
                                 Err(e) => println!("Rhai failed: {e:?}"),
-                            };
+                            }
                             Task::none()
                         }
                         Mode::Json => {
-                            match serde_json::from_str::<Character>(&f) {
+                            match serde_json::from_str::<Character>(f) {
                                 Ok(c) => self.sheet = Some(c),
                                 Err(e) => println!("Json failed: {e:?}"),
                             }
@@ -257,7 +257,7 @@ impl<'a> App {
         container(c).center(Length::Fill).into()
     }
 
-    pub fn theme(&self, _window_id: Id) -> Option<Theme> {
+    pub const fn theme(&self, _window_id: Id) -> Option<Theme> {
         Some(Theme::CatppuccinMacchiato)
     }
 
@@ -329,8 +329,8 @@ fn create_file_watcher() -> impl Stream<Item = Message> {
                 _ => false,
             };
             if send {
-                println!("{:?}", event);
-                if let Some(_) = event.paths.first() {
+                println!("{event:?}");
+                if event.paths.first().is_some() {
                     println!("File changed");
                     let _ = output.send(Message::FileModified).await;
                 }

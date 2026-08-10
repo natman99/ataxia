@@ -1,4 +1,3 @@
-use std::str::FromStr;
 
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;

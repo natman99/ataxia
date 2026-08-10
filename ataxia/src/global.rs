@@ -1,6 +1,6 @@
 use ataxia_types::{
     Character, Item,
-    condition::{Condition, Conditions},
+    condition::Condition,
     database::{condition::Condition as DBCondition, spell::DatabaseSpell},
     spells::Spell,
 };
@@ -17,16 +17,16 @@ pub struct Global {
 
 impl Global {
     pub fn new(sheet: &Character) -> anyhow::Result<Self> {
-        let conditions: Vec<DBCondition> = serde_json::from_str(&CONDITIONS)?;
-        let conditions = conditions.into_iter().map(|f| Condition::from(f)).collect();
-        let spells: Vec<DatabaseSpell> = serde_json::from_str(&SPELLS)?;
+        let conditions: Vec<DBCondition> = serde_json::from_str(CONDITIONS)?;
+        let conditions = conditions.into_iter().map(Condition::from).collect();
+        let spells: Vec<DatabaseSpell> = serde_json::from_str(SPELLS)?;
         let spells = spells
             .into_iter()
             .map(|f| Spell::try_from_database(f, sheet))
-            .filter_map(|f| f.ok())
+            .filter_map(std::result::Result::ok)
             .collect();
 
-        Ok(Global {
+        Ok(Self {
             items: vec![],
             spells,
             conditions,

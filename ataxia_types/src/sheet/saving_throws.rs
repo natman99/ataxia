@@ -1,4 +1,3 @@
-use std::io::IsTerminal;
 
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;

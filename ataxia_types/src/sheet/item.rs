@@ -1,4 +1,3 @@
-use std::str::FromStr;
 
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
@@ -10,7 +9,7 @@ use rhai::CustomType;
 
 use crate::{
     feature::{Feature, HasFeature},
-    roll::{Die, Rollable},
+    roll::Rollable,
     sheet::{
         roll::Roll,
         source::{HasSource, Source},
@@ -84,11 +83,7 @@ impl Rollable for Item {
         rng: &mut impl rand::Rng,
         special: Option<super::roll::RollModifier>,
     ) -> Option<super::roll::RollResult> {
-        if let Some(ref r) = self.roll {
-            Some(r.roll(rng, special))
-        } else {
-            None
-        }
+        self.roll.as_ref().map(|r| r.roll(rng, special))
     }
 }
 
@@ -114,7 +109,7 @@ impl HasFeature for Item {
     fn add(&mut self, feature: super::feature::Effect) {
         if self.feature.is_none() {
             self.feature = Some(Feature {
-                source: self.source().map(|f| f.clone()),
+                source: self.source().cloned(),
                 effects: vec![],
             });
         }

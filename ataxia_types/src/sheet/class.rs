@@ -154,12 +154,12 @@ impl Class {
         self.level.0
     }
 
-    pub fn set_level(&mut self, level: i64) -> () {
+    pub fn set_level(&mut self, level: i64) {
         self.level.0 = level;
         self.max_healing_die = level;
     }
 
-    pub fn set_class(&mut self, class: &str) -> () {
+    pub fn set_class(&mut self, class: &str) {
         // Cannot fail
         let Ok(class) = ClassType::from_str(class) else {
             return;
@@ -175,9 +175,9 @@ impl Class {
             level,
             hit_dice: class.get_hit_dice(),
             health_bonus_per_level: 0,
-            healing_die_remaining: level.0 as i64,
+            healing_die_remaining: level.0,
             class,
-            max_healing_die: level.0 as i64,
+            max_healing_die: level.0,
         }
     }
 }

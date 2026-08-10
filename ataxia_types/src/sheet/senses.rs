@@ -17,6 +17,7 @@ use crate::{AbilityScores, Score};
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[cfg_attr(feature = "serde", serde(default))]
 #[cfg_attr(feature = "rhai", derive(CustomType))]
+#[derive(Default)]
 pub struct Senses {
     pub perception_bonus: i64,
     pub investigation_bonus: i64,
@@ -42,16 +43,6 @@ impl Senses {
     }
 }
 
-impl Default for Senses {
-    fn default() -> Self {
-        Self {
-            extra: Default::default(),
-            perception_bonus: 0,
-            investigation_bonus: 0,
-            insight_bonus: 0,
-        }
-    }
-}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]

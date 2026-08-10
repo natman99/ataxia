@@ -386,7 +386,7 @@ impl Skills {
             bonus
         };
 
-        let total = base_modifier + bonus as i64;
-        total
+        
+        base_modifier + bonus
     }
 }

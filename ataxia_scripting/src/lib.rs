@@ -18,7 +18,7 @@ use ataxia_types::{
     spells::{Spell, Spells},
 };
 use regex::Regex;
-use rhai::{Dynamic, Engine, Module, Scope, combine_with_exported_module, plugin::RhaiResult};
+use rhai::{Dynamic, Engine, Module, Scope, combine_with_exported_module};
 
 #[cfg(test)]
 mod tests;
@@ -38,6 +38,12 @@ pub struct Interface {
     pub result: Arc<Mutex<String>>,
 }
 
+impl Default for Interface {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Interface {
     pub fn new() -> Self {
         let mut engine = Engine::new();
@@ -52,7 +58,7 @@ impl Interface {
         register_engine_functions(&mut engine);
 
         Interface {
-            engine: engine,
+            engine,
             spells: Default::default(),
             conditions: Default::default(),
             result,

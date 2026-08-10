@@ -67,7 +67,7 @@ impl Roll {
     pub fn new(dice: &[Die], bonus: i32) -> Self {
         Self {
             dice: Vec::from(dice),
-            bonus: bonus,
+            bonus,
         }
     }
 
@@ -157,7 +157,7 @@ impl FromStr for Roll {
         if dice.is_empty() && bonus == 0 {
             return Err(RollParseError::ParseFailed);
         }
-        Ok(Self { dice, bonus: bonus })
+        Ok(Self { dice, bonus })
     }
 }
 
@@ -166,11 +166,11 @@ impl Display for Roll {
         let mut out = String::new();
         let mut m = HashMap::new();
         for i in &self.dice {
-            if m.contains_key(&i.max()) {
+            if let std::collections::hash_map::Entry::Vacant(e) = m.entry(i.max()) {
+                e.insert(1);
+            } else {
                 let c = m.get_mut(&i.max()).unwrap();
                 *c += 1;
-            } else {
-                m.insert(i.max(), 1);
             }
         }
 

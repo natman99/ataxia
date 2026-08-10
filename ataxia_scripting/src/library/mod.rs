@@ -25,7 +25,6 @@ pub mod library {
             .iter()
             .map(|f| Dynamic::from_int(*f))
             .collect::<Vec<Dynamic>>()
-            .into()
     }
 
     pub fn set_bonus(initiative: &mut Initiative, b: i64) {
@@ -477,9 +476,9 @@ pub mod library {
     pub mod skills {
         use std::str::FromStr;
 
-        use super::*;
+        
         use ataxia_types::{Score, skills::Skill};
-        use rhai::{Dynamic, ImmutableString};
+        use rhai::ImmutableString;
 
         pub fn add(skills: &mut ataxia_types::skills::Skills, name: ImmutableString) {
             let Ok(skill) = Skill::try_from(name.as_str()) else {

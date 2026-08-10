@@ -90,7 +90,7 @@ pub enum BasicMessage {
     Reaction(bool),
 }
 
-pub fn scores<'a>(sheet: &'a Character) -> Container<'a, Message> {
+pub fn scores(sheet: &Character) -> Container<'_, Message> {
     let labels: Vec<Element<Message>> = ["str", "dex", "con", "int", "wis", "cha"]
         .iter()
         .map(|f| text!("{f}").into())
@@ -140,7 +140,7 @@ pub fn health<'a>(sheet: &'a Character, state: &'a BasicState) -> Container<'a, 
     let input_col = column![heal, input, damage];
     let input_col = container(input_col).center(Length::Fill);
 
-    let labels = vec!["hp", "of", "max", "tmp"];
+    let labels = ["hp", "of", "max", "tmp"];
 
     let hp = vec![
         text!("{current}"),
@@ -154,13 +154,13 @@ pub fn health<'a>(sheet: &'a Character, state: &'a BasicState) -> Container<'a, 
             .align_x(Alignment::Center)
             .into()
     });
-    let t = Row::from_iter(t.into_iter()).spacing(12);
+    let t = Row::from_iter(t).spacing(12);
 
     let r = column![t, input_col];
     container(r)
 }
 
-pub fn skills<'a>(sheet: &'a Character) -> Container<'a, Message> {
+pub fn skills(sheet: &Character) -> Container<'_, Message> {
     let skill_names = Skill::ALL_STR_PRETTY;
 
     let prof: Vec<Element<Message>> = Skill::ALL
@@ -196,7 +196,7 @@ pub fn skills<'a>(sheet: &'a Character) -> Container<'a, Message> {
 
     let r = Column::from_vec(rows);
 
-    container(r).style(container::secondary).padding(12).into()
+    container(r).style(container::secondary).padding(12)
 }
 
 fn reaction(basic: &BasicState) -> Container<'_, Message> {
@@ -206,7 +206,7 @@ fn reaction(basic: &BasicState) -> Container<'_, Message> {
     container(x)
 }
 
-fn passive_senses<'a>(sheet: &'a Character) -> Container<'a, Message> {
+fn passive_senses(sheet: &Character) -> Container<'_, Message> {
     let x = text("Passive Senses")
         .style(text::secondary)
         // .size(14)
@@ -225,7 +225,7 @@ fn passive_senses<'a>(sheet: &'a Character) -> Container<'a, Message> {
     container(z).style(container::bordered_box).padding(12)
 }
 
-fn ac_init_prof_speed<'a>(sheet: &'a Character) -> Container<'a, Message> {
+fn ac_init_prof_speed(sheet: &Character) -> Container<'_, Message> {
     let c = column![
         text!("Proficiency bonus {}", sheet.skills.proficiency_bonus),
         text!("AC {}", sheet.armor_class),
@@ -237,7 +237,7 @@ fn ac_init_prof_speed<'a>(sheet: &'a Character) -> Container<'a, Message> {
     container(c).style(container::bordered_box).padding(12)
 }
 
-pub fn saving_throws<'a>(sheet: &'a Character) -> Container<'a, Message> {
+pub fn saving_throws(sheet: &Character) -> Container<'_, Message> {
     let prof: Vec<Element<Message>> = Score::ALL
         .iter()
         .map(|f| {
@@ -267,18 +267,18 @@ pub fn saving_throws<'a>(sheet: &'a Character) -> Container<'a, Message> {
 
     let r = Column::from_vec(rows);
 
-    container(r).style(container::secondary).padding(12).into()
+    container(r).style(container::secondary).padding(12)
 }
 
-fn character_details<'a>(sheet: &'a Character) -> Container<'a, Message> {
+fn character_details(sheet: &Character) -> Container<'_, Message> {
     let subclasses = sheet
         .classes
         .iter()
         .map(|f| format!("{} ", f.subclass))
         .collect::<String>();
     let a = [
-        sheet.name.to_string(),
-        sheet.race.to_string(),
+        sheet.name.clone(),
+        sheet.race.clone(),
         format!("{}", sheet.classes),
         subclasses,
     ]
@@ -296,20 +296,20 @@ fn badge<'a>(top: &'a str, bottom: &'a str) -> Container<'a, Message> {
     container(c)
 }
 
-fn meters<'a>(sheet: &'a Character) -> Container<'a, Message> {
+fn meters(sheet: &Character) -> Container<'_, Message> {
     let mut rows = vec![];
     const BOX: char = '■';
     for m in sheet.meters.meters.values() {
         let max = m.slot_number;
         let remaining = max - m.spent;
 
-        let mut r = row![text!("{} ", m.name.to_string())];
+        let mut r = row![text!("{} ", m.name.clone())];
 
         for _ in 0..m.spent {
             r = r.push(
                 checkbox(true)
                     .size(22)
-                    .on_toggle(|_| Message::Meter(MeterMessage::Restore(m.name.to_string()))),
+                    .on_toggle(|_| Message::Meter(MeterMessage::Restore(m.name.clone()))),
             );
         }
 
@@ -317,7 +317,7 @@ fn meters<'a>(sheet: &'a Character) -> Container<'a, Message> {
             r = r.push(
                 checkbox(false)
                     .size(22)
-                    .on_toggle(|_| Message::Meter(MeterMessage::Spend(m.name.to_string()))),
+                    .on_toggle(|_| Message::Meter(MeterMessage::Spend(m.name.clone()))),
             );
         }
 
