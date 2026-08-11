@@ -1,4 +1,3 @@
-
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
 #[cfg(feature = "serde")]
@@ -29,6 +28,7 @@ pub enum DamageType {
 #[cfg(test)]
 mod test {
     use super::*;
+    use std::str::FromStr;
     #[test]
     fn test_damage() {
         DamageType::from_str("acid").unwrap();
