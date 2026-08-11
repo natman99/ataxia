@@ -95,6 +95,11 @@ impl From<String> for Language {
         Self::from_str(&value).expect("Cannot fail")
     }
 }
+impl From<&str> for Language {
+    fn from(value: &str) -> Self {
+        Self::from_str(value).expect("Cannot fail")
+    }
+}
 
 impl FromStr for Language {
     type Err = ();
