@@ -61,6 +61,7 @@ fn spell() {
         s.component("V");
         s.area("Cube", 12);
         s.desc("Goes boom");
+        s.desc = "Goes boom";
         s.cast_time = "1 action";
         s.cast_time("1 action");
         s.duration("Instant");
@@ -243,7 +244,7 @@ fn skills() {
         skills.expertise("acrobatics");
         skills.proficiency_bonus = 4;
 
-        skills.overrides.set("acrobatics", "str");
+        skills.overrides.set("acrobatics", Str);
 
         "#;
     let c = i.execute(script, None).unwrap();
@@ -293,7 +294,7 @@ fn interactive_roll() {
 fn ability_modifier() {
     let mut i = Interface::new();
     let script = r#"
-        ability_modifier = "dex";
+        ability_modifier = Dex;
         "#;
     let c = i.execute(script, None).unwrap();
     assert_eq!(c.ability_modifier, Score::Dex);

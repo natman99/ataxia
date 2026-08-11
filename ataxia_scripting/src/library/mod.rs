@@ -1,7 +1,9 @@
 #[rhai::export_module]
 pub mod library {
+    use std::str::FromStr;
+
     use ataxia_types::{
-        Initiative, Item,
+        Initiative, Item, Score,
         class::Class,
         feat::Feat,
         feature::{Effect, Feature, HasFeature},
@@ -31,20 +33,37 @@ pub mod library {
         initiative.bonus = b;
     }
 
-    pub fn set_max(hp: &mut HitPoints, v: i64) {
-        hp.max = v;
+    // ability modifier
+    pub fn set_score(score: &mut Score, s: Score) {
+        *score = s;
     }
 
-    pub fn set_current(hp: &mut HitPoints, v: i64) {
-        hp.current = v;
+    #[allow(non_upper_case_globals)]
+    pub mod score {
+        use ataxia_types::Score;
+
+        pub const Str: Score = Score::Str;
+        pub const Dex: Score = Score::Dex;
+        pub const Con: Score = Score::Con;
+        pub const Int: Score = Score::Int;
+        pub const Wis: Score = Score::Wis;
+        pub const Cha: Score = Score::Cha;
     }
 
-    pub fn set_level_bonus(hp: &mut HitPoints, v: i64) {
-        hp.level_bonus = v;
-    }
+    // -- health submodule --
+    pub mod health {
 
-    pub fn set_subclass(class: &mut Class, new: ImmutableString) {
-        class.subclass = new.to_string();
+        pub fn set_max(hp: &mut HitPoints, v: i64) {
+            hp.max = v;
+        }
+
+        pub fn set_current(hp: &mut HitPoints, v: i64) {
+            hp.current = v;
+        }
+
+        pub fn set_level_bonus(hp: &mut HitPoints, v: i64) {
+            hp.level_bonus = v;
+        }
     }
 
     // -- meter submodule --
@@ -93,6 +112,10 @@ pub mod library {
                 return;
             };
             class.hit_dice = d;
+        }
+
+        pub fn set_subclass(class: &mut Class, new: ImmutableString) {
+            class.subclass = new.to_string();
         }
     }
 
@@ -174,31 +197,18 @@ pub mod library {
             spell.spell_type = SpellType::Ranged;
         }
 
-        pub fn saving(spell: &mut Spell, dc_type: ImmutableString) {
-            let Ok(s) = Score::from_str(dc_type.as_str()) else {
-                return;
-            };
+        pub fn saving(spell: &mut Spell, dc_type: Score) {
             spell.spell_type = SpellType::Saving {
-                dc_type: s,
+                dc_type,
                 success: ataxia_types::spells::Success::Half,
             };
         }
 
-        pub fn saving_success(
-            spell: &mut Spell,
-            dc_type: ImmutableString,
-            success: ImmutableString,
-        ) {
-            let Ok(s) = Score::from_str(dc_type.as_str()) else {
-                return;
-            };
+        pub fn saving_success(spell: &mut Spell, dc_type: Score, success: ImmutableString) {
             let Ok(success) = Success::from_str(success.as_str()) else {
                 return;
             };
-            spell.spell_type = SpellType::Saving {
-                dc_type: s,
-                success,
-            };
+            spell.spell_type = SpellType::Saving { dc_type, success };
         }
 
         pub fn damage(spell: &mut Spell, damage: ImmutableString, element: ImmutableString) {
@@ -364,7 +374,7 @@ pub mod library {
     pub mod senses {
         use super::*;
 
-        #[rhai_fn(get = "darkvision")]
+        #[rhai_fn(get = "darkvision", pure)]
         pub fn darkvision_get(s: &mut Senses) -> bool {
             s.extra.dark_vision
         }
@@ -374,7 +384,7 @@ pub mod library {
             s.extra.dark_vision = v;
         }
 
-        #[rhai_fn(get = "tremor_sense")]
+        #[rhai_fn(get = "tremor_sense", pure)]
         pub fn tremor_sense_get(s: &mut Senses) -> bool {
             s.extra.tremor_sense
         }
@@ -384,7 +394,7 @@ pub mod library {
             s.extra.tremor_sense = v;
         }
 
-        #[rhai_fn(get = "blindsight")]
+        #[rhai_fn(get = "blindsight", pure)]
         pub fn blindsight_get(s: &mut Senses) -> bool {
             s.extra.blind_sight
         }
@@ -394,7 +404,7 @@ pub mod library {
             s.extra.blind_sight = v;
         }
 
-        #[rhai_fn(get = "truesight")]
+        #[rhai_fn(get = "truesight", pure)]
         pub fn truesight_get(s: &mut Senses) -> bool {
             s.extra.true_sight
         }
@@ -410,7 +420,7 @@ pub mod library {
     pub mod saving_throws {
         use super::*;
 
-        #[rhai_fn(get = "str")]
+        #[rhai_fn(get = "str", pure)]
         pub fn str_get(st: &mut SavingThrows) -> bool {
             st.str
         }
@@ -420,7 +430,7 @@ pub mod library {
             st.str = v;
         }
 
-        #[rhai_fn(get = "dex")]
+        #[rhai_fn(get = "dex", pure)]
         pub fn dex_get(st: &mut SavingThrows) -> bool {
             st.dex
         }
@@ -430,7 +440,7 @@ pub mod library {
             st.dex = v;
         }
 
-        #[rhai_fn(get = "con")]
+        #[rhai_fn(get = "con", pure)]
         pub fn con_get(st: &mut SavingThrows) -> bool {
             st.con
         }
@@ -440,7 +450,7 @@ pub mod library {
             st.con = v;
         }
 
-        #[rhai_fn(get = "int")]
+        #[rhai_fn(get = "int", pure)]
         pub fn int_get(st: &mut SavingThrows) -> bool {
             st.int
         }
@@ -450,7 +460,7 @@ pub mod library {
             st.int = v;
         }
 
-        #[rhai_fn(get = "wis")]
+        #[rhai_fn(get = "wis", pure)]
         pub fn wis_get(st: &mut SavingThrows) -> bool {
             st.wis
         }
@@ -460,7 +470,7 @@ pub mod library {
             st.wis = v;
         }
 
-        #[rhai_fn(get = "cha")]
+        #[rhai_fn(get = "cha", pure)]
         pub fn cha_get(st: &mut SavingThrows) -> bool {
             st.cha
         }
@@ -476,7 +486,6 @@ pub mod library {
     pub mod skills {
         use std::str::FromStr;
 
-        
         use ataxia_types::{Score, skills::Skill};
         use rhai::ImmutableString;
 
@@ -498,12 +507,9 @@ pub mod library {
         pub fn set(
             overrides: &mut ataxia_types::skills::Overrides,
             skill: ImmutableString,
-            score: ImmutableString,
+            score: Score,
         ) {
             let Ok(skill) = Skill::try_from(skill.as_str()) else {
-                return;
-            };
-            let Ok(score) = Score::from_str(score.as_str()) else {
                 return;
             };
             match skill {
@@ -533,13 +539,49 @@ pub mod library {
     pub mod scores {
         use ataxia_types::ability_score::AbilityScore;
 
+        #[rhai_fn(pure)]
         pub fn get(score: &mut AbilityScore) -> i64 {
             score.get()
         }
 
-        #[rhai_fn(name = "mod", name = "modifier")]
+        #[rhai_fn(name = "mod", name = "modifier", pure)]
         pub fn modifier(score: &mut AbilityScore) -> i64 {
             score.modifier()
+        }
+    }
+
+    pub mod lore {
+
+        use std::str::FromStr;
+
+        use ataxia_types::lore::{Alignment, Morality, Order};
+
+        use super::*;
+
+        #[rhai_fn(set = "morality")]
+        pub fn set_morality(a: &mut Alignment, v: ImmutableString) {
+            let Ok(v) = Morality::from_str(v.as_str()) else {
+                return;
+            };
+            a.morality = v;
+        }
+
+        #[rhai_fn(set = "order")]
+        pub fn set_order(a: &mut Alignment, v: ImmutableString) {
+            let Ok(v) = Order::from_str(v.as_str()) else {
+                return;
+            };
+            a.order = v;
+        }
+    }
+
+    pub mod language {
+        use ataxia_types::language::{Language, Languages};
+        use rhai::ImmutableString;
+
+        pub fn add(l: &mut Languages, s: ImmutableString) {
+            let s = Language::from(s.as_str());
+            l.languages.push(s);
         }
     }
 }
