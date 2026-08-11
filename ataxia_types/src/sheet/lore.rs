@@ -40,6 +40,7 @@ impl Display for Alignment {
 #[derive(Debug, Clone, PartialEq, Default, strum::EnumString)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[strum(ascii_case_insensitive)]
 pub enum Morality {
     #[default]
     Good,
@@ -63,6 +64,7 @@ impl Display for Morality {
 #[derive(Debug, Clone, PartialEq, Default, strum::EnumString)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[strum(ascii_case_insensitive)]
 pub enum Order {
     #[default]
     Lawful,
