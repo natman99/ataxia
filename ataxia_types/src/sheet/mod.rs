@@ -311,7 +311,7 @@ impl AbilityScores {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Default, EnumString)]
+#[derive(Debug, Clone, Copy, PartialEq, Default, EnumString, Hash, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[strum(ascii_case_insensitive)]
@@ -401,7 +401,6 @@ impl Display for ArmorClass {
 pub struct Initiative {
     pub bonus: i64,
 }
-
 
 impl Initiative {
     pub fn get(&self, scores: &AbilityScores) -> i64 {
