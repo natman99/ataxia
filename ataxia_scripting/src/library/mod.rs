@@ -555,6 +555,7 @@ pub mod library {
         use std::str::FromStr;
 
         use ataxia_types::lore::{Alignment, Morality, Order};
+        use rhai::ImmutableString;
 
         use super::*;
 
@@ -572,6 +573,17 @@ pub mod library {
                 return;
             };
             a.order = v;
+        }
+
+        pub fn set(a: &mut Alignment, order: ImmutableString, morality: ImmutableString) {
+            let Ok(m) = Morality::from_str(morality.as_str()) else {
+                return;
+            };
+            let Ok(o) = Order::from_str(order.as_str()) else {
+                return;
+            };
+            a.morality = m;
+            a.order = o;
         }
     }
 
