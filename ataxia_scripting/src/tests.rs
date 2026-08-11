@@ -7,10 +7,10 @@ use ataxia_types::{
     language::Language,
     lore::{Morality, Order},
     meter::{Meter, RestoreTime},
-    roll::Roll,
+    roll::{Die, Roll},
     skills::Skill,
     source::Source,
-    spells::{self, Area, Component, Damage, School, Spell, SpellType},
+    spells::{self, Area, Component, Damage, Heal, School, Spell, SpellType, Success},
 };
 
 use super::Interface;
@@ -31,7 +31,10 @@ fn class() {
         classes[0].set_level(2);
         classes[0].set_class("wizard");
         classes[0].set_subclass("School of Necromancy");
+        classes[0].set_hit_die("d6");
         classes[0].subclass = "pie subclass";
+        classes[0].healing_die_remaining = 3;
+        classes[0].health_bonus_per_level = 2;
         "#;
     let c = i.execute(script, None).unwrap();
     assert_eq!(c.classes[0].level, Level(2));
@@ -40,6 +43,8 @@ fn class() {
     assert_eq!(c.classes[0].hit_dice, ClassType::Wizard.get_hit_dice());
     assert_eq!(c.classes[0].max_healing_die, 2);
     assert_eq!(c.classes[0].subclass, "pie subclass");
+    assert_eq!(c.classes[0].healing_die_remaining, 3);
+    assert_eq!(c.classes[0].health_bonus_per_level, 2);
 
     let script = r#"
         classes[0].level = 19;
@@ -127,11 +132,13 @@ fn health() {
         health.set_max(13);
         health.set_current(11);
         health.set_level_bonus(1);
+        health.bonus = 5;
         "#;
     let c = i.execute(script, None).unwrap();
     assert_eq!(c.health.max, 13);
     assert_eq!(c.health.current, 11);
     assert_eq!(c.health.level_bonus, 1);
+    assert_eq!(c.health.bonus, 5);
 }
 
 #[test]
@@ -219,9 +226,19 @@ fn saving_throws() {
     let mut i = Interface::new();
     let script = r#"
         saving_throws.str = true;
+        saving_throws.dex = true;
+        saving_throws.con = true;
+        saving_throws.int = true;
+        saving_throws.wis = true;
+        saving_throws.cha = true;
         "#;
     let c = i.execute(script, None).unwrap();
     assert_eq!(c.saving_throws.str, true);
+    assert_eq!(c.saving_throws.dex, true);
+    assert_eq!(c.saving_throws.con, true);
+    assert_eq!(c.saving_throws.int, true);
+    assert_eq!(c.saving_throws.wis, true);
+    assert_eq!(c.saving_throws.cha, true);
 }
 
 #[test]
@@ -265,10 +282,14 @@ fn senses() {
     let script = r#"
         senses.darkvision = true;
         senses.tremor_sense = true;
+        senses.blindsight = true;
+        senses.truesight = true;
         "#;
     let c = i.execute(script, None).unwrap();
     assert_eq!(c.senses.extra.dark_vision, true);
     assert_eq!(c.senses.extra.tremor_sense, true);
+    assert_eq!(c.senses.extra.blind_sight, true);
+    assert_eq!(c.senses.extra.true_sight, true);
 }
 
 #[test]
@@ -343,4 +364,141 @@ fn languages() {
             .languages
             .contains(&Language::Other("spanish".to_string()))
     )
+}
+
+#[test]
+fn spell_variants() {
+    let mut i = Interface::new();
+
+    // heal spell
+    let script = r#"
+        let s = spell("Healing Word");
+        s.heal("2d4");
+        s.level(1);
+        s.automatic();
+        s.school("Evocation");
+        spells.add(s);
+        "#;
+    let c = i.execute(script, None).unwrap();
+    let spell = c.spells.spells.get("Healing Word").unwrap();
+    assert_eq!(spell.spell_type, SpellType::Automatic);
+    assert_eq!(
+        spell.effect,
+        spells::Effect::Heal(spells::Heal::Roll(Roll::from_str("2d4").unwrap()))
+    );
+
+    // ranged spell
+    let script = r#"
+        let s = spell("Ray of Frost");
+        s.ranged();
+        s.damage("1d8", "cold");
+        spells.add(s);
+        "#;
+    let c = i.execute(script, None).unwrap();
+    let spell = c.spells.spells.get("Ray of Frost").unwrap();
+    assert_eq!(spell.spell_type, SpellType::Ranged);
+}
+
+#[test]
+fn spell_saving() {
+    let mut i = Interface::new();
+    let script = r#"
+        let s = spell("Fireball");
+        s.saving(Dex);
+        s.damage("8d6", "fire");
+        spells.add(s);
+        "#;
+    let c = i.execute(script, None).unwrap();
+    let spell = c.spells.spells.get("Fireball").unwrap();
+    assert!(matches!(
+        spell.spell_type,
+        SpellType::Saving {
+            dc_type: Score::Dex,
+            success: Success::Half
+        }
+    ));
+}
+
+#[test]
+fn spell_saving_success() {
+    let mut i = Interface::new();
+    let script = r#"
+        let s = spell("Cone of Cold");
+        s.saving_success(Dex, "None");
+        s.damage("8d8", "cold");
+        spells.add(s);
+        "#;
+    let c = i.execute(script, None).unwrap();
+    let spell = c.spells.spells.get("Cone of Cold").unwrap();
+    assert!(matches!(
+        spell.spell_type,
+        SpellType::Saving {
+            dc_type: Score::Dex,
+            success: Success::None
+        }
+    ));
+}
+
+#[test]
+fn spell_heal_static() {
+    let mut i = Interface::new();
+    let script = r#"
+        let s = spell("Vital Wand");
+        s.heal("full hp");
+        spells.add(s);
+        "#;
+    let c = i.execute(script, None).unwrap();
+    let spell = c.spells.spells.get("Vital Wand").unwrap();
+    assert_eq!(
+        spell.effect,
+        spells::Effect::Heal(Heal::Static("full hp".to_string()))
+    );
+}
+
+#[test]
+fn meter_functions() {
+    let mut i = Interface::new();
+    let script = r#"
+        let m = meter("second", 4);
+        m.long_rest();
+        m.short_rest();
+        m.source("subclass feature");
+        meters.add(m);
+        "#;
+    let c = i.execute(script, None).unwrap();
+    assert_eq!(
+        c.meters.meters["second"],
+        Meter {
+            name: "second".to_string(),
+            slot_number: 4,
+            spent: 0,
+            restore: RestoreTime {
+                short_rest: true,
+                long_rest: true
+            },
+            source: Some(Source::Single("subclass feature".to_string()))
+        }
+    );
+}
+
+#[test]
+fn class_full() {
+    let mut i = Interface::new();
+    let script = r#"
+        classes[0].set_class("barbarian");
+        classes[0].set_level(5);
+        classes[0].set_hit_die("d12");
+        classes[0].set_subclass("Path of the Totem Warrior");
+        classes[0].healing_die_remaining = 0;
+        classes[0].health_bonus_per_level = 1;
+        classes[0].max_healing_die = 5;
+        "#;
+    let c = i.execute(script, None).unwrap();
+    assert_eq!(c.classes[0].class, ClassType::Barbarian);
+    assert_eq!(c.classes[0].level, Level(5));
+    assert_eq!(c.classes[0].hit_dice, Die::D12);
+    assert_eq!(c.classes[0].subclass, "Path of the Totem Warrior");
+    assert_eq!(c.classes[0].healing_die_remaining, 0);
+    assert_eq!(c.classes[0].health_bonus_per_level, 1);
+    assert_eq!(c.classes[0].max_healing_die, 5);
 }
