@@ -32,7 +32,7 @@ pub enum RollParseError {
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
-#[cfg_attr(feature = "serde", serde(default))]
+#[cfg_attr(feature = "serde", serde(default), serde(try_from = "String"))]
 #[cfg_attr(feature = "rhai", derive(CustomType))]
 /// A dice roll. Can contain multiple dice.
 pub struct Roll {
@@ -158,6 +158,16 @@ impl FromStr for Roll {
             return Err(RollParseError::ParseFailed);
         }
         Ok(Self { dice, bonus })
+    }
+}
+
+impl TryFrom<String> for Roll {
+    type Error = String;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        Ok(Self::from_str(value.as_str()).map_err(|_| {
+            "Failed to parse roll. 'mod' and other placeholders are not supported".to_string()
+        })?)
     }
 }
 
