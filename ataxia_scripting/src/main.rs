@@ -1,12 +1,24 @@
 use std::fs;
 
-fn main() {
+use url::Url;
+
+#[tokio::main]
+async fn main() {
     // rhai::CustomType;
-    let mut e = ataxia_scripting::Interface::new();
+    //
+    //
+    env_logger::init();
 
-    let s = fs::read_to_string("test.rhai").unwrap();
-
-    let c = e.execute(&s, None).unwrap();
-
-    dbg!(c);
+    let z = ataxia_scripting::registry::scrape_websites("silvery barbs")
+        .await
+        .unwrap();
+    let r = ataxia_scripting::registry::ask_llm(
+        z,
+        Url::parse("http://localhost:8080/v1").unwrap(),
+        None,
+        "Qwen3-8B-Q8_0",
+    )
+    .await
+    .unwrap();
+    println!("{r:?}");
 }

@@ -11,3 +11,12 @@ anyhow = { workspace = true }
 rhai = { workspace = true, features = ["sync"] }
 rand.workspace = true
 regex = "1.13.1"
+scraper = "0.27.0"
+thiserror.workspace = true
+reqwest = {version = "0.13.4", features = ["blocking"] }
+url = "2.5.8"
+env_logger = "0.11.11"
+log.workspace = true
+rig = "0.41.0"
+schemars = "1.2.2"
+tokio = { version = "1.53.1", features = ["full"] }

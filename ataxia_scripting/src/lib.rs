@@ -25,6 +25,9 @@ mod tests;
 
 mod library;
 
+pub mod registry;
+pub use registry::Registry;
+
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
 pub enum Command {
     FixedHp,
