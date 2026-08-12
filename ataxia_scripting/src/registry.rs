@@ -68,7 +68,6 @@ pub(crate) fn parsednd5e(s: &str) -> Result<String, FetchError> {
     let selector = Selector::parse("#page-content").unwrap();
 
     let Some(inner) = document.select(&selector).next() else {
-        fs::write("dummy.html", s).unwrap();
         return Err(FetchError::ParseError);
     };
 
