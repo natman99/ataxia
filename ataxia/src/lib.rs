@@ -1,10 +1,4 @@
-use std::{
-    collections::BTreeMap,
-    env,
-    ops::Deref,
-    path::PathBuf,
-    sync::Arc,
-};
+use std::{collections::BTreeMap, env, ops::Deref, path::PathBuf, sync::Arc};
 
 use ataxia_scripting::Interface;
 use ataxia_types::Character;
@@ -22,12 +16,8 @@ use notify::{
 use rfd::FileHandle;
 use tokio::{fs, io, task};
 
-use crate::{
-    global::Global,
-    views::{BasicMessage, BasicState},
-};
+use crate::views::{BasicMessage, BasicState};
 
-mod global;
 mod views;
 
 #[derive(Clone, Debug)]
@@ -76,7 +66,7 @@ pub enum Mode {
 #[derive(Debug)]
 pub struct App {
     windows: BTreeMap<Id, State>,
-    global: Option<Arc<Global>>,
+    // global: Option<Arc<Global>>,
     sheet: Option<Character>,
     basic_state: BasicState,
     sheet_path: Option<PathBuf>,
@@ -90,7 +80,7 @@ impl<'a> App {
         (
             Self {
                 windows: BTreeMap::new(),
-                global: None,
+                // global: None,
                 sheet: None,
                 basic_state: Default::default(),
                 sheet_path: None,
