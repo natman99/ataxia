@@ -32,19 +32,33 @@ use anyhow::Context;
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[cfg_attr(feature = "rhai", derive(CustomType))]
 pub struct Spell {
+    /// The name of the spell.
     pub name: String,
+    /// The spell's description.
     pub desc: String,
+    /// THe spell's range.
     pub range: String,
+    /// The spell's casting time.
     pub cast_time: String,
+    /// If the spell is concentration.
     pub concentration: bool,
+    /// The duration of the spell.
     pub duration: String,
+    /// If the spell can be cast as a ritual.
     pub ritual: bool,
+    /// The spell's level
     pub level: i64,
+    /// The type of the spell.
     pub spell_type: SpellType,
+    /// The effect of the spell.
     pub effect: Effect,
+    /// The spell's school,
     pub school: School,
+    /// Optional: The area that the spell affects.
     pub area: Option<Area>,
+    /// Components that the spell requires.
     pub components: Vec<Component>,
+    /// The source of the spell.
     pub source: Option<Source>,
 }
 
@@ -61,8 +75,11 @@ pub struct Area {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub enum Effect {
+    /// The spell deals damage.
     Damage(Damage),
+    /// The spell heals.
     Heal(Heal),
+    /// The spell has some other effect.
     Other,
 }
 
@@ -80,7 +97,9 @@ impl Default for Effect {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub enum Heal {
+    /// The spell heals a static amount.
     Static(String),
+    /// The spell heals a rolled amount.
     Roll(Roll),
 }
 
@@ -89,10 +108,13 @@ pub enum Heal {
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub enum Component {
     #[strum(serialize = "V")]
+    /// Verbal component. Deserialized as "V".
     Verbal,
     #[strum(serialize = "S")]
+    /// Semantic component. Deserialized as "S".
     Semantic,
     #[strum(serialize = "M")]
+    /// Material component. Deserialized as "M".
     Material,
 }
 
@@ -100,7 +122,9 @@ pub enum Component {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct Damage {
+    /// The damage type of the spell.
     pub damage_type: DamageType,
+    /// The damage roll
     pub damage: Roll,
 }
 
@@ -115,7 +139,7 @@ pub enum SpellType {
     Ranged,
     /// Melee attack roll
     Melee,
-    /// Automatic success
+    /// Automatic success (no attack roll)
     Automatic,
 }
 
@@ -126,8 +150,11 @@ pub enum SpellType {
 #[strum(ascii_case_insensitive)]
 pub enum Success {
     #[default]
+    /// Half damage
     Half,
+    /// No damage
     None,
+    /// Some other effect (make sure note is in description)
     Other,
 }
 
@@ -191,8 +218,7 @@ impl Spell {
                         heal.n3.or_else(|| {
                             heal.n4.or_else(|| {
                                 heal.n5.or_else(|| {
-                                    heal.n6
-                                        .or_else(|| heal.n7.or_else(|| heal.n8.or(heal.n9)))
+                                    heal.n6.or_else(|| heal.n7.or_else(|| heal.n8.or(heal.n9)))
                                 })
                             })
                         })
@@ -235,9 +261,7 @@ impl Spell {
                         a.n2.or_else(|| {
                             a.n3.or_else(|| {
                                 a.n4.or_else(|| {
-                                    a.n5.or_else(|| {
-                                        a.n6.or_else(|| a.n7.or_else(|| a.n8.or(a.n9)))
-                                    })
+                                    a.n5.or_else(|| a.n6.or_else(|| a.n7.or_else(|| a.n8.or(a.n9))))
                                 })
                             })
                         })

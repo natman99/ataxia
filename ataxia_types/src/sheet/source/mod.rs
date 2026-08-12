@@ -15,7 +15,9 @@ pub trait HasSource {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub enum Source {
+    /// Source single string
     Single(String),
+    /// Source with a page number if provided
     Book { book: String, page: u32 },
 }
 
