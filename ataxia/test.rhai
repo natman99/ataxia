@@ -4,4 +4,4 @@ health.max = 26;
 
 // saving_throws.str = true;
 //
-skills.acrobatics = true;
+skills.add("acrobatics");
