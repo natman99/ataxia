@@ -1,4 +1,11 @@
-use std::{collections::BTreeMap, env, ops::Deref, path::PathBuf, sync::Arc};
+use std::{
+    collections::BTreeMap,
+    env,
+    ops::Deref,
+    path::{Path, PathBuf},
+    sync::Arc,
+    time::{Duration, Instant},
+};
 
 use ataxia_scripting::Interface;
 use ataxia_types::Character;
@@ -9,6 +16,7 @@ use iced::{
     widget::{button, column, container, text},
     window::{self, Id},
 };
+use log::warn;
 use notify::{
     EventKind, RecommendedWatcher, Watcher,
     event::{AccessKind, AccessMode, DataChange},
@@ -27,9 +35,13 @@ pub enum Message {
     Meter(MeterMessage),
     OpenFilePicker,
     FilePicked(Option<FileHandle>),
-    FileLoaded(Arc<io::Result<String>>),
+    FileLoaded {
+        main: Arc<io::Result<String>>,
+        backup: Option<Arc<io::Result<String>>>,
+    },
     FileModified,
     WatcherCreated(tokio::sync::mpsc::Sender<PathBuf>),
+    AutoSave(Instant),
 }
 
 #[derive(Clone, Debug)]
@@ -97,7 +109,25 @@ impl<'a> App {
                 WindowMessage::WindowClosed(id) => {
                     self.windows.remove(&id);
                     if self.windows.is_empty() {
-                        iced::exit()
+                        println!("Closing window");
+                        if let Some(ref s) = self.sheet {
+                            let c = self
+                                .sheet_path
+                                .as_ref()
+                                .expect("Always a path when a character exists");
+                            let c = get_backup_path(&c);
+                            let contents =
+                                serde_json::to_string_pretty(s).expect("Should never fail");
+                            println!("Saving file");
+
+                            self.sheet_path = None;
+
+                            let start = Task::future(async move { fs::write(c, contents).await });
+                            // TODO kill the notify thread and exit properly
+                            start.then(|_| std::process::exit(0))
+                        } else {
+                            std::process::exit(0)
+                        }
                     } else {
                         Task::none()
                     }
@@ -135,14 +165,26 @@ impl<'a> App {
                             self.sheet_path = Some(f.clone());
 
                             let t = fs::read_to_string(f);
-                            Task::perform(t, |f| Message::FileLoaded(Arc::new(f)))
+                            Task::perform(t, |f| Message::FileLoaded {
+                                main: Arc::new(f),
+                                backup: None,
+                            })
                         }
                         Some(_) => {
                             let f = f.path().to_owned();
                             self.sheet_path = Some(f.clone());
 
+                            let t2 = fs::read_to_string(get_backup_path(f.as_path()));
                             let t = fs::read_to_string(f);
-                            Task::perform(t, |f| Message::FileLoaded(Arc::new(f)))
+                            let t = async move {
+                                let t = t.await;
+                                let t2 = t2.await;
+                                (t, t2)
+                            };
+                            Task::perform(t, |(main, backup)| Message::FileLoaded {
+                                main: Arc::new(main),
+                                backup: Some(Arc::new(backup)),
+                            })
                         }
                         None => {
                             println!("Invalid file");
@@ -154,12 +196,21 @@ impl<'a> App {
                     Task::none()
                 }
             }
-            Message::FileLoaded(file) => {
+            Message::FileLoaded { main, backup } => {
                 println!("File loaded");
-                match &*file {
+                match &*main {
                     Ok(f) => match self.sheet_mode {
                         Mode::Rhai => {
-                            match self.rhai_interface.execute(f, self.sheet.clone()) {
+                            let second = if let Some(backup) = backup
+                                && let Ok(b) = Arc::try_unwrap(backup)
+                                    .expect("There should only ever be one copy")
+                                && let Ok(b) = serde_json::from_str::<Character>(&b)
+                            {
+                                Some(b)
+                            } else {
+                                self.sheet.clone()
+                            };
+                            match self.rhai_interface.execute(f, second) {
                                 Ok(sheet) => self.sheet = Some(sheet),
                                 Err(e) => println!("Rhai failed: {e:?}"),
                             }
@@ -185,7 +236,10 @@ impl<'a> App {
                 if let Some(e) = &self.sheet_path {
                     let e = e.to_owned();
                     let t = fs::read_to_string(e);
-                    Task::perform(t, |f| Message::FileLoaded(Arc::new(f)))
+                    Task::perform(t, |f| Message::FileLoaded {
+                        main: Arc::new(f),
+                        backup: None,
+                    })
                 } else {
                     Task::none()
                 }
@@ -219,6 +273,28 @@ impl<'a> App {
                             m.restore();
                         }
                     }
+                }
+
+                Task::none()
+            }
+            Message::AutoSave(_instant) => {
+                let Some(ref sheet) = self.sheet else {
+                    return Task::none();
+                };
+                let r = serde_json::to_string_pretty(&sheet);
+                if let Ok(r) = r {
+                    let path = get_backup_path(
+                        self.sheet_path
+                            .as_ref()
+                            .expect("We always have this when we have a character")
+                            .clone(),
+                    );
+                    let task = async move {
+                        let _ = fs::write(path, r).await;
+                    };
+                    return Task::future(task).discard();
+                } else {
+                    warn!("Json tostring failed");
                 }
 
                 Task::none()
@@ -260,7 +336,10 @@ impl<'a> App {
         } else {
             Subscription::none()
         };
-        Subscription::batch([w, watcher])
+
+        let auto_save = iced::time::every(Duration::from_secs(5)).map(Message::AutoSave);
+
+        Subscription::batch([w, watcher, auto_save])
     }
 }
 
@@ -327,4 +406,7 @@ fn create_file_watcher() -> impl Stream<Item = Message> {
             }
         }
     })
+}
+fn get_backup_path(f: impl AsRef<Path>) -> String {
+    format!("{}.json", f.as_ref().display())
 }
