@@ -10,6 +10,7 @@ use strum::{Display, EnumString};
 
 use crate::{
     Score,
+    class::ClassType,
     damage::DamageType,
     roll::{Roll, Rollable},
     sheet::source::{HasSource, Source},
@@ -60,6 +61,8 @@ pub struct Spell {
     pub components: Vec<Component>,
     /// The source of the spell.
     pub source: Option<Source>,
+    /// The classes that can have this spell.
+    pub classes: Vec<ClassType>,
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -302,6 +305,12 @@ impl Spell {
             }
         };
 
+        let classes = value
+            .classes
+            .iter()
+            .map(|f| ClassType::from(f.index.as_str()))
+            .collect();
+
         let s = Self {
             name: value.name,
             desc: value.desc.join("\n"),
@@ -324,6 +333,7 @@ impl Spell {
             },
             components,
             source: None,
+            classes,
         };
 
         Ok(s)

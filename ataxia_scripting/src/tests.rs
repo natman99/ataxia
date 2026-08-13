@@ -107,6 +107,7 @@ fn spell() {
         }),
         components: vec![Component::from_str("V").unwrap()],
         source: Some(Source::Single("Tasha's".to_string())),
+        classes: Default::default(),
     };
     assert_eq!(&s, spell);
 }
