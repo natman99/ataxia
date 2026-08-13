@@ -1,0 +1,125 @@
+{
+  "name": "hello 2 ",
+  "race": "Elf",
+  "classes": {
+    "classes": [
+      {
+        "class": "Barbarian",
+        "subclass": "Battlemaster",
+        "level": 1,
+        "hit_dice": "D12",
+        "health_bonus_per_level": 0,
+        "healing_die_remaining": 1,
+        "max_healing_die": 1
+      }
+    ]
+  },
+  "initiative": {
+    "bonus": 0
+  },
+  "armor_class": 10,
+  "health": {
+    "current": 23,
+    "max": 26,
+    "level_bonus": 0,
+    "bonus": 0
+  },
+  "inventory": {},
+  "ability_scores": {
+    "str": {
+      "base": 10,
+      "bonus": 0
+    },
+    "dex": {
+      "base": 10,
+      "bonus": 0
+    },
+    "con": {
+      "base": 10,
+      "bonus": 0
+    },
+    "int": {
+      "base": 10,
+      "bonus": 0
+    },
+    "wis": {
+      "base": 10,
+      "bonus": 0
+    },
+    "cha": {
+      "base": 10,
+      "bonus": 0
+    }
+  },
+  "skills": {
+    "athletics": false,
+    "acrobatics": true,
+    "sleightofhand": false,
+    "stealth": false,
+    "arcana": false,
+    "history": false,
+    "investigation": false,
+    "nature": false,
+    "religion": false,
+    "animalhandling": false,
+    "insight": false,
+    "medicine": false,
+    "perception": false,
+    "survival": false,
+    "deception": false,
+    "intimidation": false,
+    "performance": false,
+    "persuasion": false,
+    "proficiency_bonus": 1,
+    "expertise": []
+  },
+  "saving_throws": {
+    "str": false,
+    "dex": false,
+    "con": false,
+    "wis": false,
+    "int": false,
+    "cha": false
+  },
+  "spells": {
+    "spells": {}
+  },
+  "senses": {
+    "perception_bonus": 0,
+    "investigation_bonus": 0,
+    "insight_bonus": 0,
+    "extra": {
+      "blind_sight": false,
+      "dark_vision": false,
+      "tremor_sense": false,
+      "true_sight": false
+    }
+  },
+  "features": {
+    "inner": []
+  },
+  "ability_modifier": "Str",
+  "meters": {
+    "meters": {}
+  },
+  "lore": {
+    "backstory": "",
+    "personality_traits": "",
+    "allies": "",
+    "enemies": "",
+    "physical_traits": "",
+    "alignment": {
+      "morality": "Good",
+      "order": "Lawful"
+    }
+  },
+  "walking_speed": 30,
+  "languages": {
+    "languages": [
+      "Common"
+    ]
+  },
+  "conditions": {
+    "conditions": []
+  }
+}
