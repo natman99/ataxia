@@ -304,6 +304,18 @@ fn interactive() {
 }
 
 #[test]
+fn interactive_alternate_access() {
+    let i = Interface::new();
+    let mut character = Character::default();
+    character.ability_scores.con.base = 14;
+    let s = i
+        .interactive("2 + ability_scores.con.mod()", character)
+        .unwrap();
+
+    assert_eq!(s.to_string(), "4");
+}
+
+#[test]
 fn interactive_roll() {
     let i = Interface::new();
     let mut character = Character::default();
