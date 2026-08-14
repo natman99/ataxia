@@ -206,9 +206,14 @@ impl<'a> App {
                             let second = if let Some(backup) = backup
                                 && let Ok(b) = Arc::try_unwrap(backup)
                                     .expect("There should only ever be one copy")
-                                && let Ok(b) = serde_json::from_str::<Character>(&b)
                             {
-                                Some(b)
+                                match serde_json::from_str(&b) {
+                                    Ok(b) => Some(b),
+                                    Err(e) => {
+                                        println!("{e:?}");
+                                        None
+                                    }
+                                }
                             } else {
                                 warn!("Failed to load file backup");
                                 self.sheet.clone()

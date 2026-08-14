@@ -32,7 +32,12 @@ pub enum RollParseError {
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
-#[cfg_attr(feature = "serde", serde(default), serde(try_from = "String"))]
+#[cfg_attr(
+    feature = "serde",
+    serde(default),
+    serde(try_from = "String"),
+    serde(into = "String")
+)]
 #[cfg_attr(feature = "rhai", derive(CustomType))]
 /// A dice roll. Can contain multiple dice.
 pub struct Roll {
@@ -192,6 +197,12 @@ impl Display for Roll {
         }
 
         write!(f, "{}", out)
+    }
+}
+
+impl Into<String> for Roll {
+    fn into(self) -> String {
+        self.to_string()
     }
 }
 
