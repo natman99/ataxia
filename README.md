@@ -62,7 +62,7 @@ git clone https://github.com/5e-bits/5e-database
 cargo build
 ```
 
-To install ataxia to Path
+To install ataxia ui to path
 ```bash
 git clone https://github.com/5e-bits/5e-database
 cargo install --path ataxia --locked
