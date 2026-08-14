@@ -332,3 +332,32 @@ fn meters(sheet: &Character) -> Container<'_, Message> {
 
     container(cols).style(container::bordered_box).padding(12)
 }
+
+fn pinned_widget<'a>(state: &BasicState, sheet: &'a Character) -> Container<'a, Message> {
+    let mut cols = Column::new().padding(8);
+
+    for i in state.pinned {
+        match i {
+            Pinnable::Spell(spell) => todo!(),
+            Pinnable::Item(item) => {
+                let roll = if let Some(f) = item.roll {
+                    f.to_string()
+                } else {
+                    "-".to_string()
+                };
+
+                let to_hit = if let Some(f) = item.to_hit(&sheet.ability_scores, &sheet.skills) {
+                    format!("{f:+}")
+                } else {
+                    "-".to_string()
+                };
+
+                let b =
+                    button("x").on_press_with(|| Message::Basic(BasicMessage::Unpin(i.clone())));
+                let r = row![text(&item.name), text(to_hit), text(roll), b].spacing(6);
+                cols = cols.push(r);
+            }
+        }
+    }
+    Container::new(cols).padding(8)
+}

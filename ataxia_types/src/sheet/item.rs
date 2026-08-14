@@ -1,4 +1,3 @@
-
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
 #[cfg(feature = "serde")]
@@ -8,12 +7,14 @@ use serde::{Deserialize, Serialize};
 use rhai::CustomType;
 
 use crate::{
+    AbilityScores, Score,
     feature::{Feature, HasFeature},
     roll::Rollable,
     sheet::{
         roll::Roll,
         source::{HasSource, Source},
     },
+    skills::Skills,
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -31,6 +32,7 @@ pub struct Item {
     pub quantity: i32,
     /// The roll if the item deals damage or has an effect.
     pub roll: Option<Roll>,
+    pub to_hit: Option<Score>,
     pub source: Option<Source>,
     pub feature: Option<Feature>,
 }
@@ -44,6 +46,7 @@ impl Default for Item {
             quantity: 1,
             source: None,
             feature: None,
+            to_hit: None,
         }
     }
 }
@@ -73,6 +76,14 @@ impl Item {
         Self {
             name,
             ..Default::default()
+        }
+    }
+
+    pub fn to_hit(&self, scores: &AbilityScores, skills: &Skills) -> Option<i64> {
+        if let Some(s) = self.to_hit {
+            Some(scores.get(&s).modifier() + skills.proficiency_bonus)
+        } else {
+            None
         }
     }
 }

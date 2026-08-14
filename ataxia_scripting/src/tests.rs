@@ -181,6 +181,7 @@ fn inventory() {
         i.desc("a really cool item");
         i.count(2);
         i.source("book of cool items");
+        i.to_hit = Cha;
         inventory.add(i);
 
         "#;
@@ -193,7 +194,8 @@ fn inventory() {
             quantity: 2,
             roll: Some(Roll::from_str("2d4").unwrap()),
             source: Some(Source::Single("book of cool items".to_string())),
-            feature: None
+            feature: None,
+            to_hit: Some(Score::Cha)
         }
     );
 }
