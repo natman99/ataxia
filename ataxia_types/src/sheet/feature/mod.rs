@@ -51,7 +51,7 @@ pub enum Effect {
     /// Add a spell.
     Spell(Spell),
     /// Add a meter. e.g. spell slots or other limited resources.
-    Meter(MeterAdd),
+    Meter(Meter),
     /// Bonus max health that is applied per level.
     HealthBonusPerLevel(i64),
     /// Ability score bonus (raw stat bonus).
@@ -62,8 +62,8 @@ pub enum Effect {
     AddProficiency(Skill),
     /// Bonus to initiative.
     InitiativeBonus(i64),
-    /// An effect for the effects page
-    Effect(Condition),
+    /// A condition effect for the conditions page
+    Condition(Condition),
     Expertise(Skill),
 }
 
@@ -82,10 +82,10 @@ impl Effect {
             Effect::Spell(spell) => {
                 s.spells.spells.insert(spell.name.clone(), spell.clone());
             }
-            Effect::Meter(meter_add) => {
+            Effect::Meter(meter) => {
                 s.meters
                     .meters
-                    .insert(meter_add.name.to_string(), meter_add.meter.clone());
+                    .insert(meter.name.to_string(), meter.clone());
             }
             Effect::HealthBonusPerLevel(b) => {
                 s.health.level_bonus += b;
@@ -100,9 +100,30 @@ impl Effect {
                 s.skills.proficiencies.set(*skill, true);
             }
             Effect::InitiativeBonus(b) => s.initiative.bonus += b,
-            Effect::Effect(e) => s.conditions.conditions.push(e.clone()),
+            Effect::Condition(e) => s.conditions.conditions.push(e.clone()),
             Effect::Expertise(skill) => s.skills.expertise.insert(*skill),
         }
+    }
+}
+
+impl Display for Effect {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            Effect::AcBonus(a) => format!("AC: {a:+}"),
+            Effect::Spell(spell) => format!("Spell {}", spell.name),
+            Effect::Meter(meter) => format!("Meter {}", meter.name),
+            Effect::HealthBonusPerLevel(h) => format!("Hp/lvl {h}"),
+            Effect::AbilityScoreBonus(ability_score_bonus) => format!(
+                "Score {} {:+}",
+                ability_score_bonus.score, ability_score_bonus.bonus
+            ),
+            Effect::Sense(sense) => format!("{sense}"),
+            Effect::AddProficiency(skill) => format!("{skill}"),
+            Effect::InitiativeBonus(b) => format!("Initiative {:+}", b),
+            Effect::Condition(condition) => format!("{}", condition.name),
+            Effect::Expertise(skill) => format!("Expertise {skill}"),
+        };
+        write!(f, "{}", s)
     }
 }
 
@@ -114,16 +135,6 @@ pub struct Features {
     pub inner: Vec<Feature>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "schema", derive(JsonSchema))]
-pub struct MeterAdd {
-    pub name: String,
-    pub meter: Meter,
-    /// Number of meter slots.
-    pub slot_number: usize,
-}
-
 #[derive(Debug, Clone, PartialEq, Copy, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
@@ -132,25 +143,4 @@ pub struct AbilityScoreBonus {
     pub score: Score,
     /// The amount to increase by.
     pub bonus: i32,
-}
-
-impl Display for Effect {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Effect::AcBonus(b) => write!(f, "AC {b:+}"),
-            Effect::Spell(spell) => write!(f, "Spell: {}", spell.name),
-            Effect::Meter(meter_add) => write!(f, "{}", meter_add.name),
-            Effect::HealthBonusPerLevel(b) => write!(f, "Health: {b:+}"),
-            Effect::AbilityScoreBonus(ability_score_bonus) => write!(
-                f,
-                "{} {:+}",
-                ability_score_bonus.score, ability_score_bonus.bonus
-            ),
-            Effect::Sense(sense) => write!(f, "{sense}"),
-            Effect::AddProficiency(skill) => write!(f, "Proficiency: {}", skill),
-            Effect::InitiativeBonus(b) => write!(f, "Initiative {b:+}"),
-            Effect::Effect(condition) => write!(f, "Condition: {}", condition.name),
-            Effect::Expertise(skill) => write!(f, "Expertise: {skill}"),
-        }
-    }
 }
