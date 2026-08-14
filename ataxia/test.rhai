@@ -6,6 +6,9 @@ health.max = 26;
 //
 skills.add("acrobatics");
 
+ability_scores.dex = 20;
+skills.proficiency_bonus = 3;
+
 let i = item("test", "cool item");
 
 inventory.add(i);
@@ -16,6 +19,8 @@ i.roll("2d6 + " + ability_scores.str.mod());
 
 let s = "2d6 + " + ability_scores.dex.mod();
 i.roll(s);
+
+i.to_hit = Dex;
 
 meters.add(meter("test", 4));
 

@@ -34,8 +34,9 @@
           "D6",
           "D6"
         ],
-        "bonus": 0
+        "bonus": 5
       },
+      "to_hit": "Dex",
       "source": null,
       "feature": {
         "source": null,
@@ -54,6 +55,7 @@
       "description": "cool item",
       "quantity": 1,
       "roll": null,
+      "to_hit": null,
       "source": null,
       "feature": null
     }
@@ -64,7 +66,7 @@
       "bonus": 0
     },
     "dex": {
-      "base": 10,
+      "base": 20,
       "bonus": 0
     },
     "con": {
@@ -103,7 +105,7 @@
     "intimidation": false,
     "performance": false,
     "persuasion": false,
-    "proficiency_bonus": 1,
+    "proficiency_bonus": 3,
     "expertise": []
   },
   "saving_throws": {
