@@ -16,9 +16,9 @@ use iced::{
     window::{self, Id},
 };
 use log::warn;
-use notify::{
-    EventKind, RecommendedWatcher, Watcher,
-    event::{AccessKind, AccessMode, DataChange},
+use notify_debouncer_full::{
+    DebounceEventResult, new_debouncer,
+    notify::{EventKind, RecursiveMode, event::ModifyKind},
 };
 use rfd::FileHandle;
 use tokio::{fs, io, task};
@@ -120,9 +120,6 @@ impl<'a> App {
                             let c = get_backup_path(&c);
                             let contents =
                                 serde_json::to_string_pretty(s).expect("Should never fail");
-                            let contents = format!(
-                                "// This is an auto-generated save not meant for manual editing.\n {contents}"
-                            );
                             println!("Saving file");
 
                             self.sheet_path = None;
@@ -295,6 +292,7 @@ impl<'a> App {
                             .clone(),
                     );
                     let task = async move {
+                        log::info!("Saving file");
                         let _ = fs::write(path, r).await;
                     };
                     return Task::future(task).discard();
@@ -382,17 +380,20 @@ fn create_file_watcher() -> impl Stream<Item = Message> {
         task::spawn_blocking(move || {
             let (event_tx, event_rx) = std::sync::mpsc::channel();
 
-            let Ok(mut watcher) = RecommendedWatcher::new(
-                move |res| {
+            let Ok(mut debouncer) = new_debouncer(
+                Duration::from_secs(1),
+                None,
+                move |res: DebounceEventResult| {
                     if let Ok(event) = res {
                         let _ = event_tx.send(event);
                     }
                 },
-                notify::Config::default(),
             ) else {
+                log::error!("File watcher failed!");
                 return;
             };
-            if let Err(e) = watcher.watch(&path, notify::RecursiveMode::NonRecursive) {
+
+            if let Err(e) = debouncer.watch(&path, RecursiveMode::NonRecursive) {
                 println!("Watcher failed: {e:?}");
                 return;
             }
@@ -404,16 +405,17 @@ fn create_file_watcher() -> impl Stream<Item = Message> {
             }
         });
 
-        while let Some(event) = bridge_rx.recv().await {
-            let send = match event.kind {
-                EventKind::Access(AccessKind::Close(AccessMode::Write)) => true,
-                EventKind::Modify(notify::event::ModifyKind::Data(DataChange::Content)) => true,
-                _ => false,
-            };
-            if send {
-                println!("{event:?}");
-                if event.paths.first().is_some() {
-                    println!("File changed");
+        while let Some(events) = bridge_rx.recv().await {
+            for event in events {
+                let send = match event.kind {
+                    EventKind::Modify(_) => true,
+                    EventKind::Create(_) => true,
+                    EventKind::Remove(_) => true,
+                    _ => false,
+                };
+
+                // println!("{event:?}");
+                if send {
                     let _ = output.send(Message::FileModified).await;
                 }
             }
