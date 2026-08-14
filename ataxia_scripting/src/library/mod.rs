@@ -1,3 +1,15 @@
+use std::{any::TypeId, str::FromStr};
+
+use ataxia_types::{
+    Item,
+    feat::Feat,
+    feature::{Effect, HasFeature},
+    senses::Sense,
+    skills::Skill,
+    source::HasSource,
+};
+use rhai::{Dynamic, ImmutableString};
+
 #[rhai::export_module]
 pub mod library {
     use std::str::FromStr;
@@ -325,6 +337,12 @@ pub mod library {
         pub fn source(f: &mut Item, source: ImmutableString) {
             f.add_source(Source::Single(source.to_string()));
         }
+
+        pub fn roll(f: &mut Item, r: ImmutableString) {
+            if let Ok(r) = Roll::from_str(r.as_str()) {
+                f.roll = Some(r)
+            }
+        }
     }
 
     // -- feat submodule --
@@ -548,6 +566,11 @@ pub mod library {
         pub fn modifier(score: &mut AbilityScore) -> i64 {
             score.modifier()
         }
+
+        #[rhai_fn(name = "mod", name = "modifier")]
+        pub fn modifier_raw(s: i64) -> i64 {
+            AbilityScore::new(s, 0).modifier()
+        }
     }
 
     pub mod lore {
@@ -596,4 +619,190 @@ pub mod library {
             l.languages.push(s);
         }
     }
+
+    pub mod feature {
+        use ataxia_types::{feature::AbilityScoreBonus, senses::Sense, spells::Spell};
+        use rhai::ImmutableString;
+
+        #[rhai_fn(name = "feature")]
+        pub fn feature_score(f: &mut Dynamic, score: Score, val: i64) {
+            let a = f.take();
+            match cast_into_feature(a) {
+                Ok(mut a) => {
+                    let effect = Effect::AbilityScoreBonus(AbilityScoreBonus {
+                        score: score,
+                        bonus: val as i32,
+                    });
+                    a.add(effect);
+
+                    let a = match a {
+                        FeatureEnum::Item(item) => Dynamic::from(item),
+                        FeatureEnum::Feat(feat) => Dynamic::from(feat),
+                    };
+                    *f = a;
+                }
+                Err(a) => *f = a,
+            }
+        }
+
+        #[rhai_fn(name = "feature")]
+        pub fn feature_double(f: &mut Dynamic, i: ImmutableString, val: Dynamic) {
+            let a = f.take();
+            match cast_into_feature(a) {
+                Ok(mut a) => {
+                    let effect = parse_double_effect(i, val);
+                    if let Some(effect) = effect {
+                        a.add(effect);
+                    } else {
+                        return;
+                    }
+
+                    let a = match a {
+                        FeatureEnum::Item(item) => Dynamic::from(item),
+                        FeatureEnum::Feat(feat) => Dynamic::from(feat),
+                    };
+                    *f = a;
+                }
+                Err(a) => *f = a,
+            }
+        }
+
+        #[rhai_fn(name = "feature")]
+        pub fn feature_spell(f: &mut Dynamic, spell: Spell) {
+            let a = f.take();
+            match cast_into_feature(a) {
+                Ok(mut a) => {
+                    let effect = Effect::Spell(spell);
+                    a.add(effect);
+
+                    let a = match a {
+                        FeatureEnum::Item(item) => Dynamic::from(item),
+                        FeatureEnum::Feat(feat) => Dynamic::from(feat),
+                    };
+                    *f = a;
+                }
+                Err(a) => *f = a,
+            }
+        }
+
+        #[rhai_fn(name = "feature")]
+        pub fn feature_meter(f: &mut Dynamic, meter: Meter) {
+            let a = f.take();
+            match cast_into_feature(a) {
+                Ok(mut a) => {
+                    let effect = Effect::Meter(meter);
+                    a.add(effect);
+
+                    let a = match a {
+                        FeatureEnum::Item(item) => Dynamic::from(item),
+                        FeatureEnum::Feat(feat) => Dynamic::from(feat),
+                    };
+                    *f = a;
+                }
+                Err(a) => *f = a,
+            }
+        }
+
+        #[rhai_fn(name = "feature")]
+        pub fn feature_single(f: &mut Dynamic, i: ImmutableString) {
+            let a = f.take();
+            match cast_into_feature(a) {
+                Ok(mut a) => {
+                    let effect = {
+                        if let Ok(s) = Skill::from_str(i.as_str()) {
+                            Effect::AddProficiency(s)
+                        } else {
+                            return;
+                        }
+                    };
+                    a.add(effect);
+
+                    let a = match a {
+                        FeatureEnum::Item(item) => Dynamic::from(item),
+                        FeatureEnum::Feat(feat) => Dynamic::from(feat),
+                    };
+                    *f = a;
+                }
+                Err(a) => *f = a,
+            }
+        }
+    }
+}
+
+/// Cast into a feature trait object. Returns the original value on failure.
+fn cast_into_feature(f: Dynamic) -> Result<FeatureEnum, Dynamic> {
+    match f.type_id() {
+        id if id == TypeId::of::<Feat>() => Ok(FeatureEnum::Feat(f.cast())),
+        id if id == TypeId::of::<Item>() => Ok(FeatureEnum::Item(f.cast())),
+        _ => Err(f),
+    }
+}
+
+enum FeatureEnum {
+    Item(Item),
+    Feat(Feat),
+}
+
+impl HasFeature for FeatureEnum {
+    fn apply(&self, sheet: &mut ataxia_types::Character) {
+        match self {
+            FeatureEnum::Item(item) => item.apply(sheet),
+            FeatureEnum::Feat(feat) => feat.apply(sheet),
+        }
+    }
+
+    fn add(&mut self, feature: ataxia_types::feature::Effect) {
+        match self {
+            FeatureEnum::Item(item) => item.add(feature),
+            FeatureEnum::Feat(feat) => feat.add(feature),
+        }
+    }
+}
+
+impl HasSource for FeatureEnum {
+    fn source(&self) -> Option<&ataxia_types::source::Source> {
+        match self {
+            FeatureEnum::Item(item) => item.source(),
+            FeatureEnum::Feat(feat) => feat.source(),
+        }
+    }
+
+    fn add_source(&mut self, source: ataxia_types::source::Source) {
+        match self {
+            FeatureEnum::Item(item) => item.add_source(source),
+            FeatureEnum::Feat(feat) => feat.add_source(source),
+        }
+    }
+}
+
+fn parse_double_effect(f: ImmutableString, val: Dynamic) -> Option<Effect> {
+    let effect = match f.as_str() {
+        "armor" | "armor_class" | "ac" => Some(Effect::AcBonus(val.as_int().ok()?)),
+        "health_bonus" => Some(Effect::HealthBonusPerLevel(val.as_int().ok()?)),
+        "initiative" | "initiative_bonus" => Some(Effect::InitiativeBonus(val.as_int().ok()?)),
+        "expertise" => {
+            if let Ok(skill) = Skill::from_str(&val.to_string()) {
+                Some(Effect::Expertise(skill))
+            } else {
+                None
+            }
+        }
+        "proficiency" => {
+            if let Ok(skill) = Skill::from_str(&val.to_string()) {
+                Some(Effect::AddProficiency(skill))
+            } else {
+                None
+            }
+        }
+        _ => {
+            let s = Sense::from_str(f.as_str()).ok();
+            if let Some(s) = s {
+                Some(Effect::Sense(s))
+            } else {
+                None
+            }
+        }
+    };
+
+    effect
 }
