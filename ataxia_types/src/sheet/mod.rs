@@ -5,7 +5,10 @@ use schemars::JsonSchema;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use std::{collections::HashMap, fmt::Display};
+use std::{
+    collections::{BTreeMap, HashMap},
+    fmt::Display,
+};
 use strum::EnumString;
 
 pub mod ability_score;
@@ -183,7 +186,7 @@ pub struct PassiveSenses {
 #[cfg_attr(feature = "serde", serde(default))]
 #[cfg_attr(feature = "rhai", derive(CustomType))]
 /// An inventory containing a hash map of `Item`s
-pub struct Inventory(pub HashMap<String, Item>);
+pub struct Inventory(pub BTreeMap<String, Item>);
 
 #[derive(Debug, Clone, PartialEq, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
