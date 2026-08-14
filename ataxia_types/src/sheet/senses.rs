@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 #[cfg(feature = "rhai")]
 use rhai::CustomType;
 
-use strum::Display;
+use strum::{Display, EnumString};
 
 use crate::{AbilityScores, Score};
 
@@ -43,7 +43,6 @@ impl Senses {
     }
 }
 
-
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
@@ -56,14 +55,19 @@ pub struct ExtraSenses {
     pub true_sight: bool,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Display)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Display, EnumString)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[strum(ascii_case_insensitive)]
 /// Extra sense types.
 pub enum Sense {
+    #[strum(serialize = "blind_sight")]
     BlindSight,
+    #[strum(serialize = "dark_vision")]
     DarkVision,
+    #[strum(serialize = "tremor_sense")]
     TremorSense,
+    #[strum(serialize = "true_sight")]
     TrueSight,
 }
 
