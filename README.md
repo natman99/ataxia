@@ -1,14 +1,15 @@
 Ataxia
 ===
 
-Ataxia is an implementation of Dungeons and Dragons 5e mechanics in Rust :crab:. 
-
+Ataxia is an implementation of Dungeons and Dragons 5e mechanics in Rust :rocket:. 
 
 ## Project Layout
 
 ### Ataxia Types
 The home of the core logic.
 Should be usable for single classed builds.
+
+Statically typed using Rust's type system. Nearly all mechanics covered and customizable.
 
 - Types implement serde, JsonSchema, and Rhai bindings under the respective `serde`, `schema` and `rhai` features.
 
@@ -21,8 +22,7 @@ Abandoned in favor of [Ataxia](#Ataxia).
 Integration with (rhai)[https://rhai.rs/] for building characters in a scripting language.
 
 - Create a character from rhai script
-- Interface with existing sheet in a read-only form (for live "scripting" against character state)
-  - Use to calculate damage numbers and feature interactions
+- Script against a sheet in real time to calculate feature interactions and rolls.
 
 ```rust
 name = "Bob";
@@ -48,11 +48,22 @@ The GUI culmination of all the projects.
 
 - [ x ] Hot reloading
   - Hot reloading preserves consumable resources and health across changes.
-  - [ ] Save state for preservation across app restarts
-- [ x ] Basic ui layout
-- [ ] Inventory
+- [ x ] Basic character information 
+- [ ] Inventory (partial)
 - [ ] Spells + Meters
 - [ x ] Integration with [ataxia_scripting](#ataxia-scripting)
-- [ ] Rhai editor[^1]
 
-[^1]: Low priority
+
+## Building
+
+This project uses info from the D&D Srd. Clone it before building.
+```bash
+git clone https://github.com/5e-bits/5e-database
+cargo build
+```
+
+To install ataxia to Path
+```bash
+git clone https://github.com/5e-bits/5e-database
+cargo install --path ataxia --locked
+```
