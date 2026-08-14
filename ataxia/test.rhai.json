@@ -133,7 +133,18 @@
   },
   "ability_modifier": "Str",
   "meters": {
-    "meters": {}
+    "meters": {
+      "test": {
+        "name": "test",
+        "slot_number": 4,
+        "spent": 0,
+        "restore": {
+          "short_rest": false,
+          "long_rest": true
+        },
+        "source": null
+      }
+    }
   },
   "lore": {
     "backstory": "",

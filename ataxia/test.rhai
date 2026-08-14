@@ -17,4 +17,6 @@ i.roll("2d6 + " + ability_scores.str.mod());
 let s = "2d6 + " + ability_scores.dex.mod();
 i.roll(s);
 
+meters.add(meter("test", 4));
+
 inventory.add(i);
