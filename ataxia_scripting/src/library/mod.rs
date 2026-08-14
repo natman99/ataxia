@@ -276,6 +276,8 @@ pub mod library {
     // -- item submodule --
 
     pub mod item {
+        use ataxia_types::Score;
+
         use super::*;
 
         #[rhai_fn(name = "item")]
@@ -283,6 +285,13 @@ pub mod library {
             Item {
                 name: name.to_string(),
                 description: description.to_string(),
+                ..Default::default()
+            }
+        }
+        #[rhai_fn(name = "item")]
+        pub fn item_name(name: ImmutableString) -> Item {
+            Item {
+                name: name.to_string(),
                 ..Default::default()
             }
         }
@@ -342,6 +351,11 @@ pub mod library {
             if let Ok(r) = Roll::from_str(r.as_str()) {
                 f.roll = Some(r)
             }
+        }
+
+        #[rhai_fn(set = "to_hit")]
+        pub fn to_hit(f: &mut Item, s: Score) {
+            f.to_hit = Some(s)
         }
     }
 
