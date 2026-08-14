@@ -210,6 +210,7 @@ impl<'a> App {
                             {
                                 Some(b)
                             } else {
+                                warn!("Failed to load file backup");
                                 self.sheet.clone()
                             };
                             match self.rhai_interface.execute(f, second) {
@@ -327,7 +328,7 @@ impl<'a> App {
 
         let c = match state.view {
             View::Basic => self.basic_state.view(sheet),
-            View::Inventory => self.inventory_state.view(&sheet.inventory),
+            View::Inventory => self.inventory_state.view(&sheet),
             View::Spells => todo!(),
         };
         let c = column![mode_switcher(self, window_id), c].spacing(8);

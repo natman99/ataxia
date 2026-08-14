@@ -1,17 +1,37 @@
-use ataxia_types::{Character, Score, skills::Skill};
+use std::fmt::Debug;
+
+use ataxia_types::{Character, Item, Score, skills::Skill, spells::Spell};
 use iced::{
     Alignment, Element, Length, Task,
     widget::{
-        Column, Container, Row, Text, button, checkbox, column, container, row, text, text_input,
+        Column, Container, Row, Rule, Text, button, checkbox, column, container, row, rule, text,
+        text_input,
     },
 };
 
 use crate::{Message, MeterMessage};
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Clone, PartialEq)]
+pub enum Pinnable {
+    Spell(Spell),
+    Item(Item),
+}
+
+#[derive(Default, Clone)]
 pub struct BasicState {
     pub hp_input: String,
     pub reaction: bool,
+    pub pinned: Vec<Pinnable>,
+}
+
+impl Debug for BasicState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("BasicState")
+            .field("hp_input", &self.hp_input)
+            .field("reaction", &self.reaction)
+            // .field("pinned", &self.pinned)
+            .finish()
+    }
 }
 
 impl<'a> BasicState {
@@ -43,7 +63,8 @@ impl<'a> BasicState {
         let saving = saving_throws(sheet).width(Length::Fill);
         let details = character_details(sheet).width(Length::Fill);
         let meters_temp = meters(sheet).width(Length::Fill);
-        let left_col = column![details, saving, meters_temp].width(200);
+        let pinned = pinned_widget(self, sheet);
+        let left_col = column![details, saving, meters_temp, pinned].width(230);
         let row = row![left_col, c1, c2].spacing(8);
 
         container(row).center(Length::Fill).into()
@@ -77,6 +98,18 @@ impl<'a> BasicState {
                 self.reaction = b;
                 Task::none()
             }
+            BasicMessage::Pin(pinnable) => {
+                self.pinned.push(pinnable);
+                Task::none()
+            }
+            BasicMessage::Unpin(pinnable) => {
+                if let Some(i) = self.pinned.iter().position(|f| &pinnable == f) {
+                    self.pinned.remove(i);
+                    Task::none()
+                } else {
+                    Task::none()
+                }
+            }
         }
     }
 }
@@ -88,6 +121,8 @@ pub enum BasicMessage {
     Damage,
     ResetInput,
     Reaction(bool),
+    Pin(Pinnable),
+    Unpin(Pinnable),
 }
 
 pub fn scores(sheet: &Character) -> Container<'_, Message> {
@@ -333,14 +368,14 @@ fn meters(sheet: &Character) -> Container<'_, Message> {
     container(cols).style(container::bordered_box).padding(12)
 }
 
-fn pinned_widget<'a>(state: &BasicState, sheet: &'a Character) -> Container<'a, Message> {
+fn pinned_widget<'a>(state: &'a BasicState, sheet: &'a Character) -> Container<'a, Message> {
     let mut cols = Column::new().padding(8);
 
-    for i in state.pinned {
+    for i in &state.pinned {
         match i {
             Pinnable::Spell(spell) => todo!(),
             Pinnable::Item(item) => {
-                let roll = if let Some(f) = item.roll {
+                let roll = if let Some(f) = item.roll.as_ref() {
                     f.to_string()
                 } else {
                     "-".to_string()
@@ -352,12 +387,21 @@ fn pinned_widget<'a>(state: &BasicState, sheet: &'a Character) -> Container<'a, 
                     "-".to_string()
                 };
 
-                let b =
-                    button("x").on_press_with(|| Message::Basic(BasicMessage::Unpin(i.clone())));
-                let r = row![text(&item.name), text(to_hit), text(roll), b].spacing(6);
+                let b = button("x")
+                    .on_press(Message::Basic(BasicMessage::Unpin(i.clone())))
+                    .padding(1);
+                let r = row![
+                    text(&item.name),
+                    rule::vertical(4),
+                    text(to_hit),
+                    rule::vertical(4),
+                    text(roll),
+                    b
+                ]
+                .spacing(8);
                 cols = cols.push(r);
             }
         }
     }
-    Container::new(cols).padding(8)
+    Container::new(cols).padding(8).height(Length::Shrink)
 }
