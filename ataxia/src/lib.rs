@@ -410,3 +410,16 @@ fn create_file_watcher() -> impl Stream<Item = Message> {
 fn get_backup_path(f: impl AsRef<Path>) -> String {
     format!("{}.json", f.as_ref().display())
 }
+
+fn mode_switcher(app: &App, id: Id) -> Container<Message> {
+    let b = button("Main").on_press_with(move || Message::ViewChanged(View::Basic, id));
+    let b2 = button("Inventory").on_press_maybe(if app.windows[id].view == View::Inventory {
+        None
+    } else {
+        Message::ViewChanged(View::Inventory, ())
+    });
+
+    container(row![b, b2].spacing(8)).padding(12)
+}
+
+fn mode_style(theme: Theme, status: &iced::widget::button::Status) {}

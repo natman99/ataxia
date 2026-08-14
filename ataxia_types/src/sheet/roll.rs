@@ -258,6 +258,12 @@ mod tests {
     }
 
     #[test]
+    fn test_display_bonus() {
+        let roll = Roll::from_str("2d6 + 2").unwrap();
+        assert_eq!(roll.to_string().trim(), "2d6 + 2");
+    }
+
+    #[test]
     fn test_parse() {
         Roll::from_str("10d6").unwrap();
         Roll::from_str("1d6 + 10").unwrap();
@@ -276,6 +282,7 @@ mod tests {
         Roll::from_str("").unwrap();
     }
 
+    #[test]
     fn only_bonus() {
         Roll::from_str("20").unwrap();
     }
