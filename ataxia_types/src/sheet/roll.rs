@@ -147,7 +147,7 @@ impl FromStr for Roll {
         let bonus = {
             let mut b = 0i32;
             for i in value.split("+") {
-                if let Ok(e) = i.parse::<i32>() {
+                if let Ok(e) = i.trim().parse::<i32>() {
                     b += e;
                 }
             }
