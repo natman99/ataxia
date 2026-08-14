@@ -19,12 +19,45 @@
   },
   "armor_class": 10,
   "health": {
-    "current": 23,
+    "current": 12,
     "max": 26,
     "level_bonus": 0,
     "bonus": 0
   },
-  "inventory": {},
+  "inventory": {
+    "cool item": {
+      "name": "cool item",
+      "description": "cool item",
+      "quantity": 1,
+      "roll": {
+        "dice": [
+          "D6",
+          "D6"
+        ],
+        "bonus": 0
+      },
+      "source": null,
+      "feature": {
+        "source": null,
+        "effects": [
+          {
+            "AbilityScoreBonus": {
+              "score": "Str",
+              "bonus": 2
+            }
+          }
+        ]
+      }
+    },
+    "test": {
+      "name": "test",
+      "description": "cool item",
+      "quantity": 1,
+      "roll": null,
+      "source": null,
+      "feature": null
+    }
+  },
   "ability_scores": {
     "str": {
       "base": 10,
