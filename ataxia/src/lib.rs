@@ -1,7 +1,6 @@
 use std::{
     collections::BTreeMap,
     env,
-    ops::Deref,
     path::{Path, PathBuf},
     sync::Arc,
     time::{Duration, Instant},
@@ -11,9 +10,9 @@ use ataxia_scripting::Interface;
 use ataxia_types::Character;
 use iced::{
     Element, Length, Subscription, Task, Theme,
-    futures::{FutureExt, SinkExt, Stream},
+    futures::{SinkExt, Stream},
     stream,
-    widget::{button, column, container, text},
+    widget::{Container, button, column, container, row, text},
     window::{self, Id},
 };
 use log::warn;
@@ -24,7 +23,7 @@ use notify::{
 use rfd::FileHandle;
 use tokio::{fs, io, task};
 
-use crate::views::{BasicMessage, BasicState};
+use crate::views::{BasicMessage, BasicState, InventoryState};
 
 mod views;
 
@@ -42,6 +41,7 @@ pub enum Message {
     FileModified,
     WatcherCreated(tokio::sync::mpsc::Sender<PathBuf>),
     AutoSave(Instant),
+    ViewChanged(View, Id),
 }
 
 #[derive(Clone, Debug)]
@@ -61,7 +61,7 @@ pub struct State {
     view: View,
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Copy)]
 pub enum View {
     #[default]
     Basic,
@@ -81,6 +81,7 @@ pub struct App {
     // global: Option<Arc<Global>>,
     sheet: Option<Character>,
     basic_state: BasicState,
+    inventory_state: InventoryState,
     sheet_path: Option<PathBuf>,
     sheet_mode: Mode,
     rhai_interface: Interface,
@@ -98,6 +99,7 @@ impl<'a> App {
                 sheet_path: None,
                 sheet_mode: Default::default(),
                 rhai_interface: Interface::new(),
+                inventory_state: Default::default(),
             },
             open.map(WindowMessage::OpenWindow).map(Message::Window),
         )
@@ -118,6 +120,9 @@ impl<'a> App {
                             let c = get_backup_path(&c);
                             let contents =
                                 serde_json::to_string_pretty(s).expect("Should never fail");
+                            let contents = format!(
+                                "// This is an auto-generated save not meant for manual editing.\n {contents}"
+                            );
                             println!("Saving file");
 
                             self.sheet_path = None;
@@ -299,6 +304,14 @@ impl<'a> App {
 
                 Task::none()
             }
+            Message::ViewChanged(view, id) => {
+                if let Some(w) = self.windows.get_mut(&id) {
+                    w.view = view;
+                    Task::none()
+                } else {
+                    Task::none()
+                }
+            }
         }
     }
 
@@ -316,10 +329,10 @@ impl<'a> App {
 
         let c = match state.view {
             View::Basic => self.basic_state.view(sheet),
-            View::Inventory => todo!(),
+            View::Inventory => self.inventory_state.view(&sheet.inventory),
             View::Spells => todo!(),
         };
-
+        let c = column![mode_switcher(self, window_id), c].spacing(8);
         container(c).center(Length::Fill).into()
     }
 
@@ -411,15 +424,23 @@ fn get_backup_path(f: impl AsRef<Path>) -> String {
     format!("{}.json", f.as_ref().display())
 }
 
-fn mode_switcher(app: &App, id: Id) -> Container<Message> {
-    let b = button("Main").on_press_with(move || Message::ViewChanged(View::Basic, id));
-    let b2 = button("Inventory").on_press_maybe(if app.windows[id].view == View::Inventory {
+fn mode_switcher(app: &'_ App, id: Id) -> Container<'_, Message> {
+    let b1 = button("Main").on_press_maybe(if app.windows[&id].view == View::Basic {
         None
     } else {
-        Message::ViewChanged(View::Inventory, ())
+        Some(Message::ViewChanged(View::Basic, id))
+    });
+    let b2 = button("Inventory").on_press_maybe(if app.windows[&id].view == View::Inventory {
+        None
+    } else {
+        Some(Message::ViewChanged(View::Inventory, id))
     });
 
-    container(row![b, b2].spacing(8)).padding(12)
+    container(row![b1, b2].spacing(8)).padding(12)
 }
 
-fn mode_style(theme: Theme, status: &iced::widget::button::Status) {}
+// fn mode_style(theme: &Theme, status: iced::widget::button::Status) -> iced::widget::button::Style {
+//     if status == iced::widget::button::Status::Disabled {
+//         Style::default().
+//     }
+// }
